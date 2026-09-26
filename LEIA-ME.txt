@@ -1,0 +1,47 @@
+SIMULADOR DE REDEMOINHO - Equações de Navier-Stokes
+====================================================
+
+COMO ABRIR
+  Dê dois cliques em  SimuladorRedemoinho.exe
+  -> Abre uma janela própria (usa o Microsoft Edge que já vem no Windows).
+  -> NÃO precisa de internet nem de instalação. Pode levar num pendrive.
+
+  Alternativa: abra o arquivo index.html no Google Chrome ou no Edge.
+
+  Se o Windows mostrar "O Windows protegeu o computador" (SmartScreen),
+  clique em "Mais informações" -> "Executar assim mesmo". Isso acontece com
+  qualquer programa novo que não tem assinatura digital paga.
+
+MODOS
+  2D (plano)   - 7 cenários: ralo da pia, furacão, fumaça subindo, fusão de
+                 vórtices, dipolo, esteira de von Kármán, laboratório livre.
+  3D (volume)  - 1. COLAPSO DA OPENAI: o vórtice que encolhe e "explode",
+                    com as leis de escala da prova de setembro de 2026
+                    (|u| ~ tau^(-1/2-h), energia -> 0) e o gráfico log-log.
+                 2. Tanque de água (grade 64x64x64): funil na superfície e
+                    jato no eixo com o ACELERADOR da descida; a água recircula.
+                 3. Tornado de fumaça.
+                 SOLTE OBJETOS no redemoinho: isopor, patinho, cubo de
+                 madeira, folha, bolinha de aço e bolha.
+
+CONTROLES
+  2D: arrastar = mexer o fluido | Shift+arrastar = mover o vórtice
+  3D: arrastar = girar a câmera | roda do mouse = zoom | clique = soltar objeto
+  Espaço = pausar | R = reiniciar | F = tela cheia | P = salvar foto
+  D = alternar 2D/3D | O = soltar objeto (3D) | V = trocar visualização (2D)
+  Clique nos termos da equação (embaixo do simulador) para ligar/desligar
+  cada parte da física.
+
+A página tem, abaixo do simulador, a explicação completa das equações, do
+Problema do Milênio (incluindo o anúncio da OpenAI de setembro de 2026) e um
+ROTEIRO PARA A APRESENTAÇÃO com perguntas prováveis dos jurados.
+
+DICA PARA A FEIRA
+  Teste antes no computador que vai usar. Se ficar lento, no modo 3D escolha
+  "Qualidade da imagem: Rápida" ou a grade 48³; no 2D, diminua a
+  "Resolução da grade" no painel "Numérico".
+
+ARQUIVOS
+  SimuladorRedemoinho.exe   programa (o simulador vai embutido nele)
+  index.html                o simulador em si (HTML + WebGL 2)
+  codigo-fonte\             código do lançador .exe (C#) e o ícone
