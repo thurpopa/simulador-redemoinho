@@ -235,7 +235,7 @@ footer{max-width:1000px;margin:40px auto 0;padding:24px 16px 50px;color:var(--di
       <div class="toast" id="toast" hidden></div>
       <div class="gpuwarn" id="gpuWarn" hidden>
         <b>⚠ O navegador está desenhando sem a placa de vídeo</b> (modo software), por isso fica lento.
-        Ative <b>“Usar aceleração de hardware quando disponível”</b> — no Chrome: Configurações → Sistema; no Edge: Configurações → Sistema e desempenho — e reinicie o navegador.
+        Ative a <b>aceleração de hardware / de gráficos</b> e reinicie o navegador — Chrome e Brave: Configurações → Sistema (endereço <b>chrome://settings/system</b> ou <b>brave://settings/system</b>); Edge: Configurações → Sistema e desempenho.
         <button class="btn" id="gpuWarnClose">Entendi</button>
       </div>
       <div class="err" id="err"><div><h3>Não consegui iniciar a simulação 😕</h3><p id="errMsg">Este navegador não suporta WebGL 2 com texturas de ponto flutuante.</p><p style="color:var(--muted)">Tente abrir no Google Chrome ou Microsoft Edge atualizados.</p></div></div>
@@ -923,7 +923,7 @@ gl.getExtension('OES_texture_float_linear');
 // Qual placa de vídeo o navegador está usando? (renderização por software = muito lento)
 const GPU_RAW = (()=>{ try{ const e = gl.getExtension('WEBGL_debug_renderer_info'); return String(e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)); }catch(err){ return ''; } })();
 const GPU_NAME = (()=>{ const m = GPU_RAW.match(/ANGLE \([^,]*,\s*(.+?)(?:\s*\(0x[0-9a-fA-F]+\))?\s*(?:Direct3D|OpenGL|Vulkan|Metal|,|\))/); return (m ? m[1] : GPU_RAW).trim() || 'desconhecida'; })();
-const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic/i.test(GPU_RAW);
+const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic|warp/i.test(GPU_RAW);
 
 const HDR = `#version 300 es
 precision highp float;
