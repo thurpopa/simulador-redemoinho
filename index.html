@@ -1724,15 +1724,14 @@ function loop(now){
   const rawDt = now - rafLast; rafLast = now;
   rafInterval = rafInterval*0.95 + Math.min(rawDt,50)*0.05;
   if(!stageVisible && !document.fullscreenElement){ last = now; return; }
-  // monitores de 120/144 Hz: limita a ~60 quadros/s (não precisa simular mais que isso)
-  if(rafInterval < 11 && now - last < 15.5) return;
+  // sem limite de quadros: roda na taxa do monitor (60, 144, 200 Hz...)
   const real = Math.min((now-last)/1000, 0.1); last = now;
   if(real>0) fps = fps*0.93 + (1/real)*0.07;
   if(frame%30===0) resize(false);
   governor(real);
   if(MODE==='3d'){ Sim3D.frame(real); frame++; return; }
   if(!paused || stepOnce){
-    const dt = Math.min(Math.max(real,1/120),1/30)*P.timeScale;
+    const dt = Math.min(Math.max(real,1/400),1/30)*P.timeScale;   // passo = tempo real (também a 200 quadros/s)
     simTime += dt; impulseTimer -= dt;
     step(dt);
     stepOnce = false;
@@ -2767,7 +2766,7 @@ void main(){
   function frame(real){
     if(!inited) init();
     if(!paused || stepOnce){
-      const dt = Math.min(Math.max(real,1/120),1/20)*P.timeScale;
+      const dt = Math.min(Math.max(real,1/400),1/20)*P.timeScale;
       time3 += dt; step3(dt); lastDt = dt; if(Q.scene!=='colapso') updateObjects(dt); stepOnce = false;
     }
     if(Q.autoRotate && !drag.active) cam.yaw += real*0.08;
