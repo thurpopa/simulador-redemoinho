@@ -14,6 +14,7 @@
   color-scheme: dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
 a{color:var(--accent)}
@@ -47,6 +48,11 @@ nav a:hover{color:var(--text);background:var(--panel2)}
 .perfrow{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px;color:var(--muted)}
 .perfrow .seg{margin-top:0;flex:1}
 .perfrow .seg button{padding:5px 6px;font-size:12px}
+.gpuline{margin-top:6px;font-size:11.5px;color:var(--dim);line-height:1.35}
+.gpuline b{color:var(--muted);font-weight:600}
+.gpuline.bad b{color:var(--force)}
+.gpuwarn{position:absolute;left:12px;right:12px;top:64px;background:rgba(40,24,6,.95);border:1px solid var(--force);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.5;color:var(--text);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.gpuwarn .btn{margin-left:auto}
 .chip b{color:#fff}
 .paused-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(10,15,28,.7);border:1px solid var(--line);padding:8px 16px;border-radius:999px;font-weight:600;display:none;pointer-events:none}
 .paused .paused-badge{display:block}
@@ -227,6 +233,11 @@ footer{max-width:1000px;margin:40px auto 0;padding:24px 16px 50px;color:var(--di
       </div>
       <div class="paused-badge">⏸ Pausado — tecle Espaço</div>
       <div class="toast" id="toast" hidden></div>
+      <div class="gpuwarn" id="gpuWarn" hidden>
+        <b>⚠ O navegador está desenhando sem a placa de vídeo</b> (modo software), por isso fica lento.
+        Ative <b>“Usar aceleração de hardware quando disponível”</b> — no Chrome: Configurações → Sistema; no Edge: Configurações → Sistema e desempenho — e reinicie o navegador.
+        <button class="btn" id="gpuWarnClose">Entendi</button>
+      </div>
       <div class="err" id="err"><div><h3>Não consegui iniciar a simulação 😕</h3><p id="errMsg">Este navegador não suporta WebGL 2 com texturas de ponto flutuante.</p><p style="color:var(--muted)">Tente abrir no Google Chrome ou Microsoft Edge atualizados.</p></div></div>
     </div>
 
@@ -298,6 +309,7 @@ footer{max-width:1000px;margin:40px auto 0;padding:24px 16px 50px;color:var(--di
         <span>Desempenho</span>
         <div class="seg" id="perfSeg"><button data-v="auto">Auto</button><button data-v="leve">Leve</button><button data-v="alta">Alta</button></div>
       </div>
+      <div class="gpuline" id="gpuLine"></div>
     </div>
 
     <!-- ===== painel 3D ===== -->
@@ -907,6 +919,11 @@ hasFloat32 = !!gl.getExtension('EXT_color_buffer_float');
 const hasHalf = hasFloat32 || !!gl.getExtension('EXT_color_buffer_half_float');
 if(!hasHalf) fail('A placa de vídeo não permite desenhar em texturas de ponto flutuante.');
 gl.getExtension('OES_texture_float_linear');
+
+// Qual placa de vídeo o navegador está usando? (renderização por software = muito lento)
+const GPU_RAW = (()=>{ try{ const e = gl.getExtension('WEBGL_debug_renderer_info'); return String(e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)); }catch(err){ return ''; } })();
+const GPU_NAME = (()=>{ const m = GPU_RAW.match(/ANGLE \([^,]*,\s*(.+?)(?:\s*\(0x[0-9a-fA-F]+\))?\s*(?:Direct3D|OpenGL|Vulkan|Metal|,|\))/); return (m ? m[1] : GPU_RAW).trim() || 'desconhecida'; })();
+const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic/i.test(GPU_RAW);
 
 const HDR = `#version 300 es
 precision highp float;
@@ -2234,23 +2251,45 @@ uniform vec4 uOA[24], uOB[24], uOC[24];
 uniform vec4 uB1, uB2, uB3;   // colapso: b1=(δ,ℓz,R,z_s)  b2=(Γ·sentido,α,amplitude do pulso,fase)  b3=(r_lo,r_hi,fase do giro,u_θmáx)
 const vec3 LDIR = vec3(-0.4778, 0.8123, 0.3345);
 vec2 boxT2(vec3 ro, vec3 rd, vec3 bmin, vec3 bmax){ vec3 inv=1./rd; vec3 t0=(bmin-ro)*inv, t1=(bmax-ro)*inv; vec3 a=min(t0,t1), b=max(t0,t1); return vec2(max(max(a.x,a.y),a.z), min(min(b.x,b.y),b.z)); }
+uniform vec4 uRot;   // (cos, sen) da fase das listras e (cos, sen) da fase angular dos pulsos — calculados na CPU
+// Brilho do colapso num ponto. Tudo em unidades do núcleo (autossimilar); os ângulos usam polinômios
+// (cos 3θ, sen 4θ...) em vez de atan/sin, e as partes caras só são calculadas onde há algo para desenhar.
 vec3 blowEmit(vec3 p, out float dens){
+  dens = 0.;
   vec3 q = p-vec3(0.,1.,0.);
-  float r2 = dot(q.xz,q.xz), r = sqrt(r2)+1e-7, d = uB1.x;
-  float zeta = (q.y-uB1.w)/uB1.y;
-  float ut = abs(uB2.x)/(6.2831853*r)*(1.-exp(-r2/(d*d)))*exp(-1.2*zeta*zeta);
-  float w = ut/uB3.w;                                           // giro normalizado (1 = máximo)
-  float core = smoothstep(0.8,0.99,w);                          // tubo de vórtice (oco no eixo: o giro é zero ali)
-  float th = atan(q.z,q.x);
-  float stripe = pow(0.5+0.5*sin(4.*th*sign(uB2.x) + uB3.z + 7.*zeta), 1.5);  // listras helicoidais que giram
-  vec3 cc = mix(vec3(0.06,0.3,1.0), vec3(0.85,0.97,1.0), smoothstep(0.8,1.0,w))*(0.25+0.75*stripe);
-  float axis = exp(-r2/(0.0025*d*d))*exp(-zeta*zeta*0.8);                      // jato que sai pelo eixo
-  float rX = r/d;                                                              // raio em unidades do núcleo
-  float band = exp(-pow((rX-1.95)/0.55,2.))*exp(-2.2*zeta*zeta);               // anel onde a força age
-  float ring = pow(0.5+0.5*cos(9.*log(r2/(2.*d*d)) - uB2.w), 10.)*(0.55+0.45*sin(3.*th - 0.5*uB2.w));   // pulsos com fase N·log X
-  vec3 ac = vec3(1.0,0.55,0.14)*band*ring*uB2.z;
-  dens = core*2.6 + band*ring*uB2.z*0.4 + axis*0.25;
-  return cc*core*2.6 + ac*1.8 + vec3(1.,0.5,0.85)*axis*0.45;
+  float d = uB1.x, r2 = dot(q.xz,q.xz), rX2 = r2/(d*d);
+  float zeta = (q.y-uB1.w)/uB1.y, z2 = zeta*zeta;
+  if(rX2 > 9.5 || z2 > 5.) return vec3(0.);                   // fora do vórtice e do anel: nada a fazer
+  vec3 col = vec3(0.);
+  float rX = sqrt(rX2)+1e-5;
+  vec2 c = q.xz/(rX*d);                                        // (cos θ, sen θ)
+  // tubo de vórtice: giro normalizado w = u_θ/u_θ,máx (oco no eixo, onde o giro é zero)
+  float w = (1.-exp(-rX2))/(0.638*rX)*exp(-1.2*z2);
+  if(w > 0.8){
+    float core = smoothstep(0.8,0.99,w);
+    vec2 c2 = vec2(c.x*c.x-c.y*c.y, 2.*c.x*c.y), c4 = vec2(c2.x*c2.x-c2.y*c2.y, 2.*c2.x*c2.y);
+    float s4 = c4.y*sign(uB2.x);
+    float ph = 7.*zeta; float cp = cos(ph), sp = sin(ph);
+    float ca = uRot.x*cp - uRot.y*sp, sa = uRot.y*cp + uRot.x*sp;             // fase total = giro + 7ζ
+    float st = 0.5+0.5*(s4*ca + c4.x*sa);                                        // sen(4θ + fase): listras helicoidais que giram
+    st *= sqrt(st);
+    col += mix(vec3(0.06,0.3,1.0), vec3(0.85,0.97,1.0), smoothstep(0.8,1.0,w))*(0.25+0.75*st)*core*2.6;
+    dens += core*2.6;
+  }
+  // anel onde a força age, com pulsos de fase N·log X
+  float br = (rX-1.95)/0.55;
+  float band = exp(-br*br-2.2*z2);
+  if(band > 0.02){
+    float cr = 0.5+0.5*cos(9.*log(0.5*rX2) - uB2.w);
+    float cr2 = cr*cr, cr4 = cr2*cr2; float ring = cr4*cr4*cr2;               // cr^10
+    vec2 c3 = vec2(c.x*c.x*c.x-3.*c.x*c.y*c.y, 3.*c.x*c.x*c.y-c.y*c.y*c.y);  // (cos 3θ, sen 3θ)
+    ring *= 0.55+0.45*(c3.y*uRot.z - c3.x*uRot.w);                            // sen(3θ − fase)
+    float a = band*ring*uB2.z;
+    col += vec3(1.0,0.55,0.14)*a*1.8; dens += a*0.4;
+  }
+  // jato que sai pelo eixo
+  if(rX2 < 0.06){ float ax = exp(-rX2/0.0025)*exp(-0.8*z2); col += vec3(1.,0.5,0.85)*ax*0.45; dens += ax*0.25; }
+  return col;
 }
 vec2 boxT(vec3 ro, vec3 rd){ vec3 inv=1./rd; vec3 t0=(vec3(-1.,0.,-1.)-ro)*inv, t1=(vec3(1.,2.,1.)-ro)*inv; vec3 a=min(t0,t1), b=max(t0,t1); return vec2(max(max(a.x,a.y),a.z), min(min(b.x,b.y),b.z)); }
 vec3 boxN(vec3 p){ vec3 q = (p-vec3(0.,1.,0.)); vec3 a = abs(q); if(a.x>a.y && a.x>a.z) return vec3(sign(q.x),0.,0.); if(a.y>a.z) return vec3(0.,sign(q.y),0.); return vec3(0.,0.,sign(q.z)); }
@@ -2284,7 +2323,8 @@ float hitObj(vec3 ro, vec3 rd, out vec3 nn, out vec4 cc, out float bub){
     if(i>=uObjN) break;
     vec3 c = uOA[i].xyz; float r = uOA[i].w; if(r<=0.) continue;
     int ty = int(uOB[i].x+0.5);
-    vec3 oc = ro-c; if(dot(oc,rd)>0. && dot(oc,oc)>r*r*4.) continue;
+    vec3 oc = ro-c; float bb = dot(oc,rd), cc0 = dot(oc,oc)-2.2*r*r;          // esfera envoltória (raio ≈1,5r)
+    if(bb*bb < cc0 || (bb > 0. && cc0 > 0.)) continue;                          // o raio não passa perto: pula as contas caras
     mat3 R = rotX(uOB[i].z)*rotY(uOB[i].y); mat3 Ri = transpose(R);
     vec3 lo = R*(ro-c), ld = R*rd; vec3 n; float t = 1e9; vec4 col = uOC[i];
     if(ty==0 || ty==4){ t = sph(ro,rd,c,r); if(t<1e9) n = normalize(ro+rd*t-c); }
@@ -2328,11 +2368,12 @@ void main(){
       col += fr*sky(reflect(rd,bn)) + vec3(0.55,0.75,0.9)*edgeGlow(pe)*0.6;
       Tr *= (1.-fr)*vec3(0.93,0.97,0.98);
       float tStop = min(t1, tObj);
-      const int STEPS = 68;
+      const int STEPS = 52;
       float ds = (t1-t0)/float(STEPS);
+      float jit = fract(52.9829189*fract(dot(gl_FragCoord.xy, vec2(0.06711056,0.00583715))));
       vec3 p = pe; bool above = p.y > surfH(p.xz);
       for(int i=0;i<STEPS;i++){
-        float t = t0 + (float(i)+0.5)*ds;
+        float t = t0 + (float(i)+jit)*ds;
         if(t>tStop) break;
         p = ro+rd*t;
         bool ab = p.y > surfH(p.xz);
@@ -2370,18 +2411,25 @@ void main(){
     }
   } else if(uScene==2){
     vec3 bg = tObj<tG ? shadeObj(on,rd,oc,bub) : (tG<1e8 ? ground(ro+rd*tG, rd, tG) : sky(rd));
-    vec3 hb = vec3(3.4*uB1.x, 2.1*uB1.y, 3.4*uB1.x);
-    vec2 tbb = boxT2(ro, rd, vec3(0.,1.,0.)-hb, vec3(0.,1.,0.)+hb);
+    // percorre só o cilindro onde o vórtice e o anel existem (raio 3,1δ), e não a caixa inteira
+    float Rc = 3.1*uB1.x, yc = 1.+uB1.w, hy = 2.2*uB1.y;
+    float a2 = dot(rd.xz,rd.xz), b2 = dot(ro.xz,rd.xz), c2 = dot(ro.xz,ro.xz)-Rc*Rc, disc = b2*b2-a2*c2;
     float Ts = 1.;
-    if(tbb.x<tbb.y && tbb.y>0.){
-      float t0 = max(tbb.x,0.), t1 = min(tbb.y, min(tObj,tG));
-      const int STEPS = 64; float ds = (tbb.y-t0)/float(STEPS);
-      float k = ds/uB1.x;                                // passo em unidades do núcleo (autossimilar)
-      for(int i=0;i<STEPS;i++){
-        float t = t0+(float(i)+0.5)*ds; if(t>t1) break;
-        float dens; vec3 em = blowEmit(ro+rd*t, dens);
-        col += Ts*em*k*0.55; Ts *= exp(-dens*k*0.45);
-        if(Ts<0.02) break;
+    if(disc > 0. && a2 > 1e-8){
+      float sq = sqrt(disc);
+      vec2 tc = vec2((-b2-sq)/a2, (-b2+sq)/a2);
+      vec2 ty = rd.y!=0. ? vec2((yc-hy-ro.y)/rd.y, (yc+hy-ro.y)/rd.y) : vec2(-1e9,1e9);
+      if(ty.x>ty.y) ty = ty.yx;
+      float t0 = max(max(tc.x,ty.x),0.), tEnd = min(tc.y,ty.y), t1 = min(tEnd, min(tObj,tG));
+      if(t0 < t1){
+        const int STEPS = 40; float ds = (tEnd-t0)/float(STEPS);
+        float k = ds/uB1.x;                              // passo em unidades do núcleo (autossimilar)
+        float jit = fract(52.9829189*fract(dot(gl_FragCoord.xy, vec2(0.06711056,0.00583715))));   // ruído que evita faixas
+        for(int i=0;i<STEPS;i++){
+          float t = t0+(float(i)+jit)*ds; if(t>t1) break;
+          float dens; vec3 em = blowEmit(ro+rd*t, dens);
+          if(dens > 0.){ col += Ts*em*k*0.55; Ts *= exp(-dens*k*0.45); if(Ts<0.03) break; }
+        }
       }
     }
     col += Ts*bg;
@@ -2392,9 +2440,10 @@ void main(){
     float Ts = 1.;
     if(inBox){
       float t0 = max(tb.x,0.), t1 = min(tb.y, tEnd);
-      const int STEPS = 56; float ds = (tb.y-t0)/float(STEPS);
+      const int STEPS = 44; float ds = (tb.y-t0)/float(STEPS);
+      float jit = fract(52.9829189*fract(dot(gl_FragCoord.xy, vec2(0.06711056,0.00583715))));
       for(int i=0;i<STEPS;i++){
-        float t = t0+(float(i)+0.5)*ds; if(t>t1) break;
+        float t = t0+(float(i)+jit)*ds; if(t>t1) break;
         vec3 p = ro+rd*t; vec4 d = dyeAt(p);
         float s = (d.r+d.g+d.b)*2.6;
         if(s>0.002){
@@ -2682,7 +2731,8 @@ void main(){
   }
   const TAN = Math.tan(0.42);
   function render3(){
-    const qs = Q.quality==='auto' ? autoQ : Q.quality;
+    let qs = Q.quality==='auto' ? autoQ : Q.quality;
+    if(Q.scene==='colapso') qs = Math.min(qs, 0.7);          // o colapso é um brilho suave: resolução menor não aparece
     const W = Math.max(2, Math.round(canvas.width*qs)), Hh = Math.max(2, Math.round(canvas.height*qs));
     if(!rtt || rtt.w!==W || rtt.h!==Hh){ destroy(rtt); rtt = createFBO(W,Hh,gl.RGBA8,gl.UNSIGNED_BYTE,gl.LINEAR); }
     const b = camBasis();
@@ -2697,6 +2747,7 @@ void main(){
       .f('uCamPos',...b.pos).f('uCamF',...b.F).f('uCamR',...b.R).f('uCamU',...b.U).f('uTan',TAN).f('uAspect',canvas.width/canvas.height)
       .f('uLevel',LEVEL).f('uTime',time3).f('uDrainR',0).i('uScene',isBlow?2:(Q.scene==='tanque'?0:1)).i('uShowDye',Q.showDye?1:0)
       .f('uB1',B.delta,B.Lz,B.R,B.zs).f('uB2',Q.dir*B.Gam,B.alpha,pulseAmp,6*blow.s).f('uB3',1.35*B.delta,2.6*B.delta,blow.spin,B.uth)
+      .f('uRot',Math.cos(blow.spin),Math.sin(blow.spin),Math.cos(3*blow.s),Math.sin(3*blow.s))
       .i('uObjN',Math.min(MAXOBJ,objs.length)).v4('uOA',OA).v4('uOB',OB).v4('uOC',OC);
     blit(rtt);
     use(prog.copy).f('texelSize',0,0).t('uTex',0,rtt); blit(null);
@@ -2721,9 +2772,10 @@ void main(){
     }
     if(Q.autoRotate && !drag.active) cam.yaw += real*0.08;
     if(Q.scene==='colapso' && frameCount3%5===0) drawBlowChart();
-    if(Q.quality==='auto' && frameCount3%45===44){
-      if(fps<40 && autoQ>0.4) autoQ = Math.max(0.4, autoQ-0.1);
-      else if(fps>56 && autoQ<qMax) autoQ = Math.min(qMax, autoQ+0.05);
+    if(Q.quality==='auto' && frameCount3%20===19){          // reage rápido: a cada ~1/3 de segundo
+      if(fps<25 && autoQ>0.3) autoQ = Math.max(0.3, autoQ-0.2);
+      else if(fps<45 && autoQ>0.3) autoQ = Math.max(0.3, autoQ-0.1);
+      else if(fps>57 && autoQ<qMax) autoQ = Math.min(qMax, autoQ+0.03);
       if(autoQ>qMax) autoQ = qMax;
     }
     render3();
@@ -2913,7 +2965,14 @@ canvas.addEventListener('wheel', e=>{ if(MODE==='3d'){ e.preventDefault(); Sim3D
 // =====================================================================
 //  INÍCIO
 // =====================================================================
-applyPerfLevel(matchMedia('(pointer:coarse)').matches && innerWidth<900 ? 0 : 1, false);   // celular começa no nível leve
+{
+  const gl1 = document.getElementById('gpuLine');
+  gl1.innerHTML = 'Placa de vídeo em uso: <b></b>'; gl1.querySelector('b').textContent = SOFTWARE_GL ? 'nenhuma (modo software)' : GPU_NAME;
+  gl1.classList.toggle('bad', SOFTWARE_GL);
+  if(SOFTWARE_GL){ document.getElementById('gpuWarn').hidden = false; perfMode = 'leve'; }
+  document.getElementById('gpuWarnClose').onclick = ()=>{ document.getElementById('gpuWarn').hidden = true; };
+}
+applyPerfLevel(SOFTWARE_GL || (matchMedia('(pointer:coarse)').matches && innerWidth<900) ? 0 : 1, false);   // celular e modo software começam no nível leve
 resize(true);
 initParticles();
 applyPreset('ralo');
