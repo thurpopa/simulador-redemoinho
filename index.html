@@ -1,0 +1,2828 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de Redemoinho</title>
+<style>
+:root{
+  --bg:#070a12; --bg2:#0a0f1c; --panel:#0e1524; --panel2:#141d31; --line:#22304f;
+  --text:#e8eef9; --muted:#9aa7c2; --dim:#6b7894;
+  --accent:#4cc9f0; --adv:#4cc9f0; --press:#b69cff; --visc:#7ee0a1; --force:#ffc247; --inc:#ff7aa8;
+  --radius:14px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button,select,input{font:inherit;color:inherit}
+
+/* ---------- topo ---------- */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(7,10,18,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-inner{max-width:1560px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:10px 16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;white-space:nowrap;letter-spacing:.2px}
+.brand svg{flex:none}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:12px;letter-spacing:0}
+nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-left:auto}
+nav::-webkit-scrollbar{display:none}
+nav a{color:var(--muted);text-decoration:none;font-size:14px;padding:6px 10px;border-radius:8px;white-space:nowrap}
+nav a:hover{color:var(--text);background:var(--panel2)}
+
+/* ---------- simulador ---------- */
+.sim{max-width:1560px;margin:0 auto;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0}
+.stage{position:relative;height:min(72vh,800px);min-height:380px;border-radius:var(--radius);overflow:hidden;background:#000;border:1px solid var(--line);touch-action:none;user-select:none}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#overlay{pointer-events:none}
+#gl{cursor:crosshair}
+.stage:fullscreen{height:100vh;border-radius:0;border:0}
+.hud{position:absolute;pointer-events:none;font-size:12.5px;font-variant-numeric:tabular-nums;color:#dfe7f7;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.hud.tl{left:12px;top:10px}
+.hud.tr{right:12px;top:10px;text-align:right}
+.hud.bl{left:12px;bottom:10px;color:#b9c4db}
+.chip{display:inline-block;background:rgba(10,15,28,.62);border:1px solid rgba(120,150,210,.25);border-radius:999px;padding:3px 10px;margin:0 0 5px 0;backdrop-filter:blur(4px)}
+.chip b{color:#fff}
+.paused-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(10,15,28,.7);border:1px solid var(--line);padding:8px 16px;border-radius:999px;font-weight:600;display:none;pointer-events:none}
+.paused .paused-badge{display:block}
+.stage-tools{position:absolute;right:10px;bottom:10px;display:flex;gap:6px}
+.icon-btn{background:rgba(10,15,28,.7);border:1px solid rgba(120,150,210,.3);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:#e8eef9;backdrop-filter:blur(4px)}
+.icon-btn:hover{border-color:var(--accent)}
+.err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:30px;background:#0a0f1c}
+.err.show{display:grid}
+
+/* barra da equação */
+.eqbar{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px}
+.eqbar .hint{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.eq{font-size:clamp(17px,2.1vw,26px);display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;justify-content:center}
+.math{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-style:italic}
+.math .v{font-weight:700;font-style:normal}
+.math .up{font-style:normal}
+.term{cursor:pointer;border-radius:10px;padding:1px 8px;border:1px solid transparent;transition:opacity .2s,background .2s,border-color .2s;white-space:nowrap}
+.term[data-term=adv]{color:var(--adv)} .term[data-term=press]{color:var(--press)} .term[data-term=visc]{color:var(--visc)} .term[data-term=force]{color:var(--force)} .term[data-term=inc]{color:var(--inc)}
+.term:hover{border-color:currentColor}
+.term.on{background:rgba(255,255,255,.05)}
+.term.off{opacity:.3;text-decoration:line-through}
+.termbox{margin-top:8px;font-size:13.5px;color:var(--muted);min-height:44px;border-top:1px dashed var(--line);padding-top:8px}
+.termbox b{color:var(--text)}
+
+.cards2{display:grid;grid-template-columns:1.1fr 1fr;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.card h3{margin:0 0 6px;font-size:15px}
+.card p{margin:6px 0;font-size:14px;color:#c9d3e6}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-top:4px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+#chart{width:100%;height:190px;display:block}
+.observe li{margin:4px 0;font-size:14px;color:#c9d3e6}
+.observe ul{padding-left:18px;margin:6px 0}
+
+/* painel */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:sticky;top:64px;max-height:calc(100vh - 80px);overflow-y:auto}
+.panel-head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#04121a;border-color:var(--accent);font-weight:600}
+details.grp{border-bottom:1px solid var(--line)}
+details.grp>summary{list-style:none;cursor:pointer;padding:11px 14px;font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s}
+details.grp[open]>summary::after{transform:rotate(-135deg)}
+.grp-body{padding:0 14px 12px}
+.row{display:grid;grid-template-columns:1fr auto;gap:0 8px;padding:5px 0}
+.row>label{font-size:13px;color:var(--muted)}
+.row>output{font-variant-numeric:tabular-nums;font-size:13px;color:var(--text)}
+.row>input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:4px 0 0}
+.row>.sub{grid-column:1/-1;font-size:11.5px;color:var(--dim);line-height:1.35}
+.row select{grid-column:1/-1;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-top:3px}
+.seg{display:flex;flex-wrap:wrap;gap:4px;grid-column:1/-1;margin-top:4px}
+.seg button{flex:1 1 auto;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer;font-size:12.5px}
+.seg button:hover{border-color:var(--accent)}
+.seg button.on{background:var(--accent);color:#04121a;border-color:var(--accent);font-weight:600}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.presets button{text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;font-size:13px;line-height:1.25}
+.presets button small{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+.presets button:hover{border-color:var(--accent)}
+.presets button.on{border-color:var(--accent);background:rgba(76,201,240,.12)}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:4px 0;cursor:pointer}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.kbd{font-size:11.5px;color:var(--dim);padding:10px 14px;line-height:1.7}
+.modebar{padding:10px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(76,201,240,.06),transparent)}
+.modebar .seg button{padding:9px 8px;font-size:13.5px}
+.objgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.objgrid button{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 4px;cursor:pointer;font-size:12px;line-height:1.2;text-align:center}
+.objgrid button .e{display:block;font-size:22px;margin-bottom:3px}
+.objgrid button:hover{border-color:var(--accent)}
+.objgrid button.on{border-color:var(--force);background:rgba(255,194,71,.12)}
+.sub3{font-size:11.5px;color:var(--dim);margin-top:8px;line-height:1.4}
+.objtable{width:100%;font-size:13px;margin:6px 0}
+.objtable td,.objtable th{padding:4px 6px}
+kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:11px;color:var(--muted)}
+
+/* ---------- documento ---------- */
+.doc{max-width:1000px;margin:0 auto;padding:56px 16px 8px}
+.doc h2{font-size:clamp(24px,3vw,32px);line-height:1.2;margin:0 0 6px;letter-spacing:-.3px}
+.doc h2 .n{color:var(--accent);font-size:.7em;display:block;letter-spacing:1.5px;font-weight:600;text-transform:uppercase;margin-bottom:6px}
+.doc h3{font-size:19px;margin:28px 0 6px}
+.doc p,.doc li{color:#cdd6e8;font-size:16px}
+.doc .lead{font-size:18px;color:#dfe6f4}
+.bigeq{background:linear-gradient(180deg,#0f1729,#0b1120);border:1px solid var(--line);border-radius:18px;padding:26px 18px;margin:22px 0;text-align:center}
+.bigeq .eq{font-size:clamp(20px,3.3vw,36px)}
+.bigeq .cap{font-size:13px;color:var(--muted);margin-top:10px}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin:18px 0}
+.tcard{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:14px 16px}
+.tcard .f{font-size:22px;color:var(--c)}
+.tcard h4{margin:4px 0 4px;font-size:15.5px}
+.tcard p{font-size:14.5px;margin:4px 0}
+.tcard .try{font-size:13px;color:var(--muted);border-top:1px dashed var(--line);margin-top:8px;padding-top:6px}
+.callout{background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.3);border-radius:12px;padding:14px 16px;margin:18px 0}
+.callout.warn{background:rgba(255,194,71,.07);border-color:rgba(255,194,71,.35)}
+.callout.pink{background:rgba(255,122,168,.07);border-color:rgba(255,122,168,.35)}
+.callout p{margin:6px 0}
+.callout strong{color:#fff}
+.formula{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-style:italic;font-size:21px;text-align:center;margin:14px 0;color:#f2f6ff}
+.formula .v{font-weight:700;font-style:normal}
+.formula .up{font-style:normal}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 3px}
+.frac>span:last-child{padding:0 3px}
+.pipeline{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:18px 0}
+.pipeline .st{flex:1 1 150px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--c);border-radius:12px;padding:12px}
+.pipeline .st b{display:block;font-size:14px}
+.pipeline .st span{font-size:13px;color:var(--muted);display:block;margin-top:4px;line-height:1.4}
+.pipeline .st .k{font-size:11px;letter-spacing:1px;color:var(--c);text-transform:uppercase;font-weight:700}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14.5px}
+th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left}
+th{color:var(--muted);font-weight:600;font-size:13px}
+td{color:#d6deee;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+.timeline{border-left:2px solid var(--line);margin:18px 0 18px 8px;padding-left:20px}
+.timeline .ev{position:relative;margin:0 0 16px}
+.timeline .ev::before{content:"";position:absolute;left:-27px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--c,var(--accent));box-shadow:0 0 0 4px var(--bg)}
+.timeline .ev .y{font-weight:700;color:var(--c,var(--accent));font-size:14px}
+.timeline .ev p{margin:2px 0;font-size:15px}
+.qa details{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:8px 0;padding:0 14px}
+.qa summary{cursor:pointer;padding:12px 0;font-weight:600}
+.qa details p{margin:0 0 12px}
+ol.script li{margin:8px 0}
+.refs li{font-size:14px;margin:6px 0}
+footer{max-width:1000px;margin:40px auto 0;padding:24px 16px 50px;color:var(--dim);font-size:13px;border-top:1px solid var(--line)}
+.demo-link{cursor:pointer;color:var(--accent);text-decoration:underline dotted;text-underline-offset:3px}
+
+@media (max-width:1100px){
+  .sim{grid-template-columns:1fr}
+  .panel{position:static;max-height:none}
+  .cards2{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .brand small{display:none}
+  .stage{height:62vh}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#4cc9f0"/><stop offset="1" stop-color="#b69cff"/></linearGradient></defs><path d="M32 32m-4 0a4 4 0 1 1 8 0a10 10 0 1 1-20 0a16 16 0 1 1 32 0a22 22 0 1 1-44 0a28 28 0 0 1 28-28" fill="none" stroke="url(#lg)" stroke-width="4.5" stroke-linecap="round"/></svg>
+      <div>Redemoinho<small>Simulador das equações de Navier–Stokes</small></div>
+    </div>
+    <nav>
+      <a href="#simulador">Simulador</a>
+      <a href="#equacoes">Equações</a>
+      <a href="#computador">Como o computador resolve</a>
+      <a href="#anatomia">Anatomia do redemoinho</a>
+      <a href="#modo3d">Modo 3D e objetos</a>
+      <a href="#fumaca-liquido">Fumaça × Líquido</a>
+      <a href="#milenio">Problema do Milênio</a>
+      <a href="#feira">Roteiro da feira</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ======================= SIMULADOR ======================= -->
+<main>
+<section class="sim" id="simulador">
+  <div class="left">
+    <div class="stage" id="stage">
+      <canvas id="gl"></canvas>
+      <canvas id="overlay"></canvas>
+      <div class="hud tl">
+        <div class="chip" id="hudScene">Ralo da pia · vista de cima</div><br>
+        <div class="chip" id="hudStats">t = 0,0 s · 60 FPS</div>
+      </div>
+      <div class="hud tr">
+        <div class="chip" id="hudRe">Re = —</div><br>
+        <div class="chip" id="hudV">v<sub>máx</sub> = —</div>
+      </div>
+      <div class="hud bl" id="hudHint">Arraste para mexer o fluido · <kbd>Shift</kbd>+arrastar move o redemoinho</div>
+      <div class="stage-tools">
+        <button class="icon-btn" id="btnShot" title="Salvar imagem (P)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h3l2-3h6l2 3h3v13H4z"/><circle cx="12" cy="13" r="4"/></svg></button>
+        <button class="icon-btn" id="btnFull" title="Tela cheia (F)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      </div>
+      <div class="paused-badge">⏸ Pausado — tecle Espaço</div>
+      <div class="err" id="err"><div><h3>Não consegui iniciar a simulação 😕</h3><p id="errMsg">Este navegador não suporta WebGL 2 com texturas de ponto flutuante.</p><p style="color:var(--muted)">Tente abrir no Google Chrome ou Microsoft Edge atualizados.</p></div></div>
+    </div>
+
+    <div class="eqbar">
+      <div class="hint">Clique em cada termo da equação para <b>ligar ou desligar</b> essa parte da física e ver o que acontece:</div>
+      <div class="eq math" id="liveEq">
+        <span class="up">∂</span><span class="v">u</span>/<span class="up">∂</span>t
+        <span class="up">+</span>
+        <span class="term on" data-term="adv">(<span class="v">u</span>·<span class="up">∇</span>)<span class="v">u</span></span>
+        <span class="up">=</span>
+        <span class="term on" data-term="press">−<span class="up">∇</span>p/ρ</span>
+        <span class="up">+</span>
+        <span class="term on" data-term="visc">ν<span class="up">∇²</span><span class="v">u</span></span>
+        <span class="up">+</span>
+        <span class="term on" data-term="force"><span class="v">f</span></span>
+        <span style="width:22px"></span>
+        <span class="term on" data-term="inc"><span class="up">∇</span>·<span class="v">u</span> <span class="up">=</span> 0</span>
+      </div>
+      <div class="termbox" id="termBox">Passe o mouse sobre um termo para ver o que ele significa.</div>
+    </div>
+
+    <div class="cards2">
+      <div class="card" id="blowCard" hidden>
+        <h3>Leis de escala do colapso (escala log-log)</h3>
+        <canvas id="chart3" style="width:100%;height:210px;display:block"></canvas>
+        <div class="legend">
+          <span><i style="background:#ff7aa8"></i>|u|<sub>máx</sub> ~ τ<sup>−1/2−h</sup></span>
+          <span><i style="background:#7ee0a1"></i>energia do núcleo ~ τ<sup>1/2−3h</sup></span>
+          <span><i style="background:#4cc9f0"></i>raio ℓ<sub>r</sub> ~ τ<sup>1/2</sup></span>
+          <span><i style="background:#b69cff"></i>comprimento ℓ<sub>z</sub> ~ τ<sup>1/2−h</sup></span>
+          <span><i style="background:#ffc247"></i>Re<sub>θ</sub> ~ τ<sup>−h</sup></span>
+        </div>
+      </div>
+      <div class="card" id="objCard" hidden>
+        <h3>Como os objetos se movem no redemoinho</h3>
+        <p>Cada objeto segue uma versão simplificada da <b>equação de Maxey–Riley</b>:</p>
+        <div class="formula" style="font-size:18px;margin:8px 0"><span class="frac"><span>d<span class="v">v</span></span><span>dt</span></span> = <span class="frac"><span><span class="v">u</span> − <span class="v">v</span></span><span>τ</span></span> + β <span class="frac"><span>D<span class="v">u</span></span><span>Dt</span></span> + (1 − β) <span class="v">g</span>,&nbsp;&nbsp; β = <span class="frac"><span>3ρ<sub class="up">f</sub></span><span>ρ<sub class="up">f</sub> + 2ρ<sub class="up">p</sub></span></span></div>
+        <p style="font-size:13px"><b>u</b> = velocidade do fluido no ponto, <b>v</b> = do objeto, τ = tempo de resposta (arrasto), ρ<sub>p</sub>/ρ<sub>f</sub> = densidade do objeto / do fluido. Mais leve que a água → β &gt; 1 → a <b>pressão baixa puxa para o centro</b>. Mais pesado → β &lt; 1 → é <b>jogado para fora</b> (como numa centrífuga).</p>
+        <p id="objStats" style="font-size:13px;color:var(--muted)"></p>
+      </div>
+      <div class="card" id="chartCard">
+        <h3>Perfil de velocidade do redemoinho</h3>
+        <canvas id="chart"></canvas>
+        <div class="legend">
+          <span><i style="background:#4cc9f0"></i>Teoria (Lamb–Oseen)</span>
+          <span><i style="background:repeating-linear-gradient(90deg,#8190ad 0 4px,transparent 4px 7px)"></i>Rankine</span>
+          <span><i style="background:#ffc247;height:6px;width:6px;border-radius:50%"></i>Medido na simulação</span>
+          <span><i style="background:#7ee0a1"></i>Entrada radial (sucção)</span>
+        </div>
+      </div>
+      <div class="card observe">
+        <h3 id="obsTitle">O que observar</h3>
+        <div id="obsText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- painel de controle -->
+  <aside class="panel" id="panel">
+    <div class="panel-head">
+      <button class="btn primary" id="btnPause">⏸ Pausar</button>
+      <button class="btn" id="btnStep" title="Avançar um passo (N)">⏭ Passo</button>
+      <button class="btn" id="btnReset" title="Reiniciar (R)">↺ Reiniciar</button>
+      <button class="btn" id="btnImpulse" title="Dá um novo impulso ao motor do redemoinho">⚡ Impulso</button>
+    </div>
+    <div class="modebar">
+      <div class="seg" id="modeSeg"><button data-v="2d">▦ 2D · plano</button><button data-v="3d">🧊 3D · volume + objetos</button></div>
+    </div>
+
+    <!-- ===== painel 3D ===== -->
+    <div id="p3d" hidden>
+    <details class="grp" open>
+      <summary>🎬 Cenários 3D</summary>
+      <div class="grp-body"><div class="presets" id="presets3"></div></div>
+    </details>
+    <details class="grp" open>
+      <summary>🦆 Soltar objetos no redemoinho</summary>
+      <div class="grp-body">
+        <div class="objgrid" id="objGrid"></div>
+        <div class="sub3">Clique num botão para soltar, ou escolha o objeto e <b>clique no tanque</b> para soltar onde quiser.</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn" id="btnRain">🌧️ Chuva de 8</button>
+          <button class="btn" id="btnMix">🎲 Um de cada</button>
+          <button class="btn" id="btnClearObj">🧹 Remover objetos</button>
+        </div>
+      </div>
+    </details>
+    <details class="grp" open id="grp3Blow">
+      <summary>💥 Colapso (construção OpenAI 2026)</summary>
+      <div class="grp-body">
+        <div class="row"><label>⏩ Acelerador do colapso</label><output data-o3="blowSpeed"></output>
+          <input type="range" data-k3="blowSpeed" min="0.05" max="2.5" step="0.05">
+          <div class="sub">Velocidade com que o tempo avança rumo à explosão (em tempo logarítmico, como o próprio colapso).</div></div>
+        <div class="row"><label>Expoente de anisotropia h</label><output data-o3="hExp"></output>
+          <input type="range" data-k3="hExp" min="0" max="0.2" step="0.005">
+          <div class="sub">Na prova, 0 &lt; h &lt; 1/100. Valores maiores são exagero didático: o vórtice afina mais depressa do que encurta.</div></div>
+        <label class="check"><input type="checkbox" data-k3="simZoom"> Zoom de similaridade (a câmera acompanha o encolhimento)</label>
+        <label class="check"><input type="checkbox" data-k3="loopBlow"> Recomeçar sozinho depois da explosão</label>
+        <div style="margin-top:6px"><button class="btn" id="btnBlowRestart">↺ Recomeçar o colapso</button></div>
+      </div>
+    </details>
+    <details class="grp" open id="grp3Vortex">
+      <summary>🌀 Redemoinho 3D</summary>
+      <div class="grp-body">
+        <div class="row"><label>Circulação Γ</label><output data-o3="gamma"></output>
+          <input type="range" data-k3="gamma" min="0" max="2.5" step="0.02"></div>
+        <div class="row"><label>Raio do núcleo r<sub>c</sub></label><output data-o3="core"></output>
+          <input type="range" data-k3="core" min="0.06" max="0.4" step="0.005"></div>
+        <div class="row"><label id="lblSuction3">🚀 Acelerador da descida</label><output data-o3="suction"></output>
+          <input type="range" data-k3="suction" min="0" max="3" step="0.05">
+          <div class="sub" id="subSuction3">Força do jato que puxa a água (e os objetos) para baixo pelo eixo do redemoinho.</div></div>
+        <div class="row" id="rowUpdraft3"><label>Corrente ascendente</label><output data-o3="updraft"></output>
+          <input type="range" data-k3="updraft" min="0" max="1" step="0.01"></div>
+        <div class="row"><label>Sentido (visto de cima)</label>
+          <div class="seg" data-seg3="dir"><button data-v="1">↺ Anti-horário</button><button data-v="-1">↻ Horário</button></div></div>
+        <label class="check"><input type="checkbox" data-k3="wander"> Redemoinho passeia</label>
+      </div>
+    </details>
+    <details class="grp" open id="grp3Fluid">
+      <summary>💧 Fluido 3D</summary>
+      <div class="grp-body">
+        <div class="row"><label>Viscosidade cinemática ν</label><output data-o3="nu"></output>
+          <input type="range" data-k3="nu" data-log="-5,-1" min="0" max="100" step="0.5"></div>
+        <div class="row" id="rowBuoy3"><label>Empuxo da fumaça</label><output data-o3="buoy"></output>
+          <input type="range" data-k3="buoy" min="0" max="80" step="1"></div>
+        <div class="row"><label>Confinamento de vorticidade</label><output data-o3="confine"></output>
+          <input type="range" data-k3="confine" min="0" max="8" step="0.1"></div>
+        <div class="row" id="rowH3"><label>Exagero da superfície</label><output data-o3="hScale"></output>
+          <input type="range" data-k3="hScale" min="0" max="3" step="0.05">
+          <div class="sub">A profundidade real do funil é pequena; aqui ela pode ser ampliada para ficar visível.</div></div>
+        <div class="row"><label>Esmaecimento do corante</label><output data-o3="dyeDiss"></output>
+          <input type="range" data-k3="dyeDiss" min="0" max="1" step="0.01"></div>
+      </div>
+    </details>
+    <details class="grp" open>
+      <summary>👁️ Visualização 3D</summary>
+      <div class="grp-body">
+        <label class="check"><input type="checkbox" data-k3="particles"> Partículas (bolhas na água / poeira no tornado)</label>
+        <label class="check"><input type="checkbox" data-k3="showDye"> Mostrar tinta / fumaça</label>
+        <label class="check"><input type="checkbox" data-k3="emitDye"> Fonte contínua de tinta / fumaça</label>
+        <label class="check"><input type="checkbox" data-k3="autoRotate"> Girar a câmera sozinha</label>
+        <div style="margin:6px 0"><button class="btn" id="btnInk3">🎨 Soltar camadas de tinta</button></div>
+        <div class="row"><label>Qualidade da imagem</label>
+          <div class="seg" data-seg3="quality"><button data-v="auto">Auto</button><button data-v="0.5">Rápida</button><button data-v="0.75">Média</button><button data-v="1">Alta</button></div></div>
+        <div class="row"><label>Resolução da grade 3D</label>
+          <select data-k3="N"><option value="48">48³ (~110 mil células)</option><option value="64">64³ (~262 mil células)</option><option value="80">80³ (~512 mil células)</option></select></div>
+        <div class="row"><label>Iterações de pressão</label><output data-o3="pIters"></output>
+          <input type="range" data-k3="pIters" min="4" max="60" step="1"></div>
+      </div>
+    </details>
+    </div>
+
+    <!-- ===== painel 2D ===== -->
+    <div id="p2d">
+    <details class="grp" open>
+      <summary>🎬 Cenários prontos</summary>
+      <div class="grp-body">
+        <div class="presets" id="presets"></div>
+      </div>
+    </details>
+
+    <details class="grp" open>
+      <summary>🌀 Redemoinho (vórtice)</summary>
+      <div class="grp-body">
+        <div class="row"><label>Arranjo de vórtices</label>
+          <select data-k="layout">
+            <option value="none">Nenhum (só a colher/mouse)</option>
+            <option value="one">1 redemoinho</option>
+            <option value="co">2 no mesmo sentido (fundem)</option>
+            <option value="op">2 em sentidos opostos (dipolo)</option>
+            <option value="tri">3 em triângulo</option>
+            <option value="quad">4 alternados</option>
+          </select></div>
+        <div class="row"><label>Circulação Γ (intensidade do giro)</label><output data-o="gamma"></output>
+          <input type="range" data-k="gamma" min="0" max="0.4" step="0.005">
+          <div class="sub">Γ = ∮ <b>u</b>·d<b>l</b>: quanto o fluido “gira” ao redor do centro.</div></div>
+        <div class="row"><label>Raio do núcleo r<sub>c</sub></label><output data-o="core"></output>
+          <input type="range" data-k="core" min="0.015" max="0.15" step="0.001">
+          <div class="sub">Dentro do núcleo o fluido gira como um disco rígido.</div></div>
+        <div class="row"><label>Sucção (ralo)</label><output data-o="suction"></output>
+          <input type="range" data-k="suction" min="0" max="1" step="0.01">
+          <div class="sub">Retira fluido pelo centro (como a água descendo pelo ralo).</div></div>
+        <div class="row"><label>Sentido de rotação</label>
+          <div class="seg" data-seg="dir"><button data-v="1">↺ Anti-horário</button><button data-v="-1">↻ Horário</button></div></div>
+        <div class="row"><label>Distância entre vórtices</label><output data-o="sep"></output>
+          <input type="range" data-k="sep" min="0.06" max="0.6" step="0.005"></div>
+        <div class="row"><label>Motor do redemoinho</label>
+          <div class="seg" data-seg="drive"><button data-v="continuous">Contínuo</button><button data-v="impulse">Só impulso inicial</button></div>
+          <div class="sub">“Só impulso”: o motor gira por 1,5 s e depois o fluido evolui sozinho — física pura.</div></div>
+        <label class="check"><input type="checkbox" data-k="wander"> Redemoinho passeia (como um tornado)</label>
+      </div>
+    </details>
+
+    <details class="grp" open>
+      <summary>💧 Fluido</summary>
+      <div class="grp-body">
+        <div class="row"><label>Tipo de fluido</label>
+          <div class="seg" data-seg="fluid"><button data-v="ar">💨 Ar / fumaça</button><button data-v="agua">💧 Água</button><button data-v="mel">🍯 Mel</button></div></div>
+        <div class="row"><label>Viscosidade cinemática ν</label><output data-o="nu"></output>
+          <input type="range" data-k="nu" data-log="-6,-2.4" min="0" max="100" step="0.5">
+          <div class="sub">“Grossura” do fluido. Mel ≫ ar &gt; água (sim: o ar é ~15× mais viscoso que a água, em ν!).</div></div>
+        <div class="row"><label>Empuxo (fumaça quente sobe)</label><output data-o="buoy"></output>
+          <input type="range" data-k="buoy" min="0" max="200" step="1"></div>
+        <div class="row"><label>Vento / correnteza U</label><output data-o="wind"></output>
+          <input type="range" data-k="wind" min="0" max="0.5" step="0.01"></div>
+        <div class="row"><label>Confinamento de vorticidade</label><output data-o="confine"></output>
+          <input type="range" data-k="confine" min="0" max="40" step="0.5">
+          <div class="sub">Truque numérico que devolve os pequenos redemoinhos que a grade “apaga”.</div></div>
+        <div class="row"><label>Esmaecimento do corante</label><output data-o="dyeDiss"></output>
+          <input type="range" data-k="dyeDiss" min="0" max="1" step="0.01"></div>
+        <div class="row"><label>Velocidade do tempo</label><output data-o="timeScale"></output>
+          <input type="range" data-k="timeScale" min="0.1" max="2" step="0.05"></div>
+      </div>
+    </details>
+
+    <details class="grp" open>
+      <summary>👁️ Visualização</summary>
+      <div class="grp-body">
+        <div class="row"><label>O que mostrar</label>
+          <div class="seg" data-seg="view"><button data-v="0">Corante</button><button data-v="1">Vorticidade ω</button><button data-v="2">Pressão p</button><button data-v="3">Velocidade |u|</button></div></div>
+        <label class="check"><input type="checkbox" data-k="arrows"> Setas do campo de velocidade</label>
+        <label class="check"><input type="checkbox" data-k="particles"> Partículas traçadoras</label>
+        <label class="check"><input type="checkbox" data-k="markers"> Marcar centro e núcleo dos vórtices</label>
+        <div class="row"><label>Fonte contínua de corante</label>
+          <select data-k="emit">
+            <option value="none">Nenhuma</option>
+            <option value="ring">Ao redor do redemoinho</option>
+            <option value="plume">Pluma na base (fumaça)</option>
+            <option value="streaks">Filetes vindos da esquerda</option>
+          </select></div>
+        <div class="row"><label>Padrão de corante</label>
+          <select data-k="pattern">
+            <option value="spokes">Raios (mostra a rotação diferencial)</option>
+            <option value="stripes">Faixas coloridas</option>
+            <option value="grid">Grade (mostra a deformação)</option>
+            <option value="blobs">Manchas</option>
+            <option value="clouds">Nuvens</option>
+            <option value="none">Nenhum</option>
+          </select>
+          <div style="grid-column:1/-1;margin-top:6px"><button class="btn" id="btnDye">🎨 Soltar corante agora</button> <button class="btn" id="btnClearDye">Limpar corante</button></div></div>
+        <div class="row"><label>Ferramenta do mouse</label>
+          <div class="seg" data-seg="tool"><button data-v="stir">🥄 Mexer</button><button data-v="dye">🎨 Pingar tinta</button><button data-v="move">✋ Mover vórtice</button></div></div>
+        <div class="row"><label>Tamanho da colher</label><output data-o="brush"></output>
+          <input type="range" data-k="brush" min="0.015" max="0.12" step="0.001"></div>
+      </div>
+    </details>
+
+    <details class="grp">
+      <summary>⚙️ Numérico (avançado)</summary>
+      <div class="grp-body">
+        <div class="row"><label>Resolução da grade (altura)</label>
+          <select data-k="simRes"><option value="128">128 células (rápido)</option><option value="192">192 células</option><option value="256">256 células</option><option value="384">384 células (pesado)</option></select></div>
+        <div class="row"><label>Resolução do corante</label>
+          <select data-k="dyeRes"><option value="512">512</option><option value="1024">1024</option><option value="1536">1536</option></select></div>
+        <div class="row"><label>Iterações de pressão (Jacobi)</label><output data-o="pIters"></output>
+          <input type="range" data-k="pIters" min="1" max="80" step="1">
+          <div class="sub">Poucas iterações = incompressibilidade mal imposta (fluido “vaza”).</div></div>
+        <div class="row"><label>Iterações de viscosidade</label><output data-o="vIters"></output>
+          <input type="range" data-k="vIters" min="1" max="60" step="1"></div>
+        <div class="row"><label>Número de partículas</label>
+          <select data-k="pCount"><option value="96">~9 mil</option><option value="160">~25 mil</option><option value="256">~65 mil</option></select></div>
+      </div>
+    </details>
+    </div>
+    <div class="kbd">Atalhos: <kbd>Espaço</kbd> pausa · <kbd>N</kbd> passo · <kbd>R</kbd> reinicia · <kbd>F</kbd> tela cheia · <kbd>V</kbd> troca visualização · <kbd>1</kbd>–<kbd>7</kbd> cenários · <kbd>P</kbd> foto · <kbd>Shift</kbd>+arrastar move o vórtice · <kbd>D</kbd> alterna 2D/3D · <kbd>O</kbd> solta objeto (3D)</div>
+  </aside>
+</section>
+
+<!-- ======================= EXPLICAÇÕES ======================= -->
+
+<section class="doc" id="equacoes">
+  <h2><span class="n">Parte 1</span>As equações de Navier–Stokes</h2>
+  <p class="lead">Toda vez que você vê fumaça subindo de um incenso, água girando no ralo ou um furacão na imagem de satélite, o movimento obedece às mesmas duas equações, escritas por Claude-Louis Navier (1822) e George Gabriel Stokes (1845).</p>
+
+  <h3>Primeiro: o que é um fluido para a matemática?</h3>
+  <p>Em vez de acompanhar trilhões de moléculas, tratamos o fluido como um <b>meio contínuo</b>. Em cada ponto do espaço <i>x</i> e em cada instante <i>t</i> existe uma <b>velocidade</b> <span class="math"><span class="v">u</span>(<span class="v">x</span>, t)</span> (uma setinha: direção e rapidez), uma <b>pressão</b> <span class="math">p(<span class="v">x</span>, t)</span> e uma <b>densidade</b> <span class="math">ρ</span>. Esse conjunto de setas é o <b>campo de velocidade</b> — ligue “Setas do campo de velocidade” no simulador para vê-lo.</p>
+
+  <div class="bigeq">
+    <div class="eq math">
+      <span class="up">∂</span><span class="v">u</span>/<span class="up">∂</span>t <span class="up">+</span>
+      <span style="color:var(--adv)">(<span class="v">u</span>·<span class="up">∇</span>)<span class="v">u</span></span> <span class="up">=</span>
+      <span style="color:var(--press)">−<span class="up">∇</span>p/ρ</span> <span class="up">+</span>
+      <span style="color:var(--visc)">ν<span class="up">∇²</span><span class="v">u</span></span> <span class="up">+</span>
+      <span style="color:var(--force)"><span class="v">f</span></span>
+    </div>
+    <div class="eq math" style="margin-top:10px;font-size:.8em"><span style="color:var(--inc)"><span class="up">∇</span>·<span class="v">u</span> <span class="up">=</span> 0</span></div>
+    <div class="cap">Equação do momento (em cima) e da incompressibilidade (embaixo), para um fluido de densidade constante.</div>
+  </div>
+
+  <div class="callout">
+    <p><strong>No fundo, é a 2ª Lei de Newton: F = m·a.</strong> O lado esquerdo é a <em>aceleração</em> de um pedacinho de fluido (dividida pela massa por volume). O lado direito são as <em>forças</em> por unidade de massa: pressão, atrito interno (viscosidade) e forças externas. Navier–Stokes é “F = m·a para cada gotinha do fluido ao mesmo tempo”.</p>
+  </div>
+
+  <div class="terms">
+    <div class="tcard" style="--c:var(--text)">
+      <div class="f math"><span class="up">∂</span><span class="v">u</span>/<span class="up">∂</span>t</div>
+      <h4>Variação local da velocidade</h4>
+      <p>Quanto a velocidade muda com o tempo num ponto fixo — como olhar sempre para o mesmo lugar do rio.</p>
+    </div>
+    <div class="tcard" style="--c:var(--adv)">
+      <div class="f math">(<span class="v">u</span>·<span class="up">∇</span>)<span class="v">u</span></div>
+      <h4>Advecção (transporte)</h4>
+      <p>O fluido <b>carrega a própria velocidade</b> consigo. Como <span class="math"><span class="v">u</span></span> aparece multiplicado por ele mesmo, este termo é <b>não linear</b>: pequenas perturbações podem crescer. É a origem da turbulência e de quase toda a dificuldade matemática.</p>
+      <div class="try">No simulador: desligue este termo e o redemoinho perde a capacidade de enrolar e transportar estruturas.</div>
+    </div>
+    <div class="tcard" style="--c:var(--press)">
+      <div class="f math">−<span class="up">∇</span>p/ρ</div>
+      <h4>Força de pressão</h4>
+      <p>O fluido é empurrado de onde a pressão é alta para onde é baixa. Num redemoinho, a <b>pressão baixa no centro</b> é o que “puxa” o fluido para dentro e o mantém girando em círculo (força centrípeta).</p>
+      <div class="try">No simulador: veja a visualização “Pressão p” — o centro fica azul (pressão baixa).</div>
+    </div>
+    <div class="tcard" style="--c:var(--visc)">
+      <div class="f math">ν<span class="up">∇²</span><span class="v">u</span></div>
+      <h4>Viscosidade (atrito interno)</h4>
+      <p>Camadas vizinhas de fluido se esfregam e tendem a igualar a velocidade. O operador laplaciano <span class="math"><span class="up">∇²</span></span> compara cada ponto com a média dos vizinhos: ele <b>suaviza</b> e <b>espalha</b>. ν é a viscosidade cinemática.</p>
+      <div class="try">No simulador: escolha “Mel” e dê um impulso — o giro morre rapidamente.</div>
+    </div>
+    <div class="tcard" style="--c:var(--force)">
+      <div class="f math"><span class="v">f</span></div>
+      <h4>Forças externas</h4>
+      <p>Gravidade, empuxo (ar quente sobe), a colher que mexe o café… No simulador, o “motor do redemoinho” e o seu mouse são forças externas.</p>
+      <div class="try">Curiosidade: a solução anunciada pela OpenAI em 2026 também depende de uma força externa (veja a Parte 5).</div>
+    </div>
+    <div class="tcard" style="--c:var(--inc)">
+      <div class="f math"><span class="up">∇</span>·<span class="v">u</span> = 0</div>
+      <h4>Incompressibilidade</h4>
+      <p>O divergente mede se um pontinho “fabrica” ou “engole” fluido. Igual a zero significa: <b>tudo que entra numa região, sai</b>. Água praticamente não se comprime, e o ar em baixa velocidade também se comporta assim.</p>
+      <div class="try">No simulador: ao desligar a pressão, essa regra deixa de valer e o corante se amontoa de forma irreal.</div>
+    </div>
+  </div>
+
+  <h3>Derivada material: acompanhando uma gotinha</h3>
+  <p>Juntando os dois primeiros termos obtemos a <b>derivada material</b>, a aceleração sentida por quem “viaja” junto com o fluido:</p>
+  <div class="formula"><span class="frac"><span>D<span class="v">u</span></span><span>Dt</span></span> = <span class="frac"><span><span class="up">∂</span><span class="v">u</span></span><span><span class="up">∂</span>t</span></span> + (<span class="v">u</span>·<span class="up">∇</span>)<span class="v">u</span></div>
+  <p>Mesmo num escoamento que não muda com o tempo (<span class="math"><span class="up">∂</span><span class="v">u</span>/<span class="up">∂</span>t = 0</span>), uma gota que gira no redemoinho está sempre acelerando, porque sua direção muda o tempo todo.</p>
+</section>
+
+<section class="doc" id="computador">
+  <h2><span class="n">Parte 2</span>Como o computador resolve as equações</h2>
+  <p class="lead">Não existe uma fórmula que dê a resposta pronta para um escoamento qualquer. Então o computador divide a tela numa <b>grade</b> de células e avança o tempo em passos pequenos (cerca de 60 por segundo), usando o método <i>Stable Fluids</i> de Jos Stam (1999), muito usado em efeitos visuais e jogos.</p>
+  <p>Cada passo aplica os termos da equação um de cada vez — a técnica se chama <b>divisão de operadores</b> (<i>operator splitting</i>). Os cálculos rodam na placa de vídeo (GPU), que processa todas as células em paralelo.</p>
+
+  <div class="pipeline">
+    <div class="st" style="--c:var(--force)"><div class="k">1 · Forças</div><b>Soma f · Δt</b><span>Motor do redemoinho, empuxo da fumaça, vento e o seu mouse empurram o fluido.</span></div>
+    <div class="st" style="--c:var(--adv)"><div class="k">2 · Advecção</div><b>Olhar para trás</b><span>Cada célula pergunta “de onde veio o fluido que está aqui?” e copia a velocidade de lá (método semi-lagrangiano).</span></div>
+    <div class="st" style="--c:var(--visc)"><div class="k">3 · Viscosidade</div><b>Difusão implícita</b><span>Resolve (I − νΔt∇²)<b>u</b> = <b>u</b>* com iterações de Jacobi: cada célula vira uma média ponderada das vizinhas.</span></div>
+    <div class="st" style="--c:var(--press)"><div class="k">4 · Projeção</div><b>Equação de Poisson</b><span>Calcula a pressão com ∇²p = ∇·<b>u</b>* e subtrai ∇p: o campo passa a ter divergente zero.</span></div>
+    <div class="st" style="--c:var(--inc)"><div class="k">5 · Transporte</div><b>Corante e partículas</b><span>Tinta, fumaça e partículas são levadas pelo campo de velocidade final.</span></div>
+  </div>
+
+  <h3>O truque mais importante: a projeção</h3>
+  <p>Depois dos passos 1–3, o campo de velocidade <span class="math"><span class="v">u</span>*</span> em geral <i>não</i> tem divergente zero (ele “cria” ou “some” com fluido). O <b>teorema de Helmholtz–Hodge</b> garante que qualquer campo pode ser separado em uma parte sem divergente mais o gradiente de algo. Esse “algo” é justamente a pressão:</p>
+  <div class="formula"><span class="up">∇²</span>p = <span class="up">∇</span>·<span class="v">u</span>* &nbsp;&nbsp;⟹&nbsp;&nbsp; <span class="v">u</span> = <span class="v">u</span>* − <span class="up">∇</span>p</div>
+  <p>Ou seja: <b>a pressão é a “força” que o fluido precisa fazer para continuar incompressível</b>. É uma ideia profunda — a pressão não tem equação própria; ela se ajusta instantaneamente para impor ∇·<b>u</b> = 0.</p>
+
+  <h3>Um detalhe sobre o ralo</h3>
+  <p>Numa simulação 2D (vista de cima), a água que desce pelo ralo vai para uma terceira dimensão que não existe na tela. Para representar isso, a projeção impõe ∇·<b>u</b> &lt; 0 no ralo (fluido sumindo) e um valor positivo minúsculo espalhado pela superfície inteira, que representa o nível da água baixando por igual. O total se conserva.</p>
+
+  <div class="callout warn">
+    <p><strong>Limitações honestas (bom citar na feira):</strong></p>
+    <p>• O modo principal é <b>2D</b>, onde está provado que as soluções nunca explodem. O mistério do Problema do Milênio só existe em 3D, e é por isso que o simulador também tem um <b>modo 3D</b> (mais grosso: 64³ células).</p>
+    <p>• A grade tem tamanho finito. Isso cria uma <b>viscosidade numérica</b> extra, por isso valores de ν muito pequenos parecem iguais entre si.</p>
+    <p>• O método de Jacobi é aproximado: com poucas iterações a incompressibilidade fica imperfeita (teste no painel “Numérico”).</p>
+    <p>• Os valores de ν estão em unidades da tela, escalonados para caber na simulação — as proporções entre fluidos são qualitativas.</p>
+  </div>
+</section>
+
+<section class="doc" id="anatomia">
+  <h2><span class="n">Parte 3</span>Anatomia de um redemoinho</h2>
+
+  <h3>Vorticidade: a medida do giro</h3>
+  <p>A <b>vorticidade</b> é o rotacional da velocidade:</p>
+  <div class="formula"><span class="v">ω</span> = <span class="up">∇</span> × <span class="v">u</span></div>
+  <p>Imagine um cata-ventinho minúsculo solto no fluido: a vorticidade diz quão rápido ele gira (é o dobro da velocidade angular local). Na visualização “Vorticidade ω”, <span style="color:#ff7a50">vermelho</span> é giro anti-horário e <span style="color:#4d9dff">azul</span> é horário. Repare que <b>quase toda a vorticidade fica concentrada no núcleo</b>: fora dele o fluido gira em volta do centro, mas o cata-vento não gira em torno de si mesmo!</p>
+  <p>A <b>circulação</b> <span class="math">Γ</span> é a soma da vorticidade dentro de uma região — o “tamanho total” do redemoinho. É o controle principal do simulador.</p>
+
+  <h3>O modelo usado: vórtice de Lamb–Oseen</h3>
+  <p>O motor do redemoinho empurra o fluido para esta velocidade tangencial, que é uma solução exata das equações de Navier–Stokes:</p>
+  <div class="formula">v<sub class="up">θ</sub>(r) = <span class="frac"><span>Γ</span><span>2π r</span></span> <span class="up">[</span>1 − e<sup>−r²/r<sub>c</sub>²</sup><span class="up">]</span></div>
+  <p>Perto do centro (r ≪ r<sub>c</sub>) isso vira <span class="math">v ≈ Ω r</span>: o núcleo gira como um <b>disco rígido</b>. Longe do centro vira <span class="math">v ≈ Γ/(2πr)</span>: um <b>vórtice livre</b>, que gira mais devagar quanto mais longe. O gráfico abaixo do simulador compara essa teoria com a velocidade <b>realmente medida</b> na simulação — um ótimo teste de que o programa obedece à física.</p>
+  <p>O padrão de corante “Raios” mostra isso muito bem: no núcleo os raios giram retos (disco rígido); fora dele se transformam em espirais, porque o fluido de dentro dá voltas mais rápido que o de fora (rotação diferencial).</p>
+
+  <h3>Por que a superfície afunda no meio?</h3>
+  <p>Para uma gota andar em círculo, algo precisa puxá-la para o centro. Esse algo é a diferença de pressão (balanço <b>ciclostrófico</b>):</p>
+  <div class="formula"><span class="frac"><span><span class="up">∂</span>p</span><span><span class="up">∂</span>r</span></span> = ρ <span class="frac"><span>v<sub class="up">θ</sub>²</span><span>r</span></span></div>
+  <p>A pressão cresce para fora, então no centro ela é <b>mínima</b>. Num líquido com superfície livre, pressão baixa significa coluna de água mais baixa: a superfície afunda formando o famoso “funil”. No modo Água, o sombreamento da superfície é calculado a partir desse campo de pressão. No olho de um furacão acontece o mesmo: é a região de menor pressão atmosférica.</p>
+
+  <h3>A bailarina e o ralo: conservação do momento angular</h3>
+  <p>Quando uma patinadora fecha os braços, ela gira mais rápido. No ralo acontece a mesma coisa: a sucção traz fluido de longe para perto do centro e, conservando o momento angular (<span class="math">r·v ≈ constante</span>), um giro fraquinho vira um redemoinho forte. Teste: cenário “Ralo da pia”, zere Γ, dê um pequeno giro com o mouse e aumente a sucção.</p>
+  <div class="callout">
+    <p><strong>Mito:</strong> “a água do ralo gira para um lado no hemisfério Sul e para o outro no Norte”. A força de Coriolis existe, mas numa pia ela é milhares de vezes mais fraca que o movimento que sobra de quando você encheu a pia. Só em escalas enormes (furacões, centenas de km) ela decide o sentido: no hemisfério Sul os ciclones giram no sentido horário — como o furacão Catarina (2004), no litoral brasileiro.</p>
+  </div>
+
+  <h3>2D × 3D: o esticamento de vórtices</h3>
+  <p>Tomando o rotacional de Navier–Stokes, obtém-se a equação da vorticidade. Em 3D ela tem um termo a mais:</p>
+  <div class="formula"><span class="frac"><span>D<span class="v">ω</span></span><span>Dt</span></span> = <span style="color:var(--inc)">(<span class="v">ω</span>·<span class="up">∇</span>)<span class="v">u</span></span> + ν<span class="up">∇²</span><span class="v">ω</span> + <span class="up">∇</span>×<span class="v">f</span></div>
+  <p>O termo destacado é o <b>esticamento de vórtices</b>: quando um tubo de vórtice é esticado (como um tornado sendo puxado para cima, ou o funil do ralo), ele fica mais fino e gira mais rápido. Em 2D esse termo é sempre zero, e é por isso que a matemática 2D está resolvida. A grande pergunta é: <b>em 3D, esse esticamento pode ficar infinito em tempo finito?</b></p>
+</section>
+
+<section class="doc" id="modo3d">
+  <h2><span class="n">Parte 4</span>Modo 3D: o redemoinho em volume e os objetos</h2>
+  <p class="lead">No modo 3D o computador resolve Navier–Stokes numa grade de <b>64 × 64 × 64 = 262.144 células</b>. Aqui aparece o ingrediente que falta no plano: o <b>esticamento de vórtices</b>.</p>
+
+  <h3>Como cabe um volume numa placa de vídeo?</h3>
+  <p>A GPU é ótima para processar imagens. Então o volume é “fatiado” em 64 camadas horizontais, e cada camada vira um ladrilho de uma única imagem de 512 × 512 pixels (um <b>atlas</b>). Cada etapa do método (forças, advecção, viscosidade, projeção) processa todas as 262 mil células de uma vez. Em 3D, cada célula conversa com <b>6 vizinhas</b> (esquerda, direita, cima, baixo, frente, trás) e a vorticidade deixa de ser um número e vira um <b>vetor</b>.</p>
+
+  <h3>O esticamento em ação: vórtice de Burgers</h3>
+  <p>No tanque, um jato puxa a água <b>para baixo pelo eixo</b> (controle “🚀 Acelerador da descida”); perto do fundo ela se abre para os lados, sobe pelas paredes e volta — a água <b>recircula</b>, como num tanque com hélice. Isso estica o tubo de vórtice: ele fica mais fino e gira mais rápido (a bailarina fechando os braços, agora na vertical). Existe uma solução exata de Navier–Stokes em 3D que descreve exatamente esse equilíbrio entre esticamento e viscosidade, o <b>vórtice de Burgers</b>:</p>
+  <div class="formula">v<sub class="up">θ</sub> = <span class="frac"><span>Γ</span><span>2π r</span></span><span class="up">[</span>1 − e<sup>−a r²/(4ν)</sup><span class="up">]</span>,&nbsp;&nbsp; u<sub class="up">r</sub> = −<span class="frac"><span>a r</span><span>2</span></span>,&nbsp;&nbsp; u<sub class="up">z</sub> = a z</div>
+  <p>O raio do núcleo é <span class="math">√(4ν/a)</span>: quanto mais forte o esticamento <i>a</i>, mais fino e rápido fica o vórtice. A viscosidade é o que impede que ele fique infinitamente fino. <b>O Problema do Milênio pergunta, no fundo, se em algum escoamento o esticamento pode vencer a viscosidade e produzir uma velocidade infinita.</b></p>
+
+  <h3>A superfície em funil</h3>
+  <p>A grade 3D tem uma “tampa” fixa no topo. A altura da superfície é calculada pela pressão logo abaixo dela: <span class="math">η = p/(ρ g)</span> (aproximação de <i>tampa rígida</i>). Pressão baixa no eixo = superfície afundada. O controle “Exagero da superfície” amplia esse efeito, que na realidade é pequeno.</p>
+
+  <h3>Por que cada objeto faz uma coisa diferente?</h3>
+  <p>Os objetos obedecem a uma versão simplificada da <b>equação de Maxey–Riley</b>, usada por cientistas para estudar partículas em escoamentos:</p>
+  <div class="formula"><span class="frac"><span>d<span class="v">v</span></span><span>dt</span></span> = <span class="frac"><span><span class="v">u</span> − <span class="v">v</span></span><span>τ</span></span> + β <span class="frac"><span>D<span class="v">u</span></span><span>Dt</span></span> + (1 − β) <span class="v">g</span>,&nbsp;&nbsp;&nbsp; β = <span class="frac"><span>3ρ<sub class="up">f</sub></span><span>ρ<sub class="up">f</sub> + 2ρ<sub class="up">p</sub></span></span></div>
+  <ul>
+    <li><b>(u − v)/τ</b> — arrasto: o fluido tenta arrastar o objeto para a sua própria velocidade. τ pequeno (folha, bolha) = obedece rápido; τ grande (aço) = tem “teimosia” (inércia).</li>
+    <li><b>β Du/Dt</b> — a mesma diferença de pressão que acelera o fluido também empurra o objeto. No redemoinho, ela aponta para o centro.</li>
+    <li><b>(1 − β) g</b> — peso menos empuxo, já incluindo a <b>massa adicional</b> (o objeto precisa empurrar água para se mover).</li>
+  </ul>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Objeto</th><th>ρ<sub>p</sub>/ρ<sub>água</sub></th><th>β</th><th>O que acontece no redemoinho</th></tr></thead>
+    <tbody>
+      <tr><td>🫧 Bolha de ar</td><td>≈ 0,001</td><td>≈ 3</td><td>Sobe e é sugada para o <b>eixo</b> do vórtice (por isso aparecem fios de bolhas no centro de redemoinhos e na ponta de hélices de barco)</td></tr>
+      <tr><td>⚪ Isopor</td><td>0,05</td><td>2,7</td><td>Flutua, espirala para o funil, é puxado para baixo pelo jato e volta a subir</td></tr>
+      <tr><td>🦆 Patinho</td><td>0,25</td><td>2,0</td><td>Flutua, gira em torno de si, mergulha pelo núcleo e recircula</td></tr>
+      <tr><td>🟫 Madeira</td><td>0,6</td><td>1,4</td><td>Flutua mais afundada e também mergulha pelo núcleo</td></tr>
+      <tr><td>🍃 Folha</td><td>0,8</td><td>1,1</td><td>Densidade parecida com a da água: vagueia junto com ela, girando</td></tr>
+      <tr><td>⚫ Aço</td><td>7,8</td><td>0,18</td><td>Afunda e a “centrífuga” o joga para a borda do tanque</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>O paradoxo das folhas de chá</h3>
+  <p>Mexa uma xícara de chá: as folhas no fundo vão para o <b>centro</b>, e não para a borda como numa centrífuga. Einstein explicou isso em 1926: perto do fundo, o atrito freia a água, a força centrífuga fica fraca ali e a pressão empurra a água do fundo para o centro (<b>escoamento secundário</b>). O tanque do simulador tem esse atrito no fundo, mas a bolinha de aço é pesada demais (7,8 vezes a densidade da água) e a “centrífuga” vence: ela vai para a borda. Uma folha de chá de verdade é quase tão densa quanto a água, por isso o escoamento secundário consegue levá-la ao centro.</p>
+
+  <h3>E no tornado?</h3>
+  <p>Na câmara de tornado, um exaustor no teto puxa o ar para cima enquanto o ar entra girando pela base (como na câmara de Ward, usada em laboratórios). No chão, o vento forte produz <b>sustentação</b> (efeito Bernoulli: ar rápido por cima = pressão menor em cima; é assim que telhados são arrancados). No ar, o objeto sobe se a corrente ascendente for mais rápida que a sua <b>velocidade terminal</b> g·τ. A folha, o isopor e o patinho (τ pequeno) sobem; o cubo de madeira só pula e o aço nunca sai do chão. A <b>poeira</b> (partículas) mostra o caminho do ar: entra rente ao chão e sobe em espiral pelo funil.</p>
+
+  <div class="callout warn">
+    <p><strong>Simplificações do modo 3D:</strong> a grade é grossa (cada célula tem ~3 % da largura do tanque); os objetos sentem o fluido, mas quase não o empurram de volta (só um “splash” ao cair na água); a superfície usa a aproximação de tampa rígida; a velocidade dos objetos é calculada com a física acima, mas os coeficientes foram escolhidos para ficar visível na tela.</p>
+  </div>
+</section>
+
+<section class="doc" id="fumaca-liquido">
+  <h2><span class="n">Parte 5</span>Fumaça × Líquido: mesmas equações, fluidos diferentes</h2>
+  <p class="lead">Ar e água obedecem exatamente às mesmas equações. O que muda são os <b>números</b> (densidade e viscosidade) e algumas forças extras.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Fluido (≈20 °C)</th><th>Densidade ρ</th><th>Viscosidade dinâmica μ</th><th>Viscosidade cinemática ν = μ/ρ</th></tr></thead>
+    <tbody>
+      <tr><td>Ar</td><td>1,2 kg/m³</td><td>1,8 × 10⁻⁵ Pa·s</td><td>1,5 × 10⁻⁵ m²/s</td></tr>
+      <tr><td>Água</td><td>1000 kg/m³</td><td>1,0 × 10⁻³ Pa·s</td><td>1,0 × 10⁻⁶ m²/s</td></tr>
+      <tr><td>Mel</td><td>≈ 1400 kg/m³</td><td>≈ 2 a 10 Pa·s</td><td>≈ 10⁻³ a 10⁻² m²/s</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Surpresa:</b> o ar é “mais grudento” que a água em termos de ν, a viscosidade que aparece na equação. A água tem mais atrito (μ), mas é tão pesada que o atrito quase não consegue freá-la.</p>
+
+  <h3>O que é específico da fumaça</h3>
+  <p>A fumaça é ar quente carregando partículas. Ar quente é menos denso e sobe (<b>empuxo</b>). Na aproximação de Boussinesq, isso entra como uma força externa proporcional à temperatura: <span class="math"><span class="v">f</span> = β (T − T<sub>0</sub>) <span class="v">g</span></span>. No cenário “Fumaça subindo”, a pluma quente sobe, fica instável e se enrola em redemoinhos em forma de cogumelo (instabilidade de Kelvin–Helmholtz).</p>
+  <h3>O que é específico dos líquidos</h3>
+  <p>Líquidos têm <b>superfície livre</b>, que afunda onde a pressão é baixa (o funil do ralo), e tintas se misturam muito devagar porque a difusão molecular é lenta — por isso a tinta desenha filamentos tão finos.</p>
+
+  <h3>Número de Reynolds: o número mais importante da mecânica dos fluidos</h3>
+  <div class="formula">Re = <span class="frac"><span>U · L</span><span>ν</span></span> <span class="up">&nbsp;=&nbsp;</span> <span class="frac"><span>inércia (advecção)</span><span>atrito (viscosidade)</span></span></div>
+  <p>Re compara o termo azul com o termo verde da equação. Re pequeno: escoamento calmo, organizado (<b>laminar</b>). Re grande: caótico (<b>turbulento</b>). Para um redemoinho usa-se Re<sub>Γ</sub> = Γ/ν; para o escoamento ao redor de um obstáculo, Re<sub>D</sub> = U·D/ν. O simulador mostra o valor no canto superior direito.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Situação</th><th>Re aproximado</th><th>Comportamento</th></tr></thead>
+    <tbody>
+      <tr><td>Bactéria nadando</td><td>10⁻⁴</td><td>Só viscosidade; parar de nadar = parar na hora</td></tr>
+      <tr><td>Mel escorrendo da colher</td><td>10⁻² a 1</td><td>Laminar, liso</td></tr>
+      <tr><td>Esteira atrás de um cilindro</td><td>50 a 200</td><td>Vórtices alternados (von Kármán)</td></tr>
+      <tr><td>Água no ralo da pia</td><td>10³ a 10⁴</td><td>Redemoinho com instabilidades</td></tr>
+      <tr><td>Tornado</td><td>~10⁹</td><td>Extremamente turbulento</td></tr>
+      <tr><td>Furacão</td><td>~10¹¹</td><td>Turbulência em escala planetária</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="doc" id="milenio">
+  <h2><span class="n">Parte 6</span>O Problema do Milênio (e o anúncio da OpenAI)</h2>
+  <p class="lead">Em 2000, o Clay Mathematics Institute escolheu sete grandes problemas em aberto e ofereceu <b>US$ 1 milhão</b> por cada solução. Um deles é sobre as equações desta página.</p>
+
+  <h3>A pergunta</h3>
+  <p>Em <b>três dimensões</b>, começando com um escoamento perfeitamente suave e com energia finita, a solução das equações de Navier–Stokes continua suave <b>para sempre</b>? Ou pode acontecer uma <b>explosão</b> (<i>blow-up</i>): em um tempo finito, a velocidade ou a vorticidade ficarem infinitas num ponto?</p>
+  <p>Fisicamente parece absurdo — água de verdade não fica com velocidade infinita. Mas ninguém conseguiu provar que as equações proíbem isso. Se a explosão existir, significa que Navier–Stokes deixa de descrever o fluido naquele ponto.</p>
+  <p>O enunciado oficial (escrito por Charles Fefferman) aceita quatro tipos de resposta: provar que as soluções são sempre suaves (A e B, sem força externa, em todo o espaço ou num domínio periódico) <b>ou</b> mostrar um exemplo de explosão (C e D), e nestes últimos <b>é permitido usar uma força externa suave <span class="math"><span class="v">f</span></span></b>.</p>
+
+  <h3>Linha do tempo</h3>
+  <div class="timeline">
+    <div class="ev"><div class="y">1822 · 1845</div><p>Navier e Stokes escrevem as equações.</p></div>
+    <div class="ev"><div class="y">1934</div><p>Jean Leray prova que existem soluções “fracas” (não necessariamente suaves) para sempre.</p></div>
+    <div class="ev"><div class="y">Anos 1950–60</div><p>Olga Ladyzhenskaya e outros: em <b>2D</b> as soluções são suaves para sempre. O caso 2D, que este simulador usa, está resolvido.</p></div>
+    <div class="ev"><div class="y">1982</div><p>Caffarelli, Kohn e Nirenberg: se houver explosões, elas ocupam um conjunto minúsculo de pontos.</p></div>
+    <div class="ev"><div class="y">2000</div><p>O Clay Institute inclui o problema entre os sete Problemas do Milênio.</p></div>
+    <div class="ev"><div class="y">2016</div><p>Terence Tao mostra que uma versão “modificada” (média) da equação explode — sinal de que provar a suavidade só com energia não basta.</p></div>
+    <div class="ev"><div class="y">2022</div><p>Jiajie Chen e Thomas Hou dão uma prova, assistida por computador, de explosão para as equações de Euler (fluido sem viscosidade) em 3D com parede.</p></div>
+    <div class="ev" style="--c:var(--force)"><div class="y">8 de setembro de 2026</div><p>A OpenAI anuncia uma solução para a versão com força externa (ver abaixo).</p></div>
+  </div>
+
+  <h3>O que a OpenAI anunciou</h3>
+  <p>Segundo a própria empresa e reportagens da imprensa:</p>
+  <ul>
+    <li>Um sistema com pelo menos <b>10 mil agentes de IA</b> trabalhou por <b>88 horas</b> (a partir de 1º de setembro de 2026) e produziu um artigo de <b>166 páginas</b>, acompanhado de uma verificação formal no assistente de provas <b>Lean</b>.</li>
+    <li>O resultado é uma construção de <b>explosão com força externa suave</b> — ou seja, uma resposta do tipo (C) do enunciado do Clay.</li>
+    <li>A OpenAI declarou que <b>não vai reivindicar</b> o prêmio de US$ 1 milhão.</li>
+  </ul>
+
+  <h3>Como é o escoamento que “explode” (e como o simulador o mostra)</h3>
+  <p><b>Importante:</b> a OpenAI não publicou uma simulação de computador — publicou uma <b>prova matemática</b>. Mas a prova descreve com precisão a forma do escoamento que explode, e pesquisadores já o analisaram (por exemplo, o artigo arXiv 2609.17642). O cenário <span class="demo-link" data-mode="3d">3D “Colapso da OpenAI”</span> mostra esse perfil com as mesmas leis de escala:</p>
+  <ul>
+    <li><b>Um vórtice que se contrai sozinho.</b> Tudo é escrito em termos de τ = T − t, o tempo que falta para a explosão. As variáveis de similaridade da prova são X = r²/(2τ) e η = z/τ<sup>1/2−h</sup>, com um expoente pequeno 0 &lt; h &lt; 1/100.</li>
+    <li><b>Ele fica cada vez mais fino:</b> o raio encolhe como τ<sup>1/2</sup> e o comprimento como τ<sup>1/2−h</sup> — a largura diminui mais depressa que o comprimento.</li>
+    <li><b>Espiral para dentro, saída pelo eixo:</b> o fluido entra girando e sai ao longo do eixo, dividido perto de z = 0 (parte sobe, parte desce), com o giro valendo zero no próprio eixo.</li>
+    <li><b>A força age só num anel</b> em volta do núcleo, em <b>pulsos oscilantes</b> (fase proporcional a log X). Ela fornece exatamente o que falta para o perfil obedecer às equações.</li>
+    <li><b>O resultado:</b> a velocidade cresce como |u| ~ τ<sup>−1/2−h</sup> → ∞, enquanto a energia do núcleo diminui como τ<sup>1/2−3h</sup> → 0 e o número de Reynolds cresce devagar, Re ~ τ<sup>−h</sup>. É uma explosão da velocidade com energia finita.</li>
+  </ul>
+  <div class="formula">|<span class="v">u</span>|<sub class="up">máx</sub> ∝ τ<sup>−1/2−h</sup>,&nbsp;&nbsp; ℓ<sub class="up">r</sub> ∝ τ<sup>1/2</sup>,&nbsp;&nbsp; ℓ<sub class="up">z</sub> ∝ τ<sup>1/2−h</sup>,&nbsp;&nbsp; E<sub class="up">núcleo</sub> ∝ τ<sup>1/2−3h</sup></div>
+  <p>No simulador, o perfil exato da prova (que é calculado numericamente) é trocado por fórmulas fechadas com o mesmo comportamento — giro do tipo Burgers com raio √τ e um escoamento de entrada e saída exatamente incompressível. As leis de escala, a geometria e o papel da força são os da construção. O tempo avança em escala logarítmica, como o próprio colapso autossimilar. Na análise do arXiv, os autores observam que um fluido real cavitaria (água) ou formaria ondas de choque (ar) antes de chegar à explosão.</p>
+
+  <h3>Por que o resultado é polêmico</h3>
+  <ul>
+    <li><b>Força “artificial”:</b> para muitos matemáticos, a pergunta realmente importante é se o fluido pode explodir <i>sozinho</i>, sem força externa. A força usada é matematicamente válida pelo enunciado, mas fisicamente artificial. Como resumiu um especialista à Scientific American, o problema do Clay pode estar resolvido, mas o problema principal das equações não. Depois do anúncio, outros matemáticos mostraram que o método não funciona sem essa força.</li>
+    <li><b>Disputa de autoria:</b> cerca de 12 horas antes do anúncio, o matemático Tristan Buckmaster afirmou que ideias recentes dele e de Levent Alpöge (sobre as equações de Euler) teriam vazado para a OpenAI e inspirado os comandos dados aos agentes.</li>
+    <li><b>Verificação:</b> até as últimas notícias, a comunidade ainda não tinha concluído uma verificação independente completa da construção.</li>
+  </ul>
+
+  <div class="callout pink">
+    <p><strong>Ligação com este simulador:</strong> o nosso redemoinho também só existe porque um termo de <b>força externa <span class="math"><span class="v">f</span></span></b> o mantém girando (o “motor”). Desligue o termo <span style="color:var(--force)"><b>f</b></span> na equação acima do simulador e veja: sem forçamento, a viscosidade vai apagando o vórtice aos poucos. É exatamente esse termo que está no centro da discussão. E, como a simulação é 2D, ela <b>nunca</b> pode explodir — o que ilustra por que o problema só é difícil em 3D.</p>
+  </div>
+  <div class="callout warn">
+    <p><strong>Dica para a apresentação:</strong> fale em “<b>solução anunciada</b>” ou “<b>alegada</b>”, e não em “problema resolvido”. Na matemática, um resultado só é aceito depois que outros especialistas verificam a prova — e este caso ainda está em discussão.</p>
+  </div>
+</section>
+
+<section class="doc" id="feira">
+  <h2><span class="n">Parte 7</span>Roteiro para a feira de ciências</h2>
+  <h3>Apresentação em ~4 minutos</h3>
+  <ol class="script">
+    <li><b>Gancho (20 s):</b> abra o cenário <span class="demo-link" data-preset="ralo">Ralo da pia</span>. “Isto é água descendo pelo ralo — calculada, não filmada. O computador está resolvendo as equações de Navier–Stokes 60 vezes por segundo.”</li>
+    <li><b>A equação (60 s):</b> mostre a barra da equação. Explique que é F = m·a para cada gotinha. Desligue a <span style="color:var(--press)">pressão</span>: o fluido fica “irreal”. Religue.</li>
+    <li><b>Como funciona o giro (60 s):</b> mude para <span class="demo-link" data-view="2">Pressão</span> (centro com pressão baixa) e depois para <span class="demo-link" data-view="1">Vorticidade</span> (giro concentrado no núcleo). Mostre o gráfico: teoria × medido.</li>
+    <li><b>Fluidos diferentes (40 s):</b> <span class="demo-link" data-preset="pluma">Fumaça subindo</span> (empuxo e redemoinhos em cogumelo) e depois a água trocada por <span class="demo-link" data-fluid="mel">Mel</span> (viscosidade alta mata o giro).</li>
+    <li><b>3D: o colapso da OpenAI (60 s):</b> clique em <span class="demo-link" data-mode="3d">3D · volume + objetos</span>. O primeiro cenário mostra o vórtice que encolhe e gira cada vez mais rápido até “explodir”. Aponte o gráfico: a velocidade vai ao infinito enquanto a energia vai a zero, e os anéis laranja são a força externa da polêmica.</li>
+    <li><b>3D com objetos (40 s):</b> no “Redemoinho no tanque”, clique em “🎲 Um de cada” e aumente o 🚀 acelerador. Pergunte ao público: “quem desce primeiro?” A bolha vai para o eixo e o aço é jogado para fora. Termine com o tornado levantando a folha, mas não a bolinha de aço.</li>
+    <li><b>Beleza da física (30 s):</b> <span class="demo-link" data-preset="karman">Esteira de von Kármán</span> — os mesmos vórtices que aparecem atrás de ilhas em fotos de satélite e fazem fios cantarem com o vento.</li>
+    <li><b>Fechamento (40 s):</b> o Problema do Milênio, US$ 1 milhão, e o anúncio da OpenAI em setembro de 2026 — com a polêmica da força externa e a lembrança de que a prova ainda está sendo verificada.</li>
+  </ol>
+
+  <h3>Perguntas que os jurados podem fazer</h3>
+  <div class="qa">
+    <details><summary>A simulação é exata?</summary><p>Não. É uma aproximação numérica numa grade de células, em 2D, com viscosidade numérica e um resolvedor iterativo aproximado. Mas ela reproduz fenômenos reais: o perfil de velocidade medido segue a teoria de Lamb–Oseen, aparece a esteira de von Kármán, a pluma de fumaça forma estruturas de cogumelo e vórtices de mesmo sentido se fundem.</p></details>
+    <details><summary>Por que a pressão é menor no centro do redemoinho?</summary><p>Para uma porção de fluido andar em círculo, precisa de uma força para o centro (centrípeta). A única força disponível é a diferença de pressão, então a pressão tem que ser maior fora e menor dentro: ∂p/∂r = ρv²/r.</p></details>
+    <details><summary>Se a IA resolveu, por que ainda é polêmico?</summary><p>Porque a construção usa uma força externa escolhida especialmente para causar a explosão. O enunciado oficial permite isso, mas a questão física central (o fluido explodir sozinho) continua em aberto. Também há uma disputa sobre quem teve as ideias primeiro, e a verificação independente ainda não terminou.</p></details>
+    <details><summary>Por que o modo 3D tem menos detalhe que o 2D?</summary><p>Custo. Em 2D usamos 256 × 455 ≈ 116 mil células; em 3D, 64 × 64 × 64 ≈ 262 mil células, e cada uma tem 6 vizinhas em vez de 4. Uma grade 3D com a mesma finura do 2D (256³) teria 16,7 milhões de células, pesado demais para rodar ao vivo num computador comum. O 3D vale a pena porque mostra o esticamento de vórtices, justamente o fenômeno que torna o Problema do Milênio difícil.</p></details>
+    <details><summary>Por que a bolha vai para o centro e o aço para fora?</summary><p>A pressão é mínima no eixo. Essa diferença de pressão empurra tudo para o centro com uma força proporcional ao volume do objeto; já a “força centrífuga” é proporcional à massa. Para um objeto mais leve que a água, a pressão ganha e ele vai para o centro; para um mais pesado, a inércia ganha e ele é jogado para fora. É a mesma física de uma centrífuga de laboratório.</p></details>
+    <details><summary>O que é o “confinamento de vorticidade”?</summary><p>A grade apaga pequenos redemoinhos (viscosidade numérica). O confinamento de vorticidade (Fedkiw, Stam e Jensen, 2001) detecta onde há giro e empurra o fluido para devolver esse detalhe. É um truque de computação gráfica e não faz parte das equações físicas — por isso fica separado nos controles.</p></details>
+    <details><summary>A água do ralo gira diferente no hemisfério Sul?</summary><p>Não numa pia: a força de Coriolis é fraca demais nessa escala. O sentido depende de como a água foi colocada ou mexida. Só em escalas enormes, como furacões, Coriolis define o sentido.</p></details>
+  </div>
+
+  <h3>Referências</h3>
+  <ul class="refs">
+    <li>Jos Stam, “Stable Fluids”, SIGGRAPH 1999.</li>
+    <li>Mark Harris, “Fast Fluid Dynamics Simulation on the GPU”, <i>GPU Gems</i>, cap. 38 (2004).</li>
+    <li>Fedkiw, Stam &amp; Jensen, “Visual Simulation of Smoke”, SIGGRAPH 2001 (confinamento de vorticidade).</li>
+    <li>Charles Fefferman, “Existence and Smoothness of the Navier–Stokes Equation” — enunciado oficial do Clay Mathematics Institute (2000).</li>
+    <li>OpenAI, “On the Navier–Stokes Millennium Prize Problem” (set. 2026) — <a href="https://openai.com/index/navier-stokes-solution/" target="_blank" rel="noopener">openai.com/index/navier-stokes-solution</a></li>
+    <li>CNBC, “OpenAI claims to have solved the 90-year-old Navier-Stokes math problem in 88 hours” (9 set. 2026) — <a href="https://www.cnbc.com/2026/09/09/openai-navier-stokes-math-problem-solved.html" target="_blank" rel="noopener">cnbc.com</a></li>
+    <li>Axios, “OpenAI's historic math solution overshadowed by credit controversy” (8 set. 2026) — <a href="https://www.axios.com/2026/09/08/openai-math-solution-navier-stokes-credit" target="_blank" rel="noopener">axios.com</a></li>
+    <li>Scientific American, “Did OpenAI solve the wrong Navier-Stokes problem?” — <a href="https://www.scientificamerican.com/article/did-openai-solve-the-wrong-navier-stokes-problem/" target="_blank" rel="noopener">scientificamerican.com</a></li>
+    <li>“Self-similar swirl between contracting porous walls: the GD1998 exact Navier–Stokes solution revisited in the similarity variables of the OpenAI 2026 forced blow-up construction” — <a href="https://arxiv.org/abs/2609.17642" target="_blank" rel="noopener">arXiv 2609.17642</a> (variáveis de similaridade e leis de escala usadas no cenário 3D).</li>
+    <li>K. Adler, visualização do colapso da OpenAI em 3D — <a href="https://github.com/keithadler/superfx-navier-stokes" target="_blank" rel="noopener">github.com/keithadler/superfx-navier-stokes</a>.</li>
+    <li>Wikipédia, “Navier–Stokes existence and smoothness”.</li>
+  </ul>
+</section>
+</main>
+
+<footer>Simulador de Redemoinho — Navier–Stokes em 2D com WebGL 2 (método <i>Stable Fluids</i>). Feito para feira de ciências. Funciona sem internet.</footer>
+
+<script>
+"use strict";
+// =====================================================================
+//  PARÂMETROS
+// =====================================================================
+const FLUIDS = {
+  ar:   {style:0, nu:7.5e-5, dyeDiss:0.12, palette:'fumaca', label:'Ar / fumaça'},
+  agua: {style:1, nu:5e-6,   dyeDiss:0.01, palette:'tinta',  label:'Água'},
+  mel:  {style:2, nu:1.8e-3, dyeDiss:0.0,  palette:'mel',    label:'Mel'},
+};
+const PALETTES = {
+  fumaca: [[1.0,0.45,0.12],[0.15,0.72,1.0],[0.95,0.22,0.65]],
+  tinta:  [[1.0,0.18,0.42],[1.0,0.80,0.12],[0.92,0.96,1.0]],
+  mel:    [[1.0,0.93,0.78],[0.85,0.12,0.18],[0.35,0.85,0.55]],
+  nuvens: [[0.92,0.95,1.0],[0.70,0.84,1.0],[1.0,1.0,1.0]],
+};
+const P = {
+  preset:'ralo', fluid:'agua', style:1, palette:'tinta',
+  layout:'one', gamma:0.10, core:0.05, suction:0.45, dir:-1, sep:0.2, drive:'continuous', wander:false,
+  nu:5e-6, buoy:0, wind:0, confine:2, dyeDiss:0.01, timeScale:1,
+  view:0, arrows:false, particles:true, markers:true, emit:'ring', pattern:'spokes', tool:'stir', brush:0.04,
+  simRes:256, dyeRes:1024, pIters:30, vIters:20, pCount:160,
+  obstacle:null,   // {fx, y, r}  fx = fração da largura
+  terms:{adv:true, press:true, visc:true, force:true},
+};
+
+const PRESETS = {
+  ralo: {label:'Ralo da pia', sub:'Água · sucção', scene:'vista de cima',
+    set:{fluid:'agua', layout:'one', gamma:0.10, core:0.05, suction:0.45, dir:-1, drive:'continuous', wander:false, buoy:0, wind:0, confine:0, emit:'ring', pattern:'spokes', obstacle:null, view:0, particles:true, arrows:false},
+    obs:['<b>Raios de tinta</b> viram espirais: o núcleo gira como disco rígido e a parte de fora gira mais devagar.',
+         'A <b>superfície afunda</b> no centro (sombra e brilho): ali a pressão é mínima.',
+         'As partículas espiralam para o ralo: a sucção cria uma velocidade radial para dentro (curva verde no gráfico).',
+         'Troque para a visualização <b>Pressão</b> e depois <b>Vorticidade</b>.']},
+  furacao: {label:'Furacão', sub:'Ar · visto de satélite', scene:'vista de cima',
+    set:{fluid:'ar', palette:'nuvens', layout:'one', gamma:0.22, core:0.07, suction:0.15, dir:1, drive:'continuous', wander:true, buoy:0, wind:0, confine:10, emit:'ring', pattern:'clouds', obstacle:null, view:0, particles:false, arrows:false, dyeDiss:0.03},
+    obs:['As nuvens formam <b>bandas espirais</b>, como nas imagens de satélite.',
+         'O <b>olho</b> é o centro de pressão mínima (veja a visualização Pressão).',
+         'Sentido anti-horário = hemisfério Norte. Mude para horário para um ciclone do hemisfério Sul (como o Catarina, 2004).',
+         'O furacão “passeia”, como fazem os ciclones reais levados pelos ventos de grande escala.']},
+  pluma: {label:'Fumaça subindo', sub:'Empuxo · vista lateral', scene:'vista lateral',
+    set:{fluid:'ar', layout:'none', gamma:0.1, suction:0, buoy:110, wind:0, confine:18, emit:'plume', pattern:'none', obstacle:null, view:0, particles:false, arrows:false, dyeDiss:0.25},
+    obs:['O ar quente é menos denso e <b>sobe</b> (empuxo = força externa <b>f</b>).',
+         'A borda da pluma fica instável e se enrola: <b>instabilidade de Kelvin–Helmholtz</b>.',
+         'O topo forma um “cogumelo”: um par de vórtices, como numa nuvem de explosão.',
+         'Troque para <b>Vorticidade</b>: os dois lados da pluma giram em sentidos opostos.']},
+  fusao: {label:'Fusão de vórtices', sub:'Água · 2 no mesmo sentido', scene:'vista de cima',
+    set:{fluid:'agua', layout:'co', gamma:0.10, core:0.04, sep:0.2, suction:0, dir:1, drive:'impulse', wander:false, buoy:0, wind:0, confine:3, emit:'none', pattern:'stripes', obstacle:null, view:0, particles:false, arrows:false},
+    obs:['Dois redemoinhos de mesmo sentido <b>orbitam um ao outro</b>…',
+         '…e, se estiverem próximos o bastante, <b>se fundem</b> num só, maior.',
+         'O motor só dá o impulso inicial: depois é física pura (Navier–Stokes sem força).',
+         'Aumente a distância: acima de certo valor eles só orbitam, sem fundir.']},
+  dipolo: {label:'Dipolo viajante', sub:'Água · sentidos opostos', scene:'vista de cima',
+    set:{fluid:'agua', layout:'op', gamma:0.09, core:0.035, sep:0.14, suction:0, dir:1, drive:'impulse', wander:false, buoy:0, wind:0, confine:3, emit:'none', pattern:'blobs', obstacle:null, view:0, particles:false, arrows:false},
+    obs:['Dois vórtices de sentidos opostos se empurram mutuamente e <b>viajam juntos</b> em linha reta.',
+         'É a versão 2D de um <b>anel de fumaça</b> (ou de golfinho!).',
+         'Veja em <b>Vorticidade</b>: um lado vermelho, outro azul.',
+         'Quando batem na parede, se separam e “quicam”.']},
+  karman: {label:'Esteira de von Kármán', sub:'Água · obstáculo', scene:'vista de cima',
+    set:{fluid:'agua', layout:'none', suction:0, buoy:0, wind:0.22, confine:4, emit:'streaks', pattern:'none', obstacle:{fx:0.22, y:0.505, r:0.055}, view:0, particles:false, arrows:false, nu:3e-5},
+    obs:['A correnteza passa pelo cilindro e solta <b>vórtices alternados</b>, um de cada lado.',
+         'O mesmo acontece atrás de ilhas (fotos de satélite de nuvens) e faz fios “cantarem” no vento.',
+         'Aumente a viscosidade ν: com Re baixo a esteira fica parada e simétrica.',
+         'Mova o obstáculo com <b>Shift+arrastar</b>.']},
+  livre: {label:'Laboratório livre', sub:'Mexa com o mouse', scene:'vista de cima',
+    set:{fluid:'agua', layout:'none', suction:0, buoy:0, wind:0, confine:4, emit:'none', pattern:'stripes', obstacle:null, view:0, particles:false, arrows:false},
+    obs:['<b>Arraste</b> o mouse para mexer o fluido como uma colher.',
+         'Crie seus próprios redemoinhos e veja como eles interagem.',
+         'Desligue termos da equação para ver o papel de cada um.',
+         'Use a ferramenta 🎨 para pingar tinta.']},
+};
+const PRESET_ORDER = ['ralo','furacao','pluma','fusao','dipolo','karman','livre'];
+
+const TERM_INFO = {
+  adv:  '<b style="color:var(--adv)">Advecção (u·∇)u</b> — o fluido carrega a própria velocidade. É o termo não linear, origem da turbulência. <i>Desligado:</i> a velocidade não é mais transportada; os vórtices não se deslocam nem se enrolam.',
+  press:'<b style="color:var(--press)">Pressão −∇p/ρ</b> — empurra o fluido de alta para baixa pressão e é o que mantém ∇·u = 0. <i>Desligado:</i> o fluido deixa de ser incompressível; o corante se amontoa e o ralo para de puxar.',
+  visc: '<b style="color:var(--visc)">Viscosidade ν∇²u</b> — atrito interno que suaviza e espalha o movimento. <i>Desligado:</i> equações de Euler (sobra só a viscosidade numérica da grade).',
+  force:'<b style="color:var(--force)">Forças externas f</b> — o motor do redemoinho, o empuxo da fumaça e o vento. <i>Desligado:</i> o vórtice fica livre e vai perdendo energia pela viscosidade. (O mouse continua funcionando.)',
+  inc:  '<b style="color:var(--inc)">Incompressibilidade ∇·u = 0</b> — o que entra, sai. É imposta pela etapa de projeção da pressão; por isso liga/desliga junto com o termo de pressão.',
+};
+
+// =====================================================================
+//  WEBGL
+// =====================================================================
+const canvas = document.getElementById('gl');
+const overlay = document.getElementById('overlay');
+const octx = overlay.getContext('2d');
+const stage = document.getElementById('stage');
+let gl, hasFloat32 = false;
+
+function fail(msg){ document.getElementById('errMsg').textContent = msg; document.getElementById('err').classList.add('show'); throw new Error(msg); }
+
+gl = canvas.getContext('webgl2', {alpha:false, depth:false, stencil:false, antialias:false, preserveDrawingBuffer:false, powerPreference:'high-performance'});
+if(!gl) fail('Este navegador não suporta WebGL 2.');
+hasFloat32 = !!gl.getExtension('EXT_color_buffer_float');
+const hasHalf = hasFloat32 || !!gl.getExtension('EXT_color_buffer_half_float');
+if(!hasHalf) fail('A placa de vídeo não permite desenhar em texturas de ponto flutuante.');
+gl.getExtension('OES_texture_float_linear');
+
+const HDR = `#version 300 es
+precision highp float;
+precision highp sampler2D;
+`;
+const VS_BASE = HDR + `
+uniform vec2 texelSize;
+out vec2 vUv, vL, vR, vT, vB;
+void main(){
+  vec2 p = vec2(float((gl_VertexID<<1)&2), float(gl_VertexID&2));
+  vUv = p;
+  vL = vUv - vec2(texelSize.x,0.); vR = vUv + vec2(texelSize.x,0.);
+  vT = vUv + vec2(0.,texelSize.y); vB = vUv - vec2(0.,texelSize.y);
+  gl_Position = vec4(p*2.-1., 0., 1.);
+}`;
+
+const FS = {};
+FS.copy = `in vec2 vUv; out vec4 o; uniform sampler2D uTex; void main(){ o = texture(uTex,vUv); }`;
+FS.clear = `in vec2 vUv; out vec4 o; uniform sampler2D uTex; uniform float uValue; void main(){ o = uValue*texture(uTex,vUv); }`;
+FS.advect = `in vec2 vUv; out vec4 o;
+uniform sampler2D uVelocity, uSource; uniform vec2 velTexel; uniform float dt, dissipation;
+void main(){
+  vec2 coord = vUv - dt*texture(uVelocity,vUv).xy*velTexel;
+  o = texture(uSource,coord)/(1.+dissipation*dt);
+}`;
+FS.splat = `in vec2 vUv; out vec4 o;
+uniform sampler2D uTarget; uniform float aspect, radius; uniform vec2 point; uniform vec4 color;
+void main(){
+  vec2 p = vUv-point; p.x *= aspect;
+  float g = exp(-dot(p,p)/(radius*radius));
+  o = texture(uTarget,vUv) + color*g;
+}`;
+FS.emit = `in vec2 vUv; out vec4 o;
+uniform sampler2D uTarget; uniform vec4 uE[12]; uniform vec4 uEC[12]; uniform vec4 uEV[12];
+uniform int uN, uMode; uniform float aspect, uRate;
+void main(){
+  vec4 c = texture(uTarget,vUv); vec2 p = vUv*vec2(aspect,1.);
+  for(int i=0;i<12;i++){
+    if(i>=uN) break;
+    vec2 d = p-uE[i].xy;
+    float g = exp(-dot(d,d)/(uE[i].z*uE[i].z))*uRate;
+    if(uMode==0) c = mix(c, vec4(uEC[i].rgb, uE[i].w), g);
+    else if(uEV[i].z>0.5) c.xy = mix(c.xy, uEV[i].xy, g);
+  }
+  o = c;
+}`;
+FS.forces = `in vec2 vUv; out vec4 o;
+uniform sampler2D uVelocity, uDye; uniform vec4 uV[4]; uniform int uCount;
+uniform float aspect, uCore, uGain, uSimH, dt, uWind, uBuoy;
+void main(){
+  vec2 v = texture(uVelocity,vUv).xy;
+  vec2 p = vUv*vec2(aspect,1.);
+  vec2 f = vec2(0.);
+  for(int i=0;i<4;i++){
+    if(i>=uCount) break;
+    vec2 d = p-uV[i].xy; float r2 = dot(d,d)+1e-8; float r = sqrt(r2);
+    float vt = uV[i].z/(6.2831853*r)*(1.-exp(-r2/(uCore*uCore)))*uSimH;
+    vec2 t = vec2(-d.y,d.x)/r;
+    float w = exp(-r2/(7.*uCore*uCore));
+    f += uGain*w*(vt-dot(v,t))*t;
+  }
+  if(uWind>0.){
+    float band = smoothstep(0.05,0.0,vUv.x)+smoothstep(0.95,1.0,vUv.x);
+    f += 10.*band*(vec2(uWind,0.)-v);
+  }
+  f.y += uBuoy*texture(uDye,vUv).a;
+  o = vec4(v+f*dt,0.,1.);
+}`;
+FS.curl = `in vec2 vUv, vL, vR, vT, vB; out vec4 o; uniform sampler2D uVelocity;
+void main(){
+  float L = texture(uVelocity,vL).y, R = texture(uVelocity,vR).y;
+  float T = texture(uVelocity,vT).x, B = texture(uVelocity,vB).x;
+  o = vec4(0.5*(R-L-T+B),0.,0.,1.);
+}`;
+FS.vorticity = `in vec2 vUv, vL, vR, vT, vB; out vec4 o;
+uniform sampler2D uVelocity, uCurl; uniform float curl, dt;
+void main(){
+  float L = texture(uCurl,vL).x, R = texture(uCurl,vR).x, T = texture(uCurl,vT).x, B = texture(uCurl,vB).x, C = texture(uCurl,vUv).x;
+  vec2 force = 0.5*vec2(abs(T)-abs(B), abs(R)-abs(L));
+  force /= length(force)+1e-4; force *= curl*C; force.y *= -1.;
+  vec2 v = texture(uVelocity,vUv).xy + force*dt;
+  o = vec4(clamp(v,-4000.,4000.),0.,1.);
+}`;
+FS.viscous = `in vec2 vUv, vL, vR, vT, vB; out vec4 o;
+uniform sampler2D uX, uB; uniform float uAlpha;
+void main(){
+  vec2 s = texture(uX,vL).xy+texture(uX,vR).xy+texture(uX,vT).xy+texture(uX,vB).xy;
+  o = vec4((s+uAlpha*texture(uB,vUv).xy)/(4.+uAlpha),0.,1.);
+}`;
+FS.divergence = `in vec2 vUv, vL, vR, vT, vB; out vec4 o;
+uniform sampler2D uVelocity; uniform float uOpenX, aspect, uSink, uDrainR, uSinkMean;
+uniform vec4 uV[4]; uniform int uCount;
+void main(){
+  float L = texture(uVelocity,vL).x, R = texture(uVelocity,vR).x, T = texture(uVelocity,vT).y, B = texture(uVelocity,vB).y;
+  vec2 C = texture(uVelocity,vUv).xy;
+  if(vL.x<0.) L = uOpenX>0.5 ? C.x : -C.x;
+  if(vR.x>1.) R = uOpenX>0.5 ? C.x : -C.x;
+  if(vT.y>1.) T = -C.y;
+  if(vB.y<0.) B = -C.y;
+  float div = 0.5*(R-L+T-B);
+  float s = 0.; vec2 p = vUv*vec2(aspect,1.);
+  for(int i=0;i<4;i++){ if(i>=uCount) break; vec2 d=p-uV[i].xy; s += exp(-dot(d,d)/(uDrainR*uDrainR)); }
+  o = vec4(div + uSink*s - uSinkMean,0.,0.,1.);
+}`;
+FS.pressure = `in vec2 vUv, vL, vR, vT, vB; out vec4 o;
+uniform sampler2D uPressure, uDivergence; uniform float uOpenX;
+void main(){
+  float L = texture(uPressure,vL).x, R = texture(uPressure,vR).x, T = texture(uPressure,vT).x, B = texture(uPressure,vB).x;
+  if(uOpenX>0.5){ if(vL.x<0.) L=0.; if(vR.x>1.) R=0.; }
+  o = vec4((L+R+B+T-texture(uDivergence,vUv).x)*0.25,0.,0.,1.);
+}`;
+FS.gradient = `in vec2 vUv, vL, vR, vT, vB; out vec4 o;
+uniform sampler2D uPressure, uVelocity; uniform float uOpenX;
+void main(){
+  float L = texture(uPressure,vL).x, R = texture(uPressure,vR).x, T = texture(uPressure,vT).x, B = texture(uPressure,vB).x;
+  if(uOpenX>0.5){ if(vL.x<0.) L=0.; if(vR.x>1.) R=0.; }
+  vec2 v = texture(uVelocity,vUv).xy - 0.5*vec2(R-L,T-B);
+  o = vec4(v,0.,1.);
+}`;
+FS.obstacle = `in vec2 vUv; out vec4 o;
+uniform sampler2D uTex; uniform vec3 uObs; uniform float aspect;
+void main(){
+  vec4 c = texture(uTex,vUv); vec2 p = vUv*vec2(aspect,1.);
+  float m = smoothstep(uObs.z, uObs.z+0.006, length(p-uObs.xy));
+  o = c*m; o.w = mix(1.,c.w,m);
+}`;
+FS.dyePost = `in vec2 vUv; out vec4 o;
+uniform sampler2D uTex; uniform vec4 uV[4]; uniform int uCount; uniform float uSink, uDrainR, aspect, dt; uniform vec3 uObs;
+void main(){
+  vec4 c = texture(uTex,vUv); vec2 p = vUv*vec2(aspect,1.);
+  float s = 0.;
+  for(int i=0;i<4;i++){ if(i>=uCount) break; vec2 d=p-uV[i].xy; s += exp(-dot(d,d)/(uDrainR*uDrainR*0.5)); }
+  c *= max(0., 1.-uSink*s*dt*0.12);
+  if(uObs.z>0. && length(p-uObs.xy)<uObs.z) c = vec4(0.);
+  o = c;
+}`;
+FS.pattern = `in vec2 vUv; out vec4 o;
+uniform int uPattern; uniform float aspect, uSeed; uniform vec3 uC0, uC1, uC2; uniform vec2 uCenter;
+float h21(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*.1031); p3 += dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
+float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }
+float fbm(vec2 p){ float a=0.5, s=0.; for(int i=0;i<5;i++){ s+=a*vnoise(p); p*=2.03; a*=0.5; } return s; }
+vec3 pick(float k){ k = mod(k,3.); return k<0.5?uC0:(k<1.5?uC1:uC2); }
+void main(){
+  vec2 p = vUv*vec2(aspect,1.);
+  vec3 col = vec3(0.); float a = 0.;
+  if(uPattern==1){ float y=p.y*9.; float f=fract(y); float m=smoothstep(0.06,0.14,f)*smoothstep(0.62,0.54,f); col=pick(floor(y))*m; a=m; }
+  else if(uPattern==2){ vec2 d=p-uCenter; float s=(atan(d.y,d.x)/6.2831853+0.5)*18.; float f=fract(s);
+    float m=smoothstep(0.08,0.18,f)*smoothstep(0.58,0.48,f)*smoothstep(0.01,0.03,length(d)); col=pick(floor(s))*m; a=m; }
+  else if(uPattern==3){ vec2 g=abs(fract(p*10.)-0.5); float mx=smoothstep(0.40,0.46,g.x), my=smoothstep(0.40,0.46,g.y); col=uC0*mx+uC1*my*(1.-mx); a=max(mx,my); }
+  else if(uPattern==4){ float n=fbm(p*3.+uSeed); float n2=fbm(p*3.+uSeed+17.); float m=smoothstep(0.52,0.62,n);
+    col = mix(uC0,uC1,step(0.5,n2))*m + uC2*smoothstep(0.62,0.7,n2)*(1.-m); a=max(m,smoothstep(0.62,0.7,n2)); }
+  else if(uPattern==5){ float n=fbm(p*4.+uSeed); float m=smoothstep(0.45,0.75,n); col=mix(uC1,uC0,m)*m*1.1; a=m; }
+  o = vec4(col*0.9,a);
+}`;
+FS.display = `in vec2 vUv; out vec4 o;
+uniform sampler2D uDye, uVelocity, uCurl, uPressure;
+uniform int uView, uStyle; uniform vec2 dyeTexel, simTexel; uniform float aspect, uPScale, uNScale, uWScale, uVRef, uSimH, uDt; uniform vec3 uObs;
+vec3 ramp(float t){ t=clamp(t,0.,1.);
+  vec3 a=vec3(0.02,0.02,0.07), b=vec3(0.33,0.06,0.55), c=vec3(0.93,0.33,0.22), d=vec3(1.,0.93,0.55);
+  if(t<0.33) return mix(a,b,t/0.33); if(t<0.66) return mix(b,c,(t-0.33)/0.33); return mix(c,d,(t-0.66)/0.34); }
+vec3 bgGrad(){ return mix(vec3(0.010,0.013,0.026), vec3(0.028,0.036,0.068), vUv.y); }
+void main(){
+  vec3 col;
+  if(uView==1){
+    float w = texture(uCurl,vUv).x;
+    float t = 1.-exp(-abs(w)*uWScale);
+    vec3 c = w>0. ? vec3(1.,0.40,0.24) : vec3(0.26,0.58,1.);
+    col = mix(bgGrad(), c, t) + vec3(pow(t,4.))*0.35;
+  } else if(uView==2){
+    float p = texture(uPressure,vUv).x/uDt*uPScale;
+    float t = 1.-exp(-abs(p)*0.9);
+    vec3 c = p<0. ? vec3(0.22,0.45,1.) : vec3(1.,0.62,0.18);
+    col = mix(bgGrad(), c, t);
+    float iso = abs(fract(p*3.)-0.5); col += 0.07*smoothstep(0.06,0.0,iso)*t;
+  } else if(uView==3){
+    float s = length(texture(uVelocity,vUv).xy)/uSimH;
+    col = ramp(s/(uVRef*1.25));
+  } else if(uStyle==0){
+    vec3 c = texture(uDye,vUv).rgb;
+    float l = length(texture(uDye,vUv-vec2(dyeTexel.x,0.)).rgb), r = length(texture(uDye,vUv+vec2(dyeTexel.x,0.)).rgb);
+    float b = length(texture(uDye,vUv-vec2(0.,dyeTexel.y)).rgb), t = length(texture(uDye,vUv+vec2(0.,dyeTexel.y)).rgb);
+    vec3 n = normalize(vec3(l-r, b-t, 0.12));
+    float diff = clamp(dot(n, normalize(vec3(-0.45,0.6,0.65))),0.,1.);
+    c *= 0.6+0.6*diff;
+    vec3 tc = 1.-exp(-c*1.5);
+    float a = clamp(max(tc.r,max(tc.g,tc.b))*1.25,0.,1.);
+    col = bgGrad()*(1.-a) + tc;
+  } else {
+    float pc = texture(uPressure,vUv).x;
+    float pl = texture(uPressure,vUv-vec2(simTexel.x,0.)).x, pr = texture(uPressure,vUv+vec2(simTexel.x,0.)).x;
+    float pb = texture(uPressure,vUv-vec2(0.,simTexel.y)).x, pt = texture(uPressure,vUv+vec2(0.,simTexel.y)).x;
+    vec2 g = vec2(pr-pl, pt-pb)*0.5*uPScale/(uDt*simTexel.y)*uNScale;
+    vec3 n = normalize(vec3(-g, 1.));
+    vec2 refr = n.xy*0.02;
+    vec3 ink = texture(uDye, vUv+refr).rgb;
+    float depth = clamp(-pc/uDt*uPScale, -1., 1.);
+    vec3 deep, shallow;
+    if(uStyle==1){ deep=vec3(0.005,0.05,0.11); shallow=vec3(0.05,0.30,0.44); }
+    else { deep=vec3(0.20,0.07,0.01); shallow=vec3(0.86,0.50,0.10); }
+    vec2 e = min(vUv, 1.-vUv)*vec2(aspect,1.);
+    float edge = smoothstep(0.0,0.25,min(e.x,e.y));
+    vec3 water = mix(shallow, deep, clamp(0.3+0.55*depth+0.25*(1.-edge),0.,1.));
+    float caust = 0.5+0.5*sin((vUv.x*aspect*38.+n.x*30.)) * sin((vUv.y*41.+n.y*30.));
+    water *= 0.93+0.14*caust*edge;
+    vec3 ic = 1.-exp(-ink*1.8);
+    float a = clamp(max(ic.r,max(ic.g,ic.b))*1.15,0.,0.94);
+    col = mix(water, ic, a);
+    vec3 L = normalize(vec3(-0.35,0.45,1.)); vec3 H = normalize(L+vec3(0.,0.,1.));
+    col += pow(max(dot(n,H),0.),90.)*0.6 + (1.-n.z)*0.25*vec3(0.7,0.85,1.);
+  }
+  if(uObs.z>0.){
+    vec2 p = vUv*vec2(aspect,1.); float d = length(p-uObs.xy);
+    if(d<uObs.z){ float sh = 0.55+0.45*dot(normalize(vec3((p-uObs.xy)/uObs.z, 0.6)), normalize(vec3(-0.5,0.6,0.7))); col = vec3(0.50,0.55,0.63)*sh; }
+    col = mix(col, vec3(0.9), smoothstep(0.004,0.,abs(d-uObs.z))*0.6);
+  }
+  o = vec4(col,1.);
+}`;
+FS.particlesUpdate = `in vec2 vUv; out vec4 o;
+uniform sampler2D uParticles, uVelocity; uniform vec2 velTexel; uniform float dt, uTime, aspect, uSink, uDrainR, uSpawn, uLife;
+uniform vec4 uV[4]; uniform int uCount; uniform vec3 uObs;
+float h(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*.1031); p3 += dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
+void main(){
+  vec4 P = texture(uParticles,vUv);
+  vec2 pos = P.xy;
+  vec2 v1 = texture(uVelocity,pos).xy*velTexel;
+  vec2 v2 = texture(uVelocity,pos+0.5*dt*v1).xy*velTexel;
+  pos += dt*v2;
+  float age = P.z+dt;
+  bool re = age>P.w || pos.x<0. || pos.y<0. || pos.x>1. || pos.y>1. || P.w<=0.;
+  vec2 pa = pos*vec2(aspect,1.);
+  if(uSink>0.) for(int i=0;i<4;i++){ if(i>=uCount) break; if(length(pa-uV[i].xy)<uDrainR*0.45) re = true; }
+  if(uObs.z>0. && length(pa-uObs.xy)<uObs.z) re = true;
+  if(re){
+    float a = h(vUv*917.13+uTime*1.37), b = h(vUv*311.71+uTime*2.11+4.7), c = h(vUv*71.3+uTime*0.7);
+    pos = vec2(a,b);
+    if(uSpawn>0.5) pos.x = a*0.04;
+    age = 0.; P.w = uLife*(0.5+c);
+  }
+  o = vec4(pos, age, P.w);
+}`;
+FS.profile = `out vec4 o;
+uniform sampler2D uVelocity; uniform vec2 uCenter; uniform float aspect, uRmax, uSimH;
+void main(){
+  float r = (floor(gl_FragCoord.x)+0.5)/64.*uRmax;
+  float st=0., sr=0.;
+  for(int i=0;i<48;i++){
+    float a = 6.2831853*float(i)/48.; vec2 dir = vec2(cos(a),sin(a));
+    vec2 pa = uCenter+dir*r; vec2 uv = pa/vec2(aspect,1.);
+    vec2 v = texture(uVelocity,uv).xy/uSimH;
+    st += dot(v,vec2(-dir.y,dir.x)); sr += dot(v,dir);
+  }
+  o = vec4(st/48., sr/48., 0., 1.);
+}`;
+
+const VS_ARROWS = HDR + `
+uniform sampler2D uVelocity; uniform ivec2 uGrid; uniform float aspect, uSimH;
+out float vA;
+vec2 rot(vec2 v,float a){ float c=cos(a),s=sin(a); return vec2(c*v.x-s*v.y, s*v.x+c*v.y); }
+void main(){
+  int id = gl_VertexID; int a = id/6; int k = id-a*6;
+  int gx = a % uGrid.x; int gy = a / uGrid.x;
+  vec2 uv = (vec2(gx,gy)+0.5)/vec2(uGrid);
+  vec2 v = texture(uVelocity,uv).xy/uSimH;
+  float m = length(v);
+  float cell = 1./float(uGrid.y);
+  float len = cell*0.95*(1.-exp(-m*6.));
+  vec2 dir = m>1e-6 ? v/m : vec2(1.,0.);
+  vec2 c = uv*vec2(aspect,1.);
+  vec2 tail = c-dir*len*0.5, tip = c+dir*len*0.5;
+  vec2 p;
+  if(k==0) p = tail; else if(k==1||k==2||k==4) p = tip;
+  else if(k==3) p = tip - rot(dir,0.45)*len*0.38;
+  else p = tip - rot(dir,-0.45)*len*0.38;
+  p /= vec2(aspect,1.);
+  vA = clamp(m*8.,0.15,1.);
+  gl_Position = vec4(p*2.-1.,0.,1.);
+}`;
+const FS_ARROWS = HDR + `in float vA; out vec4 o; void main(){ o = vec4(0.92,0.96,1.,0.75*vA); }`;
+const VS_PART = HDR + `
+uniform sampler2D uParticles, uVelocity; uniform int uSize; uniform float uPointSize, uSimH;
+out float vS; out float vF;
+void main(){
+  ivec2 c = ivec2(gl_VertexID % uSize, gl_VertexID / uSize);
+  vec4 P = texelFetch(uParticles,c,0);
+  vS = length(texture(uVelocity,P.xy).xy)/uSimH;
+  vF = smoothstep(0.,0.4,P.z)*smoothstep(P.w,P.w-0.6,P.z);
+  gl_Position = vec4(P.xy*2.-1.,0.,1.);
+  gl_PointSize = uPointSize;
+}`;
+const FS_PART = HDR + `in float vS; in float vF; out vec4 o;
+void main(){
+  vec2 q = gl_PointCoord-0.5; if(dot(q,q)>0.25) discard;
+  float t = clamp(vS*2.5,0.,1.);
+  vec3 c = mix(vec3(0.55,0.85,1.), vec3(1.,0.85,0.4), t);
+  o = vec4(c, 0.55*vF);
+}`;
+
+function compile(type, src){
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(src); fail('Erro no shader: '+gl.getShaderInfoLog(s)); }
+  return s;
+}
+function makeProgram(vsSrc, fsSrc){
+  const p = gl.createProgram();
+  gl.attachShader(p, compile(gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(p);
+  if(!gl.getProgramParameter(p, gl.LINK_STATUS)) fail('Erro ao ligar programa: '+gl.getProgramInfoLog(p));
+  const u = {};
+  const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<n;i++){ const info = gl.getActiveUniform(p,i); u[info.name.replace(/\[0\]$/,'')] = gl.getUniformLocation(p, info.name); }
+  return {p, u};
+}
+const prog = {};
+for(const k in FS) prog[k] = makeProgram(VS_BASE, HDR + FS[k]);
+prog.arrows = makeProgram(VS_ARROWS, FS_ARROWS);
+prog.part = makeProgram(VS_PART, FS_PART);
+
+// Uniform helper: current program + setters
+let cur = null;
+function use(pr){ cur = pr; gl.useProgram(pr.p); return U; }
+const U = {
+  f(n,...v){ const l=cur.u[n]; if(l==null) return U; if(v.length===1) gl.uniform1f(l,v[0]); else if(v.length===2) gl.uniform2f(l,v[0],v[1]); else if(v.length===3) gl.uniform3f(l,v[0],v[1],v[2]); else gl.uniform4f(l,v[0],v[1],v[2],v[3]); return U; },
+  i(n,v){ const l=cur.u[n]; if(l!=null) gl.uniform1i(l,v); return U; },
+  i2(n,a,b){ const l=cur.u[n]; if(l!=null) gl.uniform2i(l,a,b); return U; },
+  v4(n,arr){ const l=cur.u[n]; if(l!=null) gl.uniform4fv(l,arr); return U; },
+  t(n,unit,fbo){ const l=cur.u[n]; gl.activeTexture(gl.TEXTURE0+unit); gl.bindTexture(gl.TEXTURE_2D, fbo.tex); if(l!=null) gl.uniform1i(l,unit); return U; },
+};
+
+function createFBO(w, h, internal, type, filter){
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, internal, w, h, 0, gl.RGBA, type, null);
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+  gl.viewport(0,0,w,h); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  return {tex, fbo, w, h, ok, texel:[1/w,1/h], internal, type};
+}
+function createDouble(w,h,internal,type,filter){
+  let a = createFBO(w,h,internal,type,filter), b = createFBO(w,h,internal,type,filter);
+  return { get read(){return a;}, get write(){return b;}, swap(){ const t=a; a=b; b=t; }, w, h, texel:a.texel, ok:a.ok&&b.ok };
+}
+function destroy(f){ if(!f) return; if(f.read){ destroy(f.read); destroy(f.write); return; } gl.deleteTexture(f.tex); gl.deleteFramebuffer(f.fbo); }
+function blit(target){
+  if(target){ gl.viewport(0,0,target.w,target.h); gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo); }
+  else { gl.viewport(0,0,canvas.width,canvas.height); gl.bindFramebuffer(gl.FRAMEBUFFER, null); }
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+// =====================================================================
+//  ESTADO DA SIMULAÇÃO
+// =====================================================================
+let vel, dye, pressure, divFBO, curlFBO, velB, parts, profileFBO;
+let simW, simH, dyeW, dyeH, aspect = 1;
+let simTime = 0, impulseTimer = 1.5, paused = false, stepOnce = false;
+let vbase = [];            // posições-base dos vórtices (espaço aspecto)
+let profileData = null, profileCenter = [0.5,0.5];
+const H16 = gl.HALF_FLOAT, F16 = gl.RGBA16F;
+
+function initFBOs(){
+  [vel,dye,pressure,divFBO,curlFBO,velB].forEach(destroy);
+  simH = P.simRes; simW = Math.max(16, Math.round(simH*aspect));
+  const maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+  dyeH = Math.min(P.dyeRes, maxTex); dyeW = Math.min(maxTex, Math.round(dyeH*aspect));
+  vel = createDouble(simW, simH, F16, H16, gl.LINEAR);
+  pressure = createDouble(simW, simH, F16, H16, gl.NEAREST);
+  divFBO = createFBO(simW, simH, F16, H16, gl.NEAREST);
+  curlFBO = createFBO(simW, simH, F16, H16, gl.NEAREST);
+  velB = createFBO(simW, simH, F16, H16, gl.LINEAR);
+  dye = createDouble(dyeW, dyeH, F16, H16, gl.LINEAR);
+  if(!vel.ok || !dye.ok) fail('A placa de vídeo não conseguiu criar as texturas da simulação.');
+  if(!profileFBO && hasFloat32){ profileFBO = createFBO(64,1,gl.RGBA32F,gl.FLOAT,gl.NEAREST); if(!profileFBO.ok) profileFBO = null; }
+}
+function initParticles(){
+  destroy(parts);
+  const n = P.pCount;
+  const internal = hasFloat32 ? gl.RGBA32F : F16;
+  parts = createDouble(n, n, internal, gl.FLOAT, gl.NEAREST);
+  if(!parts.ok){ destroy(parts); parts = createDouble(n,n,F16,gl.FLOAT,gl.NEAREST); }
+  const data = new Float32Array(n*n*4);
+  for(let i=0;i<n*n;i++){ data[i*4]=Math.random(); data[i*4+1]=Math.random(); data[i*4+2]=Math.random()*3; data[i*4+3]=3+Math.random()*3; }
+  for(const f of [parts.read, parts.write]){ gl.bindTexture(gl.TEXTURE_2D, f.tex); gl.texImage2D(gl.TEXTURE_2D,0,f.internal,n,n,0,gl.RGBA,gl.FLOAT,data); }
+  parts.n = n;
+}
+
+function layoutVortices(){
+  const cx = aspect/2, cy = 0.5, s = P.sep;
+  switch(P.layout){
+    case 'one':  vbase = [{x:cx,y:cy,s:1}]; break;
+    case 'co':   vbase = [{x:cx-s/2,y:cy,s:1},{x:cx+s/2,y:cy,s:1}]; break;
+    case 'op':   vbase = [{x:cx-s/2,y:0.28,s:1},{x:cx+s/2,y:0.28,s:-1}]; break;
+    case 'tri':  { const r=s/Math.sqrt(3); vbase=[0,1,2].map(k=>({x:cx+r*Math.cos(Math.PI/2+k*2*Math.PI/3), y:cy+r*Math.sin(Math.PI/2+k*2*Math.PI/3), s:1})); break; }
+    case 'quad': vbase = [[-1,-1,1],[1,-1,-1],[1,1,1],[-1,1,-1]].map(([a,b,sg])=>({x:cx+a*s/2,y:cy+b*s/2,s:sg})); break;
+    default: vbase = [];
+  }
+}
+function wanderOffset(){
+  if(!P.wander) return [0,0];
+  return [0.09*Math.sin(simTime*0.31)*Math.min(aspect,1.6), 0.07*Math.sin(simTime*0.23+1.3)];
+}
+function vortexPositions(){
+  const [ox,oy] = wanderOffset();
+  return vbase.map(v=>({x:v.x+ox, y:v.y+oy, g:P.gamma*P.dir*v.s}));
+}
+function vortexUniform(){
+  const arr = new Float32Array(16), vs = vortexPositions();
+  vs.slice(0,4).forEach((v,i)=>{ arr[i*4]=v.x; arr[i*4+1]=v.y; arr[i*4+2]=v.g; });
+  return {arr, n:Math.min(4,vs.length), vs};
+}
+function obstacleVec(){ return P.obstacle ? [P.obstacle.fx*aspect, P.obstacle.y, P.obstacle.r] : [0,0,0]; }
+function palette(){ return PALETTES[P.palette] || PALETTES.tinta; }
+const DRAIN_R = () => Math.max(0.03, P.core*0.8);
+
+// fontes contínuas de corante
+function emitters(){
+  const pal = palette(), E = [];
+  if(P.emit==='ring'){
+    const vs = vortexPositions();
+    const c = vs.length ? vs[0] : {x:aspect/2,y:0.5};
+    const R = Math.min(0.42, Math.max(0.2, P.core*4.5));
+    for(let k=0;k<5;k++){ const a = k*2*Math.PI/5 + 0.3; E.push({x:c.x+R*Math.cos(a)*1.15, y:c.y+R*Math.sin(a), r:0.016, col:pal[k%3], d:0.4}); }
+  } else if(P.emit==='plume'){
+    const x = aspect/2 + 0.012*Math.sin(simTime*2.1);
+    E.push({x, y:0.05, r:0.035, col:[1.0,0.5,0.16], d:1.0, vx:0, vy:0.25*simH});
+    E.push({x, y:0.05, r:0.018, col:[1.0,0.85,0.55], d:1.0});
+  } else if(P.emit==='streaks'){
+    for(let k=0;k<11;k++){ const y = 0.1 + k*0.08; E.push({x:0.012, y, r:0.006, col:pal[k%3], d:0.3}); }
+  }
+  return E;
+}
+function runEmit(target, mode, E, rate){
+  const e = new Float32Array(48), c = new Float32Array(48), v = new Float32Array(48);
+  E.slice(0,12).forEach((q,i)=>{ e.set([q.x,q.y,q.r,q.d],i*4); c.set([q.col[0],q.col[1],q.col[2],0],i*4); if(q.vy!==undefined) v.set([q.vx,q.vy,1,0],i*4); });
+  use(prog.emit).f('texelSize',...target.texel).t('uTarget',0,target.read).v4('uE',e).v4('uEC',c).v4('uEV',v).i('uN',Math.min(12,E.length)).i('uMode',mode).f('aspect',aspect).f('uRate',rate);
+  blit(target.write); target.swap();
+}
+
+// fila de toques do mouse
+const splats = [];
+function splat(target, x, y, color, radius){
+  use(prog.splat).f('texelSize',...target.texel).t('uTarget',0,target.read).f('aspect',aspect).f('radius',radius).f('point',x,y).f('color',...color);
+  blit(target.write); target.swap();
+}
+
+// =====================================================================
+//  PASSO DE TEMPO  (Stable Fluids)
+// =====================================================================
+function step(dt){
+  gl.disable(gl.BLEND);
+  const T = P.terms;
+  const {arr:V, n:VN} = vortexUniform();
+  const obs = obstacleVec();
+  const driving = T.force && VN>0 && (P.drive==='continuous' || impulseTimer>0);
+  const sink = (T.press && VN>0) ? P.suction*16 : 0;
+  const drainR = DRAIN_R();
+  const openX = P.wind>0 && T.force ? 1 : 0;
+
+  // 1. Forças externas: motor do vórtice, vento, empuxo
+  use(prog.forces).f('texelSize',...vel.texel).t('uVelocity',0,vel.read).t('uDye',1,dye.read)
+    .v4('uV',V).i('uCount',VN).f('aspect',aspect).f('uCore',P.core).f('uGain',driving?(P.drive==='impulse'?5:3.5):0)
+    .f('uSimH',simH).f('dt',dt).f('uWind',T.force?P.wind*simH:0).f('uBuoy',T.force?P.buoy:0);
+  blit(vel.write); vel.swap();
+
+  const E = emitters();
+  if(T.force && E.some(e=>e.vy!==undefined)) runEmit(vel, 1, E, Math.min(1, dt*10));
+
+  // toques do mouse (também são forças, mas sempre ativos)
+  while(splats.length){
+    const s = splats.shift();
+    if(s.vel) splat(vel, s.x, s.y, [s.dx, s.dy, 0, 0], s.r);
+    if(s.col) splat(dye, s.x, s.y, [s.col[0], s.col[1], s.col[2], s.dens||0.3], s.r);
+  }
+
+  // confinamento de vorticidade
+  if(P.confine>0){
+    use(prog.curl).f('texelSize',...vel.texel).t('uVelocity',0,vel.read); blit(curlFBO);
+    use(prog.vorticity).f('texelSize',...vel.texel).t('uVelocity',0,vel.read).t('uCurl',1,curlFBO).f('curl',P.confine).f('dt',dt);
+    blit(vel.write); vel.swap();
+  }
+
+  // 2. Advecção da velocidade: termo (u·∇)u
+  if(T.adv){
+    use(prog.advect).f('texelSize',...vel.texel).f('velTexel',...vel.texel).t('uVelocity',0,vel.read).t('uSource',1,vel.read).f('dt',dt).f('dissipation',0);
+    blit(vel.write); vel.swap();
+  }
+
+  // 3. Viscosidade: termo ν∇²u (difusão implícita, Jacobi)
+  if(T.visc && P.nu>0){
+    use(prog.copy).f('texelSize',...vel.texel).t('uTex',0,vel.read); blit(velB);
+    const alpha = 1/(P.nu*simH*simH*dt);
+    use(prog.viscous).f('texelSize',...vel.texel).f('uAlpha',alpha).t('uB',1,velB);
+    for(let i=0;i<P.vIters;i++){ U.t('uX',0,vel.read); blit(vel.write); vel.swap(); }
+  }
+
+  if(obs[2]>0){ use(prog.obstacle).f('texelSize',...vel.texel).t('uTex',0,vel.read).f('uObs',...obs).f('aspect',aspect); blit(vel.write); vel.swap(); }
+
+  // 4. Projeção: termo −∇p e condição ∇·u = 0
+  if(T.press){
+    const sinkMean = sink * VN * Math.PI * drainR*drainR / aspect;
+    use(prog.divergence).f('texelSize',...vel.texel).t('uVelocity',0,vel.read).f('uOpenX',openX).f('aspect',aspect)
+      .f('uSink',sink).f('uDrainR',drainR).f('uSinkMean',sinkMean).v4('uV',V).i('uCount',VN);
+    blit(divFBO);
+    use(prog.clear).f('texelSize',...vel.texel).t('uTex',0,pressure.read).f('uValue',0.8); blit(pressure.write); pressure.swap();
+    use(prog.pressure).f('texelSize',...vel.texel).t('uDivergence',1,divFBO).f('uOpenX',openX);
+    for(let i=0;i<P.pIters;i++){ U.t('uPressure',0,pressure.read); blit(pressure.write); pressure.swap(); }
+    use(prog.gradient).f('texelSize',...vel.texel).t('uPressure',0,pressure.read).t('uVelocity',1,vel.read).f('uOpenX',openX);
+    blit(vel.write); vel.swap();
+  } else {
+    use(prog.clear).f('texelSize',...vel.texel).t('uTex',0,pressure.read).f('uValue',0.9); blit(pressure.write); pressure.swap();
+  }
+  if(obs[2]>0){ use(prog.obstacle).f('texelSize',...vel.texel).t('uTex',0,vel.read).f('uObs',...obs).f('aspect',aspect); blit(vel.write); vel.swap(); }
+
+  // 5. Transporte do corante
+  if(E.length) runEmit(dye, 0, E, Math.min(1, dt*(P.emit==='ring'?4:12)));
+  use(prog.advect).f('texelSize',...dye.texel).f('velTexel',...vel.texel).t('uVelocity',0,vel.read).t('uSource',1,dye.read).f('dt',dt).f('dissipation',P.dyeDiss);
+  blit(dye.write); dye.swap();
+  if(sink>0 || obs[2]>0){
+    use(prog.dyePost).f('texelSize',...dye.texel).t('uTex',0,dye.read).v4('uV',V).i('uCount',VN).f('uSink',sink).f('uDrainR',drainR).f('aspect',aspect).f('dt',dt).f('uObs',...obs);
+    blit(dye.write); dye.swap();
+  }
+
+  // partículas
+  if(P.particles && parts){
+    use(prog.particlesUpdate).f('texelSize',1/parts.n,1/parts.n).t('uParticles',0,parts.read).t('uVelocity',1,vel.read).f('velTexel',...vel.texel)
+      .f('dt',dt).f('uTime',simTime%1000).f('aspect',aspect).f('uSink',sink).f('uDrainR',drainR).f('uSpawn',P.wind>0?1:0).f('uLife',P.wind>0?14:5)
+      .v4('uV',V).i('uCount',VN).f('uObs',...obs);
+    blit(parts.write); parts.swap();
+  }
+}
+
+function drawPattern(pattern, target){
+  const map = {none:0, stripes:1, spokes:2, grid:3, blobs:4, clouds:5};
+  const pal = palette();
+  const vs = vortexPositions();
+  const c = vs.length ? [vs.reduce((a,v)=>a+v.x,0)/vs.length, vs.reduce((a,v)=>a+v.y,0)/vs.length] : [aspect/2,0.5];
+  use(prog.pattern).f('texelSize',...dye.texel).i('uPattern',map[pattern]||0).f('aspect',aspect).f('uSeed',Math.random()*100)
+    .f('uC0',...pal[0]).f('uC1',...pal[1]).f('uC2',...pal[2]).f('uCenter',...c);
+  blit(target);
+}
+function paintDye(pattern){
+  gl.disable(gl.BLEND);
+  drawPattern(pattern, dye.write); dye.swap();
+}
+function clearAll(){
+  for(const f of [vel.read,vel.write,dye.read,dye.write,pressure.read,pressure.write,divFBO,curlFBO]){
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f.fbo); gl.viewport(0,0,f.w,f.h); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+}
+function resetSim(){
+  clearAll(); simTime = 0; impulseTimer = 1.5;
+  layoutVortices();
+  paintDye(P.pattern);
+  // pequena perturbação para quebrar a simetria (a natureza nunca é perfeita)
+  if(P.layout==='none' && P.emit!=='plume' && P.wind===0) { /* laboratório: parado */ }
+  if(P.particles) initParticles();
+}
+
+// =====================================================================
+//  RENDERIZAÇÃO
+// =====================================================================
+let wantShot = false;
+function render(){
+  gl.disable(gl.BLEND);
+  if(P.view===1){ use(prog.curl).f('texelSize',...vel.texel).t('uVelocity',0,vel.read); blit(curlFBO); }
+  const dtRef = 1/60;
+  // escalas de referência para as cores (velocidade típica e vorticidade típica da cena)
+  let vref = 0.2;
+  if(vbase.length) vref = Math.max(0.06, 0.1015*P.gamma/P.core);
+  else if(P.wind>0) vref = P.wind;
+  const wref = vbase.length ? Math.max(4, P.gamma/(Math.PI*P.core*P.core)) : 18;
+  use(prog.display).f('texelSize',0,0).t('uDye',0,dye.read).t('uVelocity',1,vel.read).t('uCurl',2,curlFBO).t('uPressure',3,pressure.read)
+    .i('uView',P.view).i('uStyle',P.style).f('dyeTexel',...dye.texel).f('simTexel',...vel.texel).f('aspect',aspect)
+    .f('uPScale', 0.9/Math.pow(vref*simH,2)).f('uNScale', 0.03).f('uWScale', 1.3/wref).f('uVRef', vref)
+    .f('uSimH',simH).f('uDt',dtRef).f('uObs',...obstacleVec());
+  blit(null);
+
+  gl.enable(gl.BLEND);
+  if(P.particles && parts){
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+    use(prog.part).t('uParticles',0,parts.read).t('uVelocity',1,vel.read).i('uSize',parts.n).f('uPointSize',Math.max(1.5, 1.6*(window.devicePixelRatio||1))).f('uSimH',simH);
+    gl.drawArrays(gl.POINTS, 0, parts.n*parts.n);
+  }
+  if(P.arrows){
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    const gy = 30, gx = Math.round(gy*aspect);
+    use(prog.arrows).t('uVelocity',0,vel.read).i2('uGrid',gx,gy).f('aspect',aspect).f('uSimH',simH);
+    gl.drawArrays(gl.LINES, 0, gx*gy*6);
+  }
+  gl.disable(gl.BLEND);
+  maybeShot();
+}
+
+function measureProfile(){
+  const vs = vortexPositions();
+  if(!profileFBO || !vs.length){ profileData = null; return; }
+  profileCenter = [vs[0].x, vs[0].y];
+  use(prog.profile).f('texelSize',0,0).t('uVelocity',0,vel.read).f('uCenter',...profileCenter).f('aspect',aspect).f('uRmax',RMAX).f('uSimH',simH);
+  blit(profileFBO);
+  const buf = new Float32Array(64*4);
+  gl.readPixels(0,0,64,1,gl.RGBA,gl.FLOAT,buf);
+  profileData = buf;
+}
+const RMAX = 0.4;
+
+// =====================================================================
+//  SOBREPOSIÇÃO 2D (marcadores) E GRÁFICO
+// =====================================================================
+function drawOverlay(){
+  const w = overlay.width, h = overlay.height;
+  octx.clearRect(0,0,w,h);
+  const S = h;  // 1 unidade = altura
+  const toPx = (x,y)=>[x*S, h - y*S];
+  const driving = P.terms.force && (P.drive==='continuous' || impulseTimer>0);
+  if(P.markers && driving){
+    const dpr = w/overlay.clientWidth;
+    for(const v of vortexPositions()){
+      const [px,py] = toPx(v.x,v.y), rc = P.core*S;
+      octx.save();
+      octx.strokeStyle = 'rgba(255,255,255,0.55)'; octx.lineWidth = 1.2*dpr; octx.setLineDash([4*dpr,4*dpr]);
+      octx.beginPath(); octx.arc(px,py,rc,0,Math.PI*2); octx.stroke();
+      octx.setLineDash([]);
+      octx.fillStyle = 'rgba(255,255,255,0.9)'; octx.beginPath(); octx.arc(px,py,2.5*dpr,0,Math.PI*2); octx.fill();
+      // seta de rotação
+      const R = rc*1.9 + 8*dpr, ccw = v.g>=0;
+      const a0 = -0.4, a1 = 0.9;
+      octx.strokeStyle = ccw ? 'rgba(255,140,100,0.85)' : 'rgba(110,170,255,0.85)'; octx.lineWidth = 2*dpr;
+      octx.beginPath(); octx.arc(px,py,R, ccw? -a0 : a0, ccw? -a1 : a1, ccw); octx.stroke();
+      const ae = ccw ? -a1 : a1, ex = px+R*Math.cos(ae), ey = py+R*Math.sin(ae);
+      const tang = ccw ? ae - Math.PI/2 : ae + Math.PI/2;
+      octx.fillStyle = octx.strokeStyle; octx.beginPath();
+      octx.moveTo(ex+Math.cos(tang)*7*dpr, ey+Math.sin(tang)*7*dpr);
+      octx.lineTo(ex+Math.cos(tang+2.5)*7*dpr, ey+Math.sin(tang+2.5)*7*dpr);
+      octx.lineTo(ex+Math.cos(tang-2.5)*7*dpr, ey+Math.sin(tang-2.5)*7*dpr); octx.fill();
+      octx.font = `${11*dpr}px system-ui`; octx.fillStyle='rgba(255,255,255,0.75)';
+      octx.fillText('r꜀', px+rc*0.72+3*dpr, py-rc*0.72-3*dpr);
+      octx.restore();
+    }
+  }
+}
+
+const chart = document.getElementById('chart'), cctx = chart.getContext('2d');
+function lambOseen(r, G, rc){ return r<1e-6 ? 0 : G/(2*Math.PI*r)*(1-Math.exp(-r*r/(rc*rc))); }
+function rankine(r, G, rc){ return r<rc ? G*r/(2*Math.PI*rc*rc) : G/(2*Math.PI*r); }
+function drawChart(){
+  const dpr = window.devicePixelRatio||1, W = chart.clientWidth, Hh = chart.clientHeight;
+  if(chart.width !== Math.round(W*dpr)){ chart.width = Math.round(W*dpr); chart.height = Math.round(Hh*dpr); }
+  cctx.setTransform(dpr,0,0,dpr,0,0); cctx.clearRect(0,0,W,Hh);
+  const m = {l:44,r:10,t:10,b:28}, pw = W-m.l-m.r, ph = Hh-m.t-m.b;
+  cctx.font = '11px system-ui'; cctx.fillStyle = '#6b7894'; cctx.strokeStyle = '#22304f'; cctx.lineWidth = 1;
+  const has = vbase.length>0;
+  if(!has){ cctx.fillStyle='#95a3bf'; cctx.textAlign='center'; cctx.fillText('Escolha um arranjo com redemoinho para ver o perfil.', W/2, Hh/2); cctx.textAlign='left'; return; }
+  const G = Math.abs(P.gamma), rc = P.core;
+  const sgn = P.dir * vbase[0].s;
+  let ymax = 0.64*G/(2*Math.PI*rc)*1.25;
+  let meas = null, inflow = null;
+  if(profileData){
+    meas = []; inflow = [];
+    for(let i=0;i<64;i++){ const r=(i+0.5)/64*RMAX; meas.push([r, profileData[i*4]*sgn]); inflow.push([r, -profileData[i*4+1]]); }
+    ymax = Math.max(ymax, ...meas.map(p=>p[1]*1.1));
+  }
+  ymax = Math.max(ymax, 1e-3);
+  const X = r => m.l + r/RMAX*pw, Y = v => m.t + ph - v/ymax*ph;
+  // grade
+  cctx.beginPath();
+  for(let k=0;k<=4;k++){ const y = m.t + ph*k/4; cctx.moveTo(m.l,y); cctx.lineTo(m.l+pw,y); }
+  cctx.stroke();
+  cctx.fillStyle='#6b7894';
+  for(let k=0;k<=4;k++){ const v = ymax*(1-k/4); cctx.fillText(v.toFixed(2), 4, m.t+ph*k/4+4); }
+  for(let k=0;k<=4;k++){ const r = RMAX*k/4; cctx.fillText(r.toFixed(1), X(r)-6, Hh-10); }
+  cctx.fillText('raio r →', m.l+pw-44, Hh-10);
+  cctx.save(); cctx.translate(11, m.t+ph/2+24); cctx.rotate(-Math.PI/2); cctx.restore();
+  // r_c
+  cctx.strokeStyle='rgba(255,255,255,0.25)'; cctx.setLineDash([3,3]); cctx.beginPath(); cctx.moveTo(X(rc),m.t); cctx.lineTo(X(rc),m.t+ph); cctx.stroke(); cctx.setLineDash([]);
+  cctx.fillStyle='#95a3bf'; cctx.fillText('r꜀', X(rc)+3, m.t+11);
+  // Rankine
+  cctx.strokeStyle='#8190ad'; cctx.setLineDash([4,3]); cctx.lineWidth=1.3; cctx.beginPath();
+  for(let i=0;i<=160;i++){ const r=RMAX*i/160, v=rankine(r,G,rc); i?cctx.lineTo(X(r),Y(Math.min(v,ymax))):cctx.moveTo(X(r),Y(v)); }
+  cctx.stroke(); cctx.setLineDash([]);
+  // Lamb-Oseen
+  cctx.strokeStyle='#4cc9f0'; cctx.lineWidth=2.2; cctx.beginPath();
+  for(let i=0;i<=160;i++){ const r=RMAX*i/160, v=lambOseen(r,G,rc); i?cctx.lineTo(X(r),Y(v)):cctx.moveTo(X(r),Y(v)); }
+  cctx.stroke();
+  if(meas){
+    if(P.suction>0 && P.terms.press){
+      cctx.strokeStyle='#7ee0a1'; cctx.lineWidth=1.6; cctx.beginPath();
+      inflow.forEach(([r,v],i)=>{ const y=Y(Math.max(0,Math.min(v,ymax))); i?cctx.lineTo(X(r),y):cctx.moveTo(X(r),y); }); cctx.stroke();
+    }
+    cctx.fillStyle='#ffc247';
+    meas.forEach(([r,v],i)=>{ if(i%2) return; cctx.beginPath(); cctx.arc(X(r),Y(Math.max(-ymax*0.05,Math.min(v,ymax))),2.6,0,Math.PI*2); cctx.fill(); });
+  }
+}
+
+// =====================================================================
+//  HUD
+// =====================================================================
+const fmtNum = (v,d=2)=>v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+function fmtSci(v){ if(v===0) return '0'; const e=Math.floor(Math.log10(v)); const m=v/Math.pow(10,e); const sup='⁰¹²³⁴⁵⁶⁷⁸⁹'; const es=String(Math.abs(e)).split('').map(c=>sup[+c]).join(''); return fmtNum(m,1)+'×10'+(e<0?'⁻':'')+es; }
+function fmtBig(v){ if(!isFinite(v)) return '∞'; if(v>=1e5) return fmtSci(v); return Math.round(v).toLocaleString('pt-BR'); }
+let fps = 60;
+function updateHUD(){
+  const pr = PRESETS[P.preset];
+  const viewNames = ['Corante','Vorticidade ω','Pressão p','Velocidade |u|'];
+  document.getElementById('hudScene').innerHTML = `<b>${pr?pr.label:'Personalizado'}</b> · ${pr?pr.scene:''} · ${viewNames[P.view]}`;
+  document.getElementById('hudStats').textContent = `t = ${fmtNum(simTime,1)} s · ${Math.round(fps)} FPS · grade ${simW}×${simH}`;
+  const nuEff = P.terms.visc ? P.nu : 0;
+  let re = '—';
+  if(vbase.length) re = `Re<sub>Γ</sub> = Γ/ν = <b>${nuEff>0?fmtBig(P.gamma/nuEff):'∞'}</b>`;
+  else if(P.wind>0 && P.obstacle) re = `Re<sub>D</sub> = U·D/ν = <b>${nuEff>0?fmtBig(P.wind*2*P.obstacle.r/nuEff):'∞'}</b>`;
+  else re = 'Re = —';
+  document.getElementById('hudRe').innerHTML = re;
+  if(vbase.length){
+    const vt = 0.638*P.gamma/(2*Math.PI*P.core);
+    let mm = '';
+    if(profileData){ let mx=0; const sg=P.dir*vbase[0].s; for(let i=0;i<64;i++) mx=Math.max(mx, profileData[i*4]*sg); mm = ` · medida <b>${fmtNum(mx,2)}</b>`; }
+    document.getElementById('hudV').innerHTML = `v<sub>θ,máx</sub> teoria <b>${fmtNum(vt,2)}</b>${mm}`;
+    document.getElementById('hudV').style.display='';
+  } else if(P.wind>0){ document.getElementById('hudV').innerHTML = `U = <b>${fmtNum(P.wind,2)}</b>`; document.getElementById('hudV').style.display=''; }
+  else document.getElementById('hudV').style.display='none';
+}
+
+// =====================================================================
+//  LAÇO PRINCIPAL
+// =====================================================================
+let last = performance.now(), frame = 0;
+function loop(now){
+  const real = Math.min((now-last)/1000, 0.1); last = now;
+  if(real>0) fps = fps*0.93 + (1/real)*0.07;
+  if(frame%30===0) resize(false);
+  if(MODE==='3d'){ Sim3D.frame(real); frame++; requestAnimationFrame(loop); return; }
+  if(!paused || stepOnce){
+    const dt = Math.min(Math.max(real,1/120),1/30)*P.timeScale;
+    simTime += dt; impulseTimer -= dt;
+    step(dt);
+    stepOnce = false;
+  }
+  render();
+  if(frame%5===0){ measureProfile(); drawChart(); }
+  if(frame%10===0) updateHUD();
+  drawOverlay();
+  frame++;
+  requestAnimationFrame(loop);
+}
+
+// =====================================================================
+//  TAMANHO DA TELA
+// =====================================================================
+function resize(force){
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  const w = Math.max(2, Math.round(stage.clientWidth*dpr)), h = Math.max(2, Math.round(stage.clientHeight*dpr));
+  if(!force && canvas.width===w && canvas.height===h) return;
+  const oldAspect = aspect;
+  canvas.width = overlay.width = w; canvas.height = overlay.height = h;
+  aspect = w/h;
+  if(force || !vel || Math.abs(aspect-oldAspect)>0.01){
+    // mantém as posições relativas dos vórtices ao mudar a proporção
+    const rel = vbase.map(v=>({x:v.x/oldAspect, y:v.y, s:v.s}));
+    initFBOs();
+    if(rel.length && !force){ vbase = rel.map(v=>({x:v.x*aspect,y:v.y,s:v.s})); paintDye(P.pattern); }
+    else resetSim();
+  }
+}
+let resizeTimer;
+new ResizeObserver(()=>{ clearTimeout(resizeTimer); resizeTimer = setTimeout(()=>resize(false), 120); }).observe(stage);
+
+// =====================================================================
+//  INTERAÇÃO: MOUSE / TOQUE
+// =====================================================================
+const ptr = {down:false, x:0, y:0, drag:null, t:0, colorIdx:0};
+function evUv(e){ const r = canvas.getBoundingClientRect(); return [(e.clientX-r.left)/r.width, 1-(e.clientY-r.top)/r.height]; }
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+canvas.addEventListener('pointerdown', e=>{
+  if(MODE==='3d') return Sim3D.pointer('down', e);
+  canvas.setPointerCapture(e.pointerId);
+  const [x,y] = evUv(e);
+  ptr.down = true; ptr.x = x; ptr.y = y; ptr.t = performance.now(); ptr.drag = null;
+  ptr.colorIdx = (ptr.colorIdx+1)%3;
+  if(P.tool==='move' || e.shiftKey || e.button===2){
+    const pa = [x*aspect, y];
+    let best = null, bd = 0.15;
+    vortexPositions().forEach((v,i)=>{ const d = Math.hypot(v.x-pa[0], v.y-pa[1]); if(d<bd){ bd=d; best={type:'v',i}; } });
+    const o = obstacleVec(); if(o[2]>0 && Math.hypot(o[0]-pa[0],o[1]-pa[1])<Math.max(bd,o[2]+0.03)) best = {type:'o'};
+    ptr.drag = best || {type:'none'};
+  } else if(P.tool==='dye'){
+    splats.push({x, y, col:palette()[ptr.colorIdx].map(c=>c*1.2), dens:0.8, r:P.brush*0.8});
+  }
+});
+canvas.addEventListener('pointermove', e=>{
+  if(MODE==='3d') return Sim3D.pointer('move', e);
+  if(!ptr.down) return;
+  const [x,y] = evUv(e);
+  const now = performance.now(), dtp = Math.max(1, now-ptr.t)/1000;
+  const dx = x-ptr.x, dy = y-ptr.y;
+  if(ptr.drag){
+    const [ox,oy] = wanderOffset();
+    if(ptr.drag.type==='v'){ const v = vbase[ptr.drag.i]; v.x = x*aspect-ox; v.y = y-oy; }
+    else if(ptr.drag.type==='o'){ P.obstacle.fx = x; P.obstacle.y = y; }
+  } else if(Math.hypot(dx,dy)>1e-5){
+    if(P.tool==='stir'){
+      const k = Math.min(1, 0.016/dtp);
+      const vx = dx*aspect/dtp*simH*0.9, vy = dy/dtp*simH*0.9;
+      const lim = simH*3, mag = Math.hypot(vx,vy), s = mag>lim ? lim/mag : 1;
+      const pal = palette()[ptr.colorIdx];
+      splats.push({x, y, vel:true, dx:vx*s, dy:vy*s, r:P.brush, col:pal.map(c=>c*0.35*Math.min(1,k*3)), dens:0.25});
+    } else if(P.tool==='dye'){
+      splats.push({x, y, col:palette()[ptr.colorIdx].map(c=>c*0.5), dens:0.4, r:P.brush*0.7});
+    }
+  }
+  ptr.x = x; ptr.y = y; ptr.t = now;
+});
+const endPtr = ()=>{ ptr.down = false; ptr.drag = null; };
+canvas.addEventListener('pointerup', e=>{ if(MODE==='3d') return Sim3D.pointer('up', e); endPtr(); });
+canvas.addEventListener('pointercancel', e=>{ if(MODE==='3d') return Sim3D.pointer('cancel', e); endPtr(); });
+
+// =====================================================================
+//  PAINEL DE CONTROLE
+// =====================================================================
+const fmt = {
+  gamma: v=>fmtNum(v,3), core: v=>fmtNum(v,3), suction: v=>Math.round(v*100)+'%', sep: v=>fmtNum(v,2),
+  nu: v=>v===0?'0 (Euler)':fmtSci(v), buoy: v=>String(Math.round(v)), wind: v=>fmtNum(v,2), confine: v=>fmtNum(v,1),
+  dyeDiss: v=>fmtNum(v,2), timeScale: v=>fmtNum(v,2)+'×', pIters: v=>String(v), vIters: v=>String(v), brush: v=>fmtNum(v,3),
+};
+function sliderToVal(el){
+  const v = parseFloat(el.value);
+  if(el.dataset.log){ const [a,b] = el.dataset.log.split(',').map(Number); return v<=0 ? 0 : Math.pow(10, a+(b-a)*v/100); }
+  return v;
+}
+function valToSlider(el, v){
+  if(el.dataset.log){ const [a,b] = el.dataset.log.split(',').map(Number); return v<=0 ? 0 : Math.max(0.5,Math.min(100,(Math.log10(v)-a)/(b-a)*100)); }
+  return v;
+}
+function syncUI(){
+  document.querySelectorAll('[data-k]').forEach(el=>{
+    const k = el.dataset.k;
+    if(el.type==='checkbox') el.checked = !!P[k];
+    else if(el.type==='range') el.value = valToSlider(el, P[k]);
+    else el.value = String(P[k]);
+  });
+  document.querySelectorAll('[data-o]').forEach(o=>{ const k=o.dataset.o; o.textContent = fmt[k] ? fmt[k](P[k]) : P[k]; });
+  document.querySelectorAll('[data-seg]').forEach(seg=>{
+    const k = seg.dataset.seg;
+    seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', String(P[k])===b.dataset.v));
+  });
+  document.querySelectorAll('#presets button').forEach(b=>b.classList.toggle('on', b.dataset.p===P.preset));
+  document.querySelectorAll('.term').forEach(t=>{
+    const k = t.dataset.term, on = k==='inc' ? P.terms.press : P.terms[k];
+    t.classList.toggle('on', on); t.classList.toggle('off', !on);
+  });
+  document.getElementById('btnPause').textContent = paused ? '▶ Continuar' : '⏸ Pausar';
+  stage.classList.toggle('paused', paused);
+  const hint = {stir:'Arraste para mexer o fluido', dye:'Arraste para pingar tinta', move:'Arraste um vórtice (ou o obstáculo) para movê-lo'}[P.tool];
+  document.getElementById('hudHint').innerHTML = hint + (P.tool!=='move' ? ' · <kbd>Shift</kbd>+arrastar move o vórtice' : '');
+  const pr = PRESETS[P.preset];
+  document.getElementById('obsTitle').textContent = 'O que observar' + (pr ? ' — ' + pr.label : '');
+  document.getElementById('obsText').innerHTML = pr ? '<ul>'+pr.obs.map(s=>'<li>'+s+'</li>').join('')+'</ul>' : '<p>Configuração personalizada. Experimente os termos da equação!</p>';
+  if(MODE==='3d') Sim3D.sync();
+}
+function setFluid(name, keepNu){
+  const f = FLUIDS[name]; if(!f) return;
+  P.fluid = name; P.style = f.style; P.palette = f.palette; P.dyeDiss = f.dyeDiss;
+  if(!keepNu) P.nu = f.nu;
+}
+function onParam(k){
+  if(k==='layout' || k==='sep'){ layoutVortices(); impulseTimer = 1.5; }
+  if(k==='simRes' || k==='dyeRes'){ initFBOs(); resetSim(); }
+  if(k==='pCount' || (k==='particles' && P.particles)) initParticles();
+  if(k==='pattern'){ paintDye(P.pattern); }
+}
+document.querySelectorAll('[data-k]').forEach(el=>{
+  const ev = (el.tagName==='SELECT' || el.type==='checkbox') ? 'change' : 'input';
+  el.addEventListener(ev, ()=>{
+    const k = el.dataset.k;
+    if(el.type==='checkbox') P[k] = el.checked;
+    else if(el.type==='range') P[k] = sliderToVal(el);
+    else { const n = Number(el.value); P[k] = isNaN(n) ? el.value : n; }
+    if(k!=='pattern' && k!=='simRes' && k!=='dyeRes') P.preset = P.preset; // mantém
+    onParam(k); syncUI();
+  });
+});
+document.querySelectorAll('[data-seg]').forEach(seg=>{
+  seg.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    const k = seg.dataset.seg; const n = Number(b.dataset.v); const v = isNaN(n) ? b.dataset.v : n;
+    if(k==='fluid'){ setFluid(v); if(P.pattern!=='none') paintDye(P.pattern); }
+    else P[k] = v;
+    if(k==='drive') impulseTimer = 1.5;
+    syncUI();
+  });
+});
+document.querySelectorAll('.term').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    const k = t.dataset.term === 'inc' ? 'press' : t.dataset.term;
+    P.terms[k] = !P.terms[k];
+    showTerm(t.dataset.term); syncUI();
+  });
+  t.addEventListener('mouseenter', ()=>showTerm(t.dataset.term));
+});
+function showTerm(k){ const on = k==='inc'?P.terms.press:P.terms[k]; document.getElementById('termBox').innerHTML = TERM_INFO[k] + ` <span style="color:${on?'#7ee0a1':'#ff7aa8'}">[${on?'LIGADO':'DESLIGADO'}]</span>`; }
+
+// cenários
+const presetBox = document.getElementById('presets');
+PRESET_ORDER.forEach((k,i)=>{
+  const b = document.createElement('button'); b.dataset.p = k;
+  b.innerHTML = `${i+1}. ${PRESETS[k].label}<small>${PRESETS[k].sub}</small>`;
+  b.onclick = ()=>applyPreset(k);
+  presetBox.appendChild(b);
+});
+function applyPreset(name){
+  const pr = PRESETS[name]; if(!pr) return;
+  const s = pr.set;
+  P.preset = name;
+  P.terms = {adv:true, press:true, visc:true, force:true};
+  setFluid(s.fluid || 'agua');
+  Object.assign(P, {layout:'none', gamma:0.1, core:0.05, suction:0, dir:1, sep:0.2, drive:'continuous', wander:false, buoy:0, wind:0, confine:2, emit:'none', obstacle:null, arrows:false});
+  for(const k in s){ if(k==='fluid') continue; P[k] = (k==='obstacle' && s[k]) ? {...s[k]} : s[k]; }
+  resetSim(); syncUI();
+}
+
+// botões
+document.getElementById('btnPause').onclick = ()=>{ paused = !paused; syncUI(); };
+document.getElementById('btnStep').onclick = ()=>{ paused = true; stepOnce = true; syncUI(); };
+document.getElementById('btnReset').onclick = ()=>{ if(MODE==='3d') Sim3D.reset(); else resetSim(); };
+document.getElementById('btnImpulse').onclick = ()=>{ impulseTimer = 1.5; if(!vbase.length){ P.layout='one'; layoutVortices(); syncUI(); } };
+document.getElementById('btnDye').onclick = ()=>{ paintDyeAdd(P.pattern==='none'?'blobs':P.pattern); };
+document.getElementById('btnClearDye').onclick = ()=>{ for(const f of [dye.read,dye.write]){ gl.bindFramebuffer(gl.FRAMEBUFFER,f.fbo); gl.viewport(0,0,f.w,f.h); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); } };
+document.getElementById('btnShot').onclick = ()=>{ wantShot = true; };
+document.getElementById('btnFull').onclick = toggleFull;
+function toggleFull(){
+  try{
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    else if(stage.requestFullscreen) stage.requestFullscreen().catch(()=>{});
+  }catch(e){}
+}
+function paintDyeAdd(pattern){
+  // soma um novo padrão por cima do corante existente (mistura aditiva)
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  drawPattern(pattern, dye.read);
+  gl.disable(gl.BLEND);
+}
+
+// links de demonstração no roteiro
+document.querySelectorAll('.demo-link').forEach(a=>{
+  a.addEventListener('click', ()=>{
+    if(a.dataset.mode){ setMode(a.dataset.mode); document.getElementById('simulador').scrollIntoView({behavior:'smooth'}); return; }
+    if(a.dataset.preset || a.dataset.view || a.dataset.fluid) setMode('2d');
+    if(a.dataset.preset) applyPreset(a.dataset.preset);
+    if(a.dataset.view){ P.view = Number(a.dataset.view); syncUI(); }
+    if(a.dataset.fluid){ setFluid(a.dataset.fluid); impulseTimer = 1.5; if(P.pattern!=='none') paintDye(P.pattern); syncUI(); }
+    document.getElementById('simulador').scrollIntoView({behavior:'smooth'});
+  });
+});
+
+// teclado
+window.addEventListener('keydown', e=>{
+  if(e.target.closest('input,select,textarea')) return;
+  const k = e.key.toLowerCase();
+  if(k===' '){ e.preventDefault(); paused=!paused; syncUI(); }
+  else if(k==='r'){ if(MODE==='3d') Sim3D.reset(); else resetSim(); }
+  else if(k==='n'){ paused=true; stepOnce=true; syncUI(); }
+  else if(k==='f') toggleFull();
+  else if(k==='p') wantShot = true;
+  else if(k==='d') setMode(MODE==='3d'?'2d':'3d');
+  else if(MODE==='3d'){
+    if(k==='o') Sim3D.drop();
+    else if(/^[1-3]$/.test(k)) Sim3D.applyScene(Sim3D.sceneOrder[+k-1]);
+  }
+  else if(k==='v'){ P.view=(P.view+1)%4; syncUI(); }
+  else if(/^[1-7]$/.test(k)) applyPreset(PRESET_ORDER[+k-1]);
+});
+
+// =====================================================================
+//  MÓDULO 3D — Navier–Stokes em volume
+//  A grade N×N×N fica guardada num "atlas" 2D: cada camada horizontal (y)
+//  é um ladrilho de N×N pixels. Assim cada etapa é UM desenho na GPU.
+// =====================================================================
+let MODE = '2d';
+const Sim3D = (()=>{
+  const Q = {scene:'colapso', N:64, gamma:1.0, core:0.16, dir:1, suction:1.2, updraft:0, nu:2e-4, confine:1.0, buoy:0,
+    hScale:1.0, quality:'auto', particles:true, autoRotate:true, showDye:true, emitDye:true, wander:false, dyeDiss:0.02, pIters:30, vIters:8, objType:'bolha',
+    hExp:0.01, blowSpeed:0.5, simZoom:true, loopBlow:true};
+  const LEVEL = 1.45, GRAV = 4.0, MAXOBJ = 24, G_EFF = 1.6;
+  const SCENES = {
+    colapso: {label:'Colapso da OpenAI (blow-up)', sub:'Perfil da prova de 2026', scene:'3D · vórtice autossimilar',
+      set:{autoRotate:true, showDye:false},
+      obs:['Este é o <b>perfil de colapso</b> descrito na prova da OpenAI (set. 2026): um vórtice com giro que <b>encolhe</b> enquanto gira cada vez mais rápido. τ = tempo que falta para a explosão.',
+           'O fluido entra <b>em espiral para dentro</b> e sai <b>pelo eixo</b>, para cima e para baixo (divisão perto de z = 0). As partículas desenham esse caminho.',
+           'Os <b>anéis laranja pulsantes</b> são a <b>força externa</b>: ela só age num anel em volta do núcleo. Sem ela a prova não funciona — é o centro da polêmica.',
+           'No gráfico: a velocidade explode (τ<sup>−1/2−h</sup>) enquanto a <b>energia do núcleo vai a zero</b> (τ<sup>1/2−3h</sup>). Velocidade infinita com energia finita!',
+           'Solte objetos: os <b>leves</b> (bolha, isopor) são puxados para o núcleo e disparados pelo eixo; os <b>pesados</b> (aço) são jogados para fora.']},
+    tanque: {label:'Redemoinho no tanque', sub:'Água · jato no eixo', scene:'3D · tanque de água',
+      set:{gamma:1.6, core:0.14, suction:1.2, updraft:0, nu:2e-4, confine:0.5, buoy:0, wander:false, dyeDiss:0.02, hScale:1.5, emitDye:true, showDye:true, autoRotate:true},
+      obs:['<b>Solte objetos</b> (botões ou clique no tanque). Os leves espiralam até o funil, <b>descem pelo núcleo</b>, abrem pelo fundo, sobem pelas paredes e voltam: a água <b>recircula</b>. A <b>bolinha de aço</b> afunda e é jogada para a borda (centrífuga).',
+           'Use o <b>🚀 Acelerador da descida</b> para o jato no eixo puxar a água e os objetos para baixo mais depressa.',
+           'O <b>funil</b> na superfície aparece porque no eixo a pressão é mínima (∂p/∂r = ρv²/r).',
+           'As <b>partículas</b> nascem na superfície e descem em espiral pelo núcleo: o jato <b>estica o vórtice</b> (termo (ω·∇)u, que só existe em 3D) e ele gira mais rápido.']},
+    tornado: {label:'Tornado de fumaça', sub:'Ar · câmara de Ward', scene:'3D · câmara de tornado',
+      set:{gamma:1.7, core:0.11, suction:0.8, updraft:0.85, nu:3e-4, confine:4.0, buoy:25, wander:true, dyeDiss:0.2, hScale:0, emitDye:true, showDye:true, autoRotate:true},
+      obs:['Um <b>exaustor no teto</b> puxa o ar para cima; o ar entra girando pela base e o giro se concentra no eixo: nasce o <b>funil</b> (como na câmara de Ward, usada para estudar tornados em laboratório).',
+           'A <b>poeira</b> (partículas) é arrastada pelo chão até o centro e sobe em espiral pelo funil.',
+           'Solte objetos no chão: <b>folha, isopor e patinho</b> são levantados e giram no tornado; o <b>cubo de madeira</b> só dá pulinhos; a <b>bolinha de aço</b> nunca sai do chão.',
+           'Quem decide é a <b>velocidade terminal</b> g·τ (se a corrente ascendente for mais rápida, o objeto sobe) e a <b>sustentação</b> do vento rasante (efeito Bernoulli).']},
+  };
+  const SCENE_ORDER = ['colapso','tanque','tornado'];
+
+  // ---------------- perfil de colapso autossimilar (construção OpenAI 2026) ----------------
+  // Variáveis da prova (ver arXiv 2609.17642): τ = T − t, X = r²/(2τ), η = z/τ^(1/2−h).
+  // Aqui usamos um perfil em forma fechada com as MESMAS leis de escala:
+  //   raio do núcleo δ ~ τ^(1/2), comprimento ℓz ~ τ^(1/2−h), |u| ~ τ^(−1/2−h), energia ~ τ^(1/2−3h), Re ~ τ^(−h).
+  // Giro tipo Burgers/Lamb–Oseen + escoamento meridional exatamente incompressível (função de corrente de Stokes).
+  // α·τ = 2,5 > 1: o fluido entra mais rápido do que a estrutura encolhe → espiral para dentro também nas variáveis de similaridade
+  const B0 = {delta:0.26, Lz:0.65, R:0.83, uth:0.7, alpha:2.5};
+  const S_MAX = Math.log(2e4);                       // τ mínimo mostrado = 5×10⁻⁵
+  const blow = {s:0, flash:0, spin:0, ejected:0, cored:0};
+  function blowParams(s){
+    const tau = Math.exp(-s), h = Q.hExp;
+    const delta = B0.delta*Math.sqrt(tau), Lz = B0.Lz*Math.pow(tau,0.5-h), R = B0.R*Math.sqrt(tau);
+    const Gam = (B0.uth*2*Math.PI*B0.delta/0.638)*Math.pow(tau,-h), alpha = B0.alpha/tau, zs = 0.08*Lz;
+    const uth = 0.638*Gam/(2*Math.PI*delta), uz = alpha*Lz*Math.exp(-0.5);
+    const nu = B0.alpha*B0.delta*B0.delta/4;
+    return {s, tau, delta, Lz, R, Gam, alpha, zs, uth, umax:Math.max(uth,uz), nu, Re:Gam/nu, E:Math.pow(tau,0.5-3*h), h};
+  }
+  function velBlow(x,y,z,B){
+    const qy = y-1, r2 = x*x+z*z, r = Math.sqrt(r2)+1e-9;
+    const zz = qy-B.zs, zeta = zz/B.Lz, eR = Math.exp(-r2/(B.R*B.R)), eZ = Math.exp(-0.5*zeta*zeta);
+    const ur = -0.5*B.alpha*r*eR*(1-zeta*zeta)*eZ;                 // entrada em espiral
+    const uz = B.alpha*(1-r2/(B.R*B.R))*eR*zz*eZ;                  // saída pelo eixo (sobe e desce)
+    const ut = Q.dir*B.Gam/(2*Math.PI*r)*(1-Math.exp(-r2/(B.delta*B.delta)))*Math.exp(-1.2*zeta*zeta);
+    return [ur*x/r + ut*z/r, uz, ur*z/r - ut*x/r];
+  }
+  // s = densidade do objeto / densidade do fluido (na água); tau = tempo de resposta ao arrasto
+  const OBJ = {
+    isopor: {label:'Isopor',        e:'⚪', type:0, r:0.070, s:0.05, tau:0.10, tauAir:0.055, lift:19, col:[0.96,0.96,0.93], shin:16},
+    pato:   {label:'Patinho',       e:'🦆', type:2, r:0.085, s:0.25, tau:0.25, tauAir:0.08, lift:16, col:[1.00,0.80,0.08], shin:60},
+    madeira:{label:'Cubo de madeira',e:'🟫', type:1, r:0.075, s:0.60, tau:0.30, tauAir:0.19, lift:8, col:[0.70,0.47,0.25], shin:8},
+    folha:  {label:'Folha',         e:'🍃', type:3, r:0.090, s:0.80, tau:0.06, tauAir:0.07, lift:24, col:[0.36,0.72,0.20], shin:10},
+    aco:    {label:'Bolinha de aço',e:'⚫', type:0, r:0.060, s:7.80, tau:0.60, tauAir:1.20, lift:0, col:[0.70,0.72,0.76], shin:140},
+    bolha:  {label:'Bolha de ar',   e:'🫧', type:4, r:0.035, s:0.01, tau:0.05, tauAir:0.05, lift:0, col:[0.85,0.95,1.00], shin:200},
+  };
+  const OBJ_ORDER = ['isopor','pato','madeira','folha','aco','bolha'];
+
+  let inited = false, n = 64, t = 8, A = 512;
+  let vel, dye, pr, div, curl, velB, height, samp, rtt;
+  const prg = {};
+  let time3 = 0, objs = [], swallowed = 0, lifted = 0, lastDt = 1/60, sinkSum = 1, compSum = 1, sampBuf = null;
+  const splashes = [];
+  const cam = {yaw:0.6, pitch:0.45, dist:4.6, target:[0,0.85,0]};
+  const drag = {active:false, moved:false, x:0, y:0};
+
+  const COMMON = `
+uniform float N, T;
+int iN(){ return int(N+0.5); }
+ivec2 apix(ivec3 c){ int n=iN(), t=int(T+0.5); c = clamp(c, ivec3(0), ivec3(n-1)); return ivec2((c.y % t)*n + c.x, (c.y / t)*n + c.z); }
+vec4 F3(sampler2D s, ivec3 c){ return texelFetch(s, apix(c), 0); }
+ivec3 cellOf(){ int n=iN(), t=int(T+0.5); ivec2 p = ivec2(gl_FragCoord.xy); ivec2 tl = p / n; ivec2 l = p - tl*n; return ivec3(l.x, tl.y*t+tl.x, l.y); }
+vec2 tuv(float j, vec2 xz){ float tx = mod(j,T), ty = floor(j/T); return (vec2(tx,ty)*N + xz)/(N*T); }
+vec4 S3(sampler2D s, vec3 p){ p = clamp(p, vec3(0.5), vec3(N-0.5)); float fy = p.y-0.5; float j0 = floor(fy); float f = fy-j0; float j1 = min(j0+1., N-1.);
+  return mix(texture(s,tuv(j0,p.xz)), texture(s,tuv(j1,p.xz)), f); }
+vec3 cellW(ivec3 c){ return (vec3(c)+0.5)*(2./N) - vec3(1.,0.,1.); }
+float sinkG(vec3 p, vec3 c, float R, float H){ vec2 d=p.xz-c.xz; float dy=p.y-c.y; return exp(-dot(d,d)/(R*R) - dy*dy/(H*H)); }
+// perfil de colapso: b1 = (δ, ℓz, R, z_s), b2 = (Γ·sentido, α, -, -)
+vec3 velBlow(vec3 p, vec4 b1, vec4 b2){
+  vec3 q = p - vec3(0.,1.,0.);
+  float r2 = dot(q.xz,q.xz), r = sqrt(r2)+1e-7;
+  float zz = q.y-b1.w, zeta = zz/b1.y, eR = exp(-r2/(b1.z*b1.z)), eZ = exp(-0.5*zeta*zeta);
+  float ur = -0.5*b2.y*r*eR*(1.-zeta*zeta)*eZ;
+  float uz = b2.y*(1.-r2/(b1.z*b1.z))*eR*zz*eZ;
+  float ut = b2.x/(6.2831853*r)*(1.-exp(-r2/(b1.x*b1.x)))*exp(-1.2*zeta*zeta);
+  vec2 rh = q.xz/r;
+  return vec3(ur*rh.x + ut*rh.y, uz, ur*rh.y - ut*rh.x);
+}
+`;
+  const SH = {};
+  SH.forces = `in vec2 vUv; out vec4 o;
+uniform sampler2D uVel, uDye; uniform vec2 uC; uniform float uGamma, uCore, uGain, uS, dt, uBuoy, uUpdraft, uFric, uDown; uniform int uScene;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  vec3 v = F3(uVel,c).xyz; vec3 p = cellW(c);
+  vec2 d = p.xz-uC; float r2 = dot(d,d)+1e-6, r = sqrt(r2);
+  if(uGain>0.){
+    float vt = uGamma/(6.2831853*r)*(1.-exp(-r2/(uCore*uCore)))*uS;
+    vec2 t2 = vec2(d.y,-d.x)/r;
+    float w = exp(-r2/(7.*uCore*uCore));
+    if(uScene==0) w *= smoothstep(0.15,0.75,p.y);                // perto do fundo o atrito freia o giro
+    v.xz += dt*uGain*w*(vt-dot(v.xz,t2))*t2;
+  }
+  v.y += dt*uBuoy*F3(uDye,c).a;
+  if(uUpdraft>0.){ float wu = exp(-r2/(5.*uCore*uCore))*mix(0.75,1.,smoothstep(0.0,0.4,p.y)); v.y += dt*2.5*wu*(uUpdraft*uS*1.6 - v.y); }
+  if(uDown>0.){ float rd = max(uCore,0.12); v.y += dt*3.*exp(-r2/(rd*rd))*smoothstep(0.05,0.45,p.y)*(-uDown*uS - v.y); }   // jato descendo pelo núcleo; perto do fundo ele abre e a água recircula
+  if(c.y==0) v.xz *= max(0., 1.-uFric*dt);          // atrito com o fundo (camada limite)
+  if(uScene==0 && p.y<0.35){ vec2 tt = vec2(d.y,-d.x)/r; v.xz -= dt*2.5*(1.-p.y/0.35)*dot(v.xz,tt)*tt; }   // o fundo freia o giro (não o escoamento para fora)
+  o = vec4(v,0.);
+}`;
+  SH.advect = `in vec2 vUv; out vec4 o;
+uniform sampler2D uVel, uSrc; uniform float dt, uDiss;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  vec3 pc = vec3(c)+0.5; vec3 v = F3(uVel,c).xyz;
+  vec3 v2 = S3(uVel, pc-0.5*dt*v).xyz;
+  o = S3(uSrc, pc-dt*v2)/(1.+uDiss*dt);
+}`;
+  SH.curl = `in vec2 vUv; out vec4 o; uniform sampler2D uVel;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  vec3 L=F3(uVel,c-ivec3(1,0,0)).xyz, R=F3(uVel,c+ivec3(1,0,0)).xyz, D=F3(uVel,c-ivec3(0,1,0)).xyz, U=F3(uVel,c+ivec3(0,1,0)).xyz, B=F3(uVel,c-ivec3(0,0,1)).xyz, Fz=F3(uVel,c+ivec3(0,0,1)).xyz;
+  o = vec4(0.5*vec3((U.z-D.z)-(Fz.y-B.y), (Fz.x-B.x)-(R.z-L.z), (R.y-L.y)-(U.x-D.x)), 0.);
+}`;
+  SH.confine = `in vec2 vUv; out vec4 o; uniform sampler2D uVel, uCurl; uniform float uEps, dt;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  float l=length(F3(uCurl,c-ivec3(1,0,0)).xyz), r=length(F3(uCurl,c+ivec3(1,0,0)).xyz), d=length(F3(uCurl,c-ivec3(0,1,0)).xyz), u=length(F3(uCurl,c+ivec3(0,1,0)).xyz), b=length(F3(uCurl,c-ivec3(0,0,1)).xyz), f=length(F3(uCurl,c+ivec3(0,0,1)).xyz);
+  vec3 eta = 0.5*vec3(r-l, u-d, f-b); vec3 Nn = eta/(length(eta)+1e-5);
+  vec3 v = F3(uVel,c).xyz + dt*uEps*cross(Nn, F3(uCurl,c).xyz);
+  o = vec4(clamp(v,-500.,500.),0.);
+}`;
+  SH.viscous = `in vec2 vUv; out vec4 o; uniform sampler2D uX, uB; uniform float uAlpha;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  vec3 s = F3(uX,c-ivec3(1,0,0)).xyz+F3(uX,c+ivec3(1,0,0)).xyz+F3(uX,c-ivec3(0,1,0)).xyz+F3(uX,c+ivec3(0,1,0)).xyz+F3(uX,c-ivec3(0,0,1)).xyz+F3(uX,c+ivec3(0,0,1)).xyz;
+  o = vec4((s+uAlpha*F3(uB,c).xyz)/(6.+uAlpha),0.);
+}`;
+  SH.div = `in vec2 vUv; out vec4 o;
+uniform sampler2D uVel; uniform vec3 uSinkC; uniform float uSinkR, uSinkH, uQ, uComp; uniform int uCompMode;
+void main(){ ivec3 c = cellOf(); int n = iN(); if(c.y>=n){ o=vec4(0.); return; }
+  vec3 C = F3(uVel,c).xyz;
+  float L = c.x>0   ? F3(uVel,c-ivec3(1,0,0)).x : -C.x;
+  float R = c.x<n-1 ? F3(uVel,c+ivec3(1,0,0)).x : -C.x;
+  float D = c.y>0   ? F3(uVel,c-ivec3(0,1,0)).y : -C.y;
+  float U = c.y<n-1 ? F3(uVel,c+ivec3(0,1,0)).y : -C.y;
+  float B = c.z>0   ? F3(uVel,c-ivec3(0,0,1)).z : -C.z;
+  float Fz= c.z<n-1 ? F3(uVel,c+ivec3(0,0,1)).z : -C.z;
+  float dv = 0.5*(R-L+U-D+Fz-B);
+  vec3 p = cellW(c);
+  float gc = uCompMode==0 ? (c.y==n-1?1.:0.) : (p.y<0.5 ? smoothstep(0.8,0.95,max(abs(p.x),abs(p.z))) : 0.);
+  o = vec4(dv + uQ*sinkG(p,uSinkC,uSinkR,uSinkH) - uComp*gc, 0.,0.,1.);
+}`;
+  SH.pressure = `in vec2 vUv; out vec4 o; uniform sampler2D uP, uDiv;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  float s = F3(uP,c-ivec3(1,0,0)).x+F3(uP,c+ivec3(1,0,0)).x+F3(uP,c-ivec3(0,1,0)).x+F3(uP,c+ivec3(0,1,0)).x+F3(uP,c-ivec3(0,0,1)).x+F3(uP,c+ivec3(0,0,1)).x;
+  o = vec4((s-F3(uDiv,c).x)/6.,0.,0.,1.);
+}`;
+  SH.grad = `in vec2 vUv; out vec4 o; uniform sampler2D uP, uVel;
+void main(){ ivec3 c = cellOf(); int n=iN(); if(c.y>=n){ o=vec4(0.); return; }
+  float L=F3(uP,c-ivec3(1,0,0)).x, R=F3(uP,c+ivec3(1,0,0)).x, D=F3(uP,c-ivec3(0,1,0)).x, U=F3(uP,c+ivec3(0,1,0)).x, B=F3(uP,c-ivec3(0,0,1)).x, Fz=F3(uP,c+ivec3(0,0,1)).x;
+  vec3 v = F3(uVel,c).xyz - 0.5*vec3(R-L, U-D, Fz-B);
+  if((c.x==0 && v.x<0.) || (c.x==n-1 && v.x>0.)) v.x = 0.;
+  if((c.y==0 && v.y<0.) || (c.y==n-1 && v.y>0.)) v.y = 0.;
+  if((c.z==0 && v.z<0.) || (c.z==n-1 && v.z>0.)) v.z = 0.;
+  o = vec4(v,0.);
+}`;
+  SH.emit = `in vec2 vUv; out vec4 o;
+uniform sampler2D uSrc; uniform vec4 uE[8]; uniform vec4 uEC[8]; uniform int uEN; uniform float uRate, uDrainK, dt, uSinkR, uSinkH; uniform vec3 uSinkC;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  vec4 d = F3(uSrc,c); vec3 p = cellW(c);
+  for(int i=0;i<8;i++){ if(i>=uEN) break; vec3 q=p-uE[i].xyz; d = mix(d, uEC[i], exp(-dot(q,q)/(uE[i].w*uE[i].w))*uRate); }
+  if(uDrainK>0.) d *= max(0., 1.-uDrainK*sinkG(p,uSinkC,uSinkR*1.3,uSinkH*1.5)*dt);
+  o = d;
+}`;
+  SH.splat = `in vec2 vUv; out vec4 o; uniform sampler2D uSrc; uniform vec3 uPt, uVec; uniform float uR;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  vec3 q = cellW(c)-uPt; o = F3(uSrc,c) + vec4(uVec*exp(-dot(q,q)/(uR*uR)),0.);
+}`;
+  SH.init = `in vec2 vUv; out vec4 o; uniform int uMode; uniform vec3 uC0, uC1, uC2;
+void main(){ ivec3 c = cellOf(); if(c.y>=iN()){ o=vec4(0.); return; }
+  vec3 p = cellW(c); vec4 d = vec4(0.);
+  if(uMode==1){
+    float a = smoothstep(0.045,0.015,abs(p.y-1.12)), b = smoothstep(0.045,0.015,abs(p.y-0.72)), e = smoothstep(0.045,0.015,abs(p.y-0.32));
+    d = vec4(uC0*a + uC1*b + uC2*e, 0.)*0.9*smoothstep(0.98,0.9,max(abs(p.x),abs(p.z)));
+  }
+  o = d;
+}`;
+  SH.height = `in vec2 vUv; out vec4 o; uniform sampler2D uP, uPrev; uniform float uK, uMinH, uBlend;
+void main(){ int n=iN(); ivec2 q = ivec2(gl_FragCoord.xy);
+  float ref = 0.25*(F3(uP,ivec3(0,n-1,0)).x+F3(uP,ivec3(n-1,n-1,0)).x+F3(uP,ivec3(0,n-1,n-1)).x+F3(uP,ivec3(n-1,n-1,n-1)).x);
+  float s=0., ws=0.;
+  for(int dx=-2;dx<=2;dx++) for(int dz=-2;dz<=2;dz++){ float w = exp(-0.5*float(dx*dx+dz*dz)); s += w*F3(uP,ivec3(q.x+dx,n-1,q.y+dz)).x; ws += w; }
+  float target = max((s/ws-ref)*uK, uMinH);
+  o = vec4(mix(texelFetch(uPrev,q,0).r, target, uBlend),0.,0.,1.);   // suavização no tempo: sem tremedeira
+}`;
+  SH.sample = `in vec2 vUv; out vec4 o; uniform sampler2D uVel, uP, uHeight; uniform vec4 uOP[24];
+void main(){ ivec2 q = ivec2(gl_FragCoord.xy); vec3 pc = uOP[q.x].xyz;
+  if(q.y==0){ o = vec4(S3(uVel,pc).xyz,0.); }
+  else if(q.y==1){ o = vec4(0.5*vec3(S3(uP,pc+vec3(1,0,0)).x-S3(uP,pc-vec3(1,0,0)).x, S3(uP,pc+vec3(0,1,0)).x-S3(uP,pc-vec3(0,1,0)).x, S3(uP,pc+vec3(0,0,1)).x-S3(uP,pc-vec3(0,0,1)).x),0.); }
+  else { vec3 a=S3(uVel,pc+vec3(1,0,0)).xyz, b=S3(uVel,pc-vec3(1,0,0)).xyz, e=S3(uVel,pc+vec3(0,0,1)).xyz, f=S3(uVel,pc-vec3(0,0,1)).xyz;
+    o = vec4(texture(uHeight, pc.xz/N).r, 0.5*((e.x-f.x)-(a.z-b.z)), 0., 0.); }
+}`;
+  // partículas traçadoras: cada pixel guarda a posição (xyz) e a idade (w) de uma partícula
+  SH.pupd = `in vec2 vUv; out vec4 o;
+uniform sampler2D uPart, uVel, uHeight; uniform float dt, uTime, uLevel, uSettle, uAgeDt; uniform int uScene; uniform vec2 uAxis; uniform vec4 uB1, uB2;
+float hh(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*.1031); p3 += dot(p3,p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
+void main(){
+  vec4 P = texture(uPart,vUv); vec3 x = P.xyz; float age = P.w;
+  if(uScene==2){                                        // colapso: campo analítico, tempo logarítmico
+    vec3 u1 = velBlow(x,uB1,uB2), u2 = velBlow(x+0.5*dt*u1,uB1,uB2);
+    x += dt*u2; age += uAgeDt;
+    vec3 q = x-vec3(0.,1.,0.);
+    if(age > 1.2+2.6*hh(vUv*371.3) || length(q.xz) > 4.2*uB1.x || abs(q.y-uB1.w) > 2.3*uB1.y){
+      float a = hh(vUv*917.1+uTime), b = hh(vUv*131.7+uTime*1.7+3.1), c = hh(vUv*57.3+uTime*0.37+7.7);
+      float ang = a*6.2831853, rr = (1.5+1.6*b)*uB1.x;
+      x = vec3(rr*cos(ang), 1.+uB1.w+(c-0.5)*1.8*uB1.y, rr*sin(ang)); age = 0.;
+    }
+    o = vec4(x,age); return;
+  }
+  float S = N*0.5;
+  vec3 u1 = S3(uVel,(x+vec3(1.,0.,1.))*S).xyz/S;
+  vec3 u2 = S3(uVel,(x+0.5*dt*u1+vec3(1.,0.,1.))*S).xyz/S;
+  x += dt*(u2 - vec3(0.,uSettle,0.)); age += dt;
+  float life = 4.+7.*hh(vUv*371.3);
+  bool re = age>life || abs(x.x)>1. || abs(x.z)>1. || x.y>1.99;
+  if(uScene==0){
+    float H = uLevel + texture(uHeight,(x.xz+1.)*0.5).r;
+    if(x.y>H-0.01) x.y = H-0.01;
+    if(x.y<0.005) x.y = 0.005;
+  } else if(x.y<0.012) x.y = 0.012;
+  if(re){
+    float a = hh(vUv*917.1+uTime), b = hh(vUv*131.7+uTime*1.7+3.1), c = hh(vUv*57.3+uTime*0.37+7.7);
+    if(uScene==0){ x.xz = vec2(a*1.9-0.95, b*1.9-0.95); x.y = uLevel + texture(uHeight,(x.xz+1.)*0.5).r - 0.02 - 0.06*c; }   // nascem na superfície
+    else { float ang = a*6.2831853, rr = 0.15+0.8*sqrt(b); x = vec3(uAxis.x+rr*cos(ang), 0.012+0.03*c, uAxis.y+rr*sin(ang)); x.xz = clamp(x.xz,vec2(-0.95),vec2(0.95)); }
+    age = 0.;
+  }
+  o = vec4(x,age);
+}`;
+  const VS_P3 = HDR + `
+uniform sampler2D uPart; uniform int uSize; uniform vec3 uCamPos, uCamF, uCamR, uCamU; uniform float uTan, uAspect, uPx;
+out float vA;
+void main(){
+  ivec2 c = ivec2(gl_VertexID % uSize, gl_VertexID / uSize); vec4 P = texelFetch(uPart,c,0);
+  vec3 d = P.xyz-uCamPos; float z = dot(d,uCamF);
+  if(z<0.1){ gl_Position = vec4(2.,2.,2.,1.); gl_PointSize = 1.; vA = 0.; return; }
+  gl_Position = vec4(dot(d,uCamR)/(z*uTan*uAspect), dot(d,uCamU)/(z*uTan), 0., 1.);
+  gl_PointSize = clamp(uPx/z, 1.5, 8.);
+  vA = smoothstep(0.,0.6,P.w);
+}`;
+  const FS_P3 = HDR + `in float vA; uniform vec4 uCol; out vec4 o;
+void main(){ vec2 q = gl_PointCoord-0.5; float d = dot(q,q); if(d>0.25) discard; o = vec4(uCol.rgb, uCol.a*vA*(1.-d*2.)); }`;
+  const PN = 128;
+  let parts3 = null;
+  function initParts3(){
+    if(!parts3){
+      parts3 = createDouble(PN,PN, hasFloat32?gl.RGBA32F:F16, gl.FLOAT, gl.NEAREST);
+      if(!parts3.ok){ destroy(parts3); parts3 = createDouble(PN,PN,F16,gl.FLOAT,gl.NEAREST); }
+    }
+    const data = new Float32Array(PN*PN*4);
+    for(let i=0;i<PN*PN;i++){ data[i*4]=0; data[i*4+1]=0.5; data[i*4+2]=0; data[i*4+3]=1e3; }   // todas renascem no 1º passo
+    for(const f of [parts3.read, parts3.write]){ gl.bindTexture(gl.TEXTURE_2D, f.tex); gl.texImage2D(gl.TEXTURE_2D,0,f.internal,PN,PN,0,gl.RGBA,gl.FLOAT,data); }
+  }
+
+  SH.render = `in vec2 vUv; out vec4 o;
+uniform sampler2D uDye, uHeight;
+uniform vec3 uCamPos, uCamF, uCamR, uCamU; uniform float uTan, uAspect, uLevel, uTime, uDrainR;
+uniform int uScene, uObjN, uShowDye;
+uniform vec4 uOA[24], uOB[24], uOC[24];
+uniform vec4 uB1, uB2, uB3;   // colapso: b1=(δ,ℓz,R,z_s)  b2=(Γ·sentido,α,amplitude do pulso,fase)  b3=(r_lo,r_hi,fase do giro,u_θmáx)
+const vec3 LDIR = vec3(-0.4778, 0.8123, 0.3345);
+vec2 boxT2(vec3 ro, vec3 rd, vec3 bmin, vec3 bmax){ vec3 inv=1./rd; vec3 t0=(bmin-ro)*inv, t1=(bmax-ro)*inv; vec3 a=min(t0,t1), b=max(t0,t1); return vec2(max(max(a.x,a.y),a.z), min(min(b.x,b.y),b.z)); }
+vec3 blowEmit(vec3 p, out float dens){
+  vec3 q = p-vec3(0.,1.,0.);
+  float r2 = dot(q.xz,q.xz), r = sqrt(r2)+1e-7, d = uB1.x;
+  float zeta = (q.y-uB1.w)/uB1.y;
+  float ut = abs(uB2.x)/(6.2831853*r)*(1.-exp(-r2/(d*d)))*exp(-1.2*zeta*zeta);
+  float w = ut/uB3.w;                                           // giro normalizado (1 = máximo)
+  float core = smoothstep(0.8,0.99,w);                          // tubo de vórtice (oco no eixo: o giro é zero ali)
+  float th = atan(q.z,q.x);
+  float stripe = pow(0.5+0.5*sin(4.*th*sign(uB2.x) + uB3.z + 7.*zeta), 1.5);  // listras helicoidais que giram
+  vec3 cc = mix(vec3(0.06,0.3,1.0), vec3(0.85,0.97,1.0), smoothstep(0.8,1.0,w))*(0.25+0.75*stripe);
+  float axis = exp(-r2/(0.0025*d*d))*exp(-zeta*zeta*0.8);                      // jato que sai pelo eixo
+  float rX = r/d;                                                              // raio em unidades do núcleo
+  float band = exp(-pow((rX-1.95)/0.55,2.))*exp(-2.2*zeta*zeta);               // anel onde a força age
+  float ring = pow(0.5+0.5*cos(9.*log(r2/(2.*d*d)) - uB2.w), 10.)*(0.55+0.45*sin(3.*th - 0.5*uB2.w));   // pulsos com fase N·log X
+  vec3 ac = vec3(1.0,0.55,0.14)*band*ring*uB2.z;
+  dens = core*2.6 + band*ring*uB2.z*0.4 + axis*0.25;
+  return cc*core*2.6 + ac*1.8 + vec3(1.,0.5,0.85)*axis*0.45;
+}
+vec2 boxT(vec3 ro, vec3 rd){ vec3 inv=1./rd; vec3 t0=(vec3(-1.,0.,-1.)-ro)*inv, t1=(vec3(1.,2.,1.)-ro)*inv; vec3 a=min(t0,t1), b=max(t0,t1); return vec2(max(max(a.x,a.y),a.z), min(min(b.x,b.y),b.z)); }
+vec3 boxN(vec3 p){ vec3 q = (p-vec3(0.,1.,0.)); vec3 a = abs(q); if(a.x>a.y && a.x>a.z) return vec3(sign(q.x),0.,0.); if(a.y>a.z) return vec3(0.,sign(q.y),0.); return vec3(0.,0.,sign(q.z)); }
+float edgeGlow(vec3 p){ float e=0.012; float ax=smoothstep(e,0.,1.-abs(p.x)), ay=smoothstep(e,0.,min(p.y,2.-p.y)), az=smoothstep(e,0.,1.-abs(p.z)); return max(max(ax*ay,ay*az),ax*az); }
+vec3 sky(vec3 d){
+  if(uScene==0){ vec3 c = mix(vec3(0.05,0.06,0.09), vec3(0.17,0.21,0.30), clamp(d.y*0.7+0.4,0.,1.)); return c + vec3(1.,0.9,0.75)*pow(max(dot(d,LDIR),0.),60.)*0.8; }
+  if(uScene==2){ return mix(vec3(0.012,0.016,0.035), vec3(0.04,0.06,0.11), clamp(d.y*0.6+0.5,0.,1.)); }
+  vec3 c = mix(vec3(0.30,0.33,0.32), vec3(0.16,0.18,0.20), clamp(d.y*1.4,0.,1.));
+  return c + vec3(0.25,0.24,0.2)*pow(max(dot(d,LDIR),0.),8.)*0.4;
+}
+vec3 ground(vec3 p, vec3 rd, float dist){
+  vec3 c;
+  if(uScene==2){ vec2 g = abs(fract(p.xz*4.)-0.5); float line = smoothstep(0.47,0.5,max(g.x,g.y)); c = mix(vec3(0.02,0.025,0.045), vec3(0.09,0.12,0.2), line); return mix(c, sky(rd), smoothstep(3.,10.,dist)); }
+  if(uScene==0){ float w = 0.5+0.5*sin(p.x*9.+sin(p.z*1.7)*2.); c = mix(vec3(0.20,0.12,0.07), vec3(0.28,0.17,0.10), w);
+    vec2 q = max(abs(p.xz)-vec2(1.), 0.); float sh = smoothstep(0.0,0.35,length(q)); c *= 0.45+0.55*sh; }
+  else { vec2 g = abs(fract(p.xz*2.)-0.5); float line = smoothstep(0.47,0.5,max(g.x,g.y)); c = mix(vec3(0.24,0.26,0.15), vec3(0.30,0.28,0.18), 0.5+0.5*sin(p.x*3.1)*sin(p.z*2.3)); c = mix(c, vec3(0.38,0.38,0.3), line*0.5); }
+  c *= 0.55+0.45*max(dot(vec3(0.,1.,0.),LDIR),0.);
+  return mix(c, sky(rd), smoothstep(4.,14.,dist));
+}
+float surfH(vec2 xz){ return uLevel + texture(uHeight,(xz+1.)*0.5).r; }
+vec3 surfN(vec2 xz){ float e=0.03; float hx = surfH(xz+vec2(e,0.))-surfH(xz-vec2(e,0.)); float hz = surfH(xz+vec2(0.,e))-surfH(xz-vec2(0.,e)); return normalize(vec3(-hx, 2.*e, -hz)); }
+vec4 dyeAt(vec3 p){ return S3(uDye, (p+vec3(1.,0.,1.))*N*0.5); }
+mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0.,-s, 0.,1.,0., s,0.,c); }
+mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1.,0.,0., 0.,c,s, 0.,-s,c); }
+float sph(vec3 ro, vec3 rd, vec3 c, float r){ vec3 oc=ro-c; float b=dot(oc,rd); float h=b*b-dot(oc,oc)+r*r; if(h<0.) return 1e9; h=sqrt(h); float t=-b-h; return t>0. ? t : 1e9; }
+float ell(vec3 ro, vec3 rd, vec3 rad, out vec3 n){ vec3 o2=ro/rad, d2=rd/rad; float a=dot(d2,d2), b=dot(o2,d2), c=dot(o2,o2)-1.; float h=b*b-a*c; if(h<0.) return 1e9; float t=(-b-sqrt(h))/a; if(t<0.) return 1e9; n = normalize((ro+rd*t)/(rad*rad)); return t; }
+float boxL(vec3 ro, vec3 rd, vec3 hs, out vec3 n){ vec3 inv=1./rd; vec3 t0=(-hs-ro)*inv, t1=(hs-ro)*inv; vec3 a=min(t0,t1), b=max(t0,t1); float tn=max(max(a.x,a.y),a.z), tf=min(min(b.x,b.y),b.z); if(tn>tf || tn<0.) return 1e9; n = -sign(rd)*step(a.yzx,a.xyz)*step(a.zxy,a.xyz); return tn; }
+float hitObj(vec3 ro, vec3 rd, out vec3 nn, out vec4 cc, out float bub){
+  float best = 1e9; bub = 0.;
+  for(int i=0;i<24;i++){
+    if(i>=uObjN) break;
+    vec3 c = uOA[i].xyz; float r = uOA[i].w; if(r<=0.) continue;
+    int ty = int(uOB[i].x+0.5);
+    vec3 oc = ro-c; if(dot(oc,rd)>0. && dot(oc,oc)>r*r*4.) continue;
+    mat3 R = rotX(uOB[i].z)*rotY(uOB[i].y); mat3 Ri = transpose(R);
+    vec3 lo = R*(ro-c), ld = R*rd; vec3 n; float t = 1e9; vec4 col = uOC[i];
+    if(ty==0 || ty==4){ t = sph(ro,rd,c,r); if(t<1e9) n = normalize(ro+rd*t-c); }
+    else if(ty==1){ t = boxL(lo,ld,vec3(r*0.78),n); if(t<1e9) n = Ri*n; }
+    else if(ty==3){ t = ell(lo,ld,vec3(r,r*0.12,r*0.55),n); if(t<1e9) n = Ri*n; }
+    else {
+      vec3 n1; float t1 = ell(lo-vec3(0.,0.,0.), ld, vec3(r,r*0.72,r*0.8), n1);
+      float t2 = sph(lo,ld,vec3(r*0.55,r*0.78,0.),r*0.5); float t3 = sph(lo,ld,vec3(r*1.05,r*0.72,0.),r*0.2);
+      float t4 = sph(lo,ld,vec3(-r*0.85,r*0.35,0.),r*0.25);
+      t = t1; n = n1;
+      if(t2<t){ t=t2; n = normalize(lo+ld*t2-vec3(r*0.55,r*0.78,0.)); }
+      if(t4<t){ t=t4; n = normalize(lo+ld*t4-vec3(-r*0.85,r*0.35,0.)); }
+      if(t3<t){ t=t3; n = normalize(lo+ld*t3-vec3(r*1.05,r*0.72,0.)); col = vec4(1.,0.45,0.08,col.w); }
+      else if(t==t2){ vec3 hp = lo+ld*t2 - vec3(r*0.55,r*0.78,0.); if(hp.x>r*0.3 && abs(hp.y-r*0.12)<r*0.12 && abs(abs(hp.z)-r*0.22)<r*0.1) col = vec4(0.05,0.05,0.05,col.w); }
+      if(t<1e9) n = Ri*n;
+    }
+    if(t<best){ best=t; nn=n; cc=col; bub = ty==4 ? 1. : 0.; }
+  }
+  return best;
+}
+vec3 shadeObj(vec3 n, vec3 rd, vec4 c, float bub){
+  float lam = max(dot(n,LDIR),0.);
+  float spec = pow(max(dot(reflect(-LDIR,n),-rd),0.), c.w);
+  if(bub>0.5){ float rim = pow(1.-abs(dot(n,-rd)),2.); return vec3(0.75,0.88,1.)*(0.15+0.9*rim) + spec*1.2; }
+  return c.rgb*(0.32+0.78*lam) + spec*(c.w>50.?0.9:0.25);
+}
+vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.,1.); }
+void main(){
+  vec2 ndc = vUv*2.-1.;
+  vec3 rd = normalize(uCamF + ndc.x*uAspect*uTan*uCamR + ndc.y*uTan*uCamU);
+  vec3 ro = uCamPos;
+  vec3 on; vec4 oc; float bub; float tObj = hitObj(ro, rd, on, oc, bub);
+  float tG = rd.y<0. ? -ro.y/rd.y : 1e9;
+  vec2 tb = boxT(ro, rd); bool inBox = tb.x<tb.y && tb.y>0.;
+  vec3 col = vec3(0.); vec3 Tr = vec3(1.);
+  if(uScene==0){
+    if(inBox){
+      float t0 = max(tb.x,0.), t1 = tb.y;
+      vec3 pe = ro+rd*t0; vec3 bn = boxN(pe);
+      float fr = 0.03 + 0.4*pow(1.-abs(dot(rd,bn)),5.);
+      col += fr*sky(reflect(rd,bn)) + vec3(0.55,0.75,0.9)*edgeGlow(pe)*0.6;
+      Tr *= (1.-fr)*vec3(0.93,0.97,0.98);
+      float tStop = min(t1, tObj);
+      const int STEPS = 96;
+      float ds = (t1-t0)/float(STEPS);
+      vec3 p = pe; bool above = p.y > surfH(p.xz);
+      for(int i=0;i<STEPS;i++){
+        float t = t0 + (float(i)+0.5)*ds;
+        if(t>tStop) break;
+        p = ro+rd*t;
+        bool ab = p.y > surfH(p.xz);
+        if(ab != above){
+          vec3 n = surfN(p.xz); vec3 rr = reflect(rd, n.y*rd.y<0. ? n : -n);
+          float F = 0.02 + 0.98*pow(1.-abs(dot(n,rd)),5.);
+          col += Tr*(F*sky(rr) + vec3(1.,0.95,0.85)*pow(max(dot(rr,LDIR),0.),180.)*2.5);
+          float sl = length(n.xz)/max(n.y,0.05);                       // inclinação da superfície
+          col += Tr*(vec3(0.30,0.52,0.62)*0.16*(0.5+0.5*max(dot(n,LDIR),0.)) + vec3(0.9,0.96,1.)*smoothstep(0.5,2.5,sl)*0.3);
+          Tr *= (1.-F)*mix(1.,0.75,smoothstep(0.5,2.5,sl)); above = ab;
+        }
+        if(!ab){
+          vec3 sig = vec3(0.50,0.16,0.09); vec3 sc = vec3(0.035,0.21,0.30);
+          if(uShowDye==1){ vec4 d = dyeAt(p); float dd = max(d.r,max(d.g,d.b)); sig += vec3(dd*7.); sc += d.rgb*5.; }
+          col += Tr*sc*ds; Tr *= exp(-sig*ds);
+        }
+      }
+      if(tObj<t1){ col += Tr*shadeObj(on,rd,oc,bub); Tr = vec3(0.); }
+      else {
+        vec3 px = ro+rd*t1;
+        if(px.y<0.002){
+          vec2 g = abs(fract(px.xz*4.)-0.5); float line = smoothstep(0.46,0.49,max(g.x,g.y));
+          vec3 fc = mix(vec3(0.78,0.82,0.84), vec3(0.55,0.6,0.64), line);
+          float ex = 0.02; float lap = surfH(px.xz+vec2(ex,0.))+surfH(px.xz-vec2(ex,0.))+surfH(px.xz+vec2(0.,ex))+surfH(px.xz-vec2(0.,ex))-4.*surfH(px.xz);
+          fc *= 0.85 + clamp(lap*120.,-0.3,0.6) + 0.12*sin(px.x*23.+uTime*1.3)*sin(px.z*21.-uTime);
+          col += Tr*fc*(0.35+0.65*LDIR.y);
+        } else {
+          col += Tr*vec3(0.55,0.75,0.9)*edgeGlow(px)*0.4;
+          vec3 bgc = tG<1e8 ? ground(ro+rd*tG, rd, tG) : sky(rd);
+          col += Tr*bgc*0.92;
+        }
+      }
+    } else {
+      col = tG<1e8 ? ground(ro+rd*tG, rd, tG) : sky(rd);
+    }
+  } else if(uScene==2){
+    vec3 bg = tObj<tG ? shadeObj(on,rd,oc,bub) : (tG<1e8 ? ground(ro+rd*tG, rd, tG) : sky(rd));
+    vec3 hb = vec3(3.4*uB1.x, 2.1*uB1.y, 3.4*uB1.x);
+    vec2 tbb = boxT2(ro, rd, vec3(0.,1.,0.)-hb, vec3(0.,1.,0.)+hb);
+    float Ts = 1.;
+    if(tbb.x<tbb.y && tbb.y>0.){
+      float t0 = max(tbb.x,0.), t1 = min(tbb.y, min(tObj,tG));
+      const int STEPS = 96; float ds = (tbb.y-t0)/float(STEPS);
+      float k = ds/uB1.x;                                // passo em unidades do núcleo (autossimilar)
+      for(int i=0;i<STEPS;i++){
+        float t = t0+(float(i)+0.5)*ds; if(t>t1) break;
+        float dens; vec3 em = blowEmit(ro+rd*t, dens);
+        col += Ts*em*k*0.55; Ts *= exp(-dens*k*0.45);
+        if(Ts<0.02) break;
+      }
+    }
+    col += Ts*bg;
+  } else {
+    float tEnd = min(tObj, tG);
+    vec3 bg = tObj<tG ? shadeObj(on,rd,oc,bub) : (tG<1e8 ? ground(ro+rd*tG, rd, tG) : sky(rd));
+    if(tG<tObj && tG<1e8){ vec3 gp = ro+rd*tG; if(abs(gp.x)<1. && abs(gp.z)<1.){ float sh = 0.; for(int k=1;k<7;k++){ sh += dyeAt(gp+LDIR*float(k)*0.22).a; } bg *= exp(-sh*0.35); } }
+    float Ts = 1.;
+    if(inBox){
+      float t0 = max(tb.x,0.), t1 = min(tb.y, tEnd);
+      const int STEPS = 80; float ds = (tb.y-t0)/float(STEPS);
+      for(int i=0;i<STEPS;i++){
+        float t = t0+(float(i)+0.5)*ds; if(t>t1) break;
+        vec3 p = ro+rd*t; vec4 d = dyeAt(p);
+        float s = (d.r+d.g+d.b)*2.6;
+        if(s>0.002){
+          float occ = dyeAt(p+LDIR*0.12).a + dyeAt(p+LDIR*0.3).a;
+          float light = exp(-occ*1.6);
+          vec3 sc = d.rgb/max(0.001,(d.r+d.g+d.b)/3.);
+          col += Ts*s*ds*sc*(0.28+0.9*light)*0.9;
+          Ts *= exp(-s*ds);
+          if(Ts<0.01) break;
+        }
+      }
+      col += vec3(0.5,0.6,0.7)*edgeGlow(ro+rd*max(tb.x,0.))*0.25;
+    }
+    col += Ts*bg;
+  }
+  o = vec4(aces(col*1.15), 1.);
+}`;
+
+  // ---------------- alocação ----------------
+  function alloc(){
+    [vel,dye,pr,div,curl,velB,height,samp].forEach(destroy);
+    n = Q.N; t = Math.ceil(Math.sqrt(n)); A = n*t;
+    vel = createDouble(A,A,F16,H16,gl.LINEAR);
+    dye = createDouble(A,A,F16,H16,gl.LINEAR);
+    pr  = createDouble(A,A,F16,H16,gl.LINEAR);
+    div = createFBO(A,A,F16,H16,gl.NEAREST);
+    curl= createFBO(A,A,F16,H16,gl.NEAREST);
+    velB= createFBO(A,A,F16,H16,gl.NEAREST);
+    height = createDouble(n,n,F16,H16,gl.LINEAR);
+    samp = hasFloat32 ? createFBO(MAXOBJ,3,gl.RGBA32F,gl.FLOAT,gl.NEAREST) : null;
+    if(samp && !samp.ok){ destroy(samp); samp = null; }
+    sampBuf = new Float32Array(MAXOBJ*3*4);
+    computeSums();
+  }
+  function sinkCfg(){ return Q.scene==='tanque' ? {c:[0,0.06,0], R:0.11, H:0.08, mode:0} : {c:[0,1.94,0], R:0.28, H:0.1, mode:1}; }
+  function computeSums(){
+    const s = sinkCfg(), h = 2/n; let a = 0, b = 0;
+    const ss = (e0,e1,x)=>{ const k=Math.min(1,Math.max(0,(x-e0)/(e1-e0))); return k*k*(3-2*k); };
+    for(let j=0;j<n;j++){ const y=(j+0.5)*h, dy=y-s.c[1];
+      for(let i=0;i<n;i++){ const x=(i+0.5)*h-1;
+        for(let k=0;k<n;k++){ const z=(k+0.5)*h-1;
+          a += Math.exp(-(x*x+z*z)/(s.R*s.R) - dy*dy/(s.H*s.H));
+          b += s.mode===0 ? (j===n-1?1:0) : (y<0.5 ? ss(0.8,0.95,Math.max(Math.abs(x),Math.abs(z))) : 0);
+    }}}
+    sinkSum = a; compSum = Math.max(1e-6,b);
+  }
+  const C3 = ()=>U.f('N',n).f('T',t).f('texelSize',0,0);
+  function clearAll3(){
+    for(const f of [vel.read,vel.write,dye.read,dye.write,pr.read,pr.write,div,curl,height.read,height.write]){ gl.bindFramebuffer(gl.FRAMEBUFFER,f.fbo); gl.viewport(0,0,f.w,f.h); gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT); }
+  }
+  function inkLayers(){
+    const pal = PALETTES.tinta;
+    gl.disable(gl.BLEND);
+    use(prg.init); C3().i('uMode', Q.scene==='tanque'?1:0).f('uC0',...pal[0]).f('uC1',...pal[1]).f('uC2',0.25,0.85,1.0);
+    if(Q.scene==='tanque'){ gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); blit(dye.read); gl.disable(gl.BLEND); }
+  }
+  function reset(){
+    clearAll3(); time3 = 0; swallowed = 0; lifted = 0; objs = [];
+    blow.s = 0; blow.flash = 0; blow.spin = 0; blow.ejected = 0; blow.cored = 0;
+    if(parts3) initParts3();
+    if(Q.scene==='tanque') inkLayers();
+  }
+  function resetBlow(){
+    blow.s = 0; blow.flash = 0; blow.spin = 0;
+    if(parts3) initParts3();
+    const kinds = objs.map(o=>o.kind); objs = []; kinds.forEach(k=>addObject(k));
+  }
+  function axisC(){ return Q.wander ? [0.16*Math.sin(time3*0.23), 0.13*Math.sin(time3*0.17+1.1)] : [0,0]; }
+
+  // ---------------- passo de tempo ----------------
+  function stepBlow(dtReal){
+    if(blow.flash>0){ blow.flash -= dtReal; if(blow.flash<=0 && Q.loopBlow) resetBlow(); return; }
+    const ds = Q.blowSpeed*dtReal;
+    const B = blowParams(blow.s), sN = Math.min(S_MAX, blow.s+ds), Bn = blowParams(sN);
+    const dtp = B.tau - Bn.tau;                                   // tempo físico que passou
+    blow.spin += (B.uth/B.delta)*dtp*1.2;                         // fase das listras: gira com a velocidade angular do núcleo
+    if(Q.particles && parts3){
+      gl.disable(gl.BLEND);
+      use(prg.pupd); C3().t('uPart',0,parts3.read).t('uVel',1,vel.read).t('uHeight',2,height.read).f('dt',dtp).f('uAgeDt',sN-blow.s).f('uTime',time3%500)
+        .i('uScene',2).f('uB1',B.delta,B.Lz,B.R,B.zs).f('uB2',Q.dir*B.Gam,B.alpha,0,0).f('uLevel',0).f('uSettle',0).f('uAxis',0,0);
+      blit(parts3.write); parts3.swap();
+    }
+    updateObjectsBlow(B, Bn, dtp);
+    blow.s = sN;
+    if(blow.s >= S_MAX) blow.flash = 2.2;                         // τ → 0: explosão
+  }
+  function step3(dt){
+    if(Q.scene==='colapso'){ stepBlow(dt); return; }
+    gl.disable(gl.BLEND);
+    const T = P.terms, S = n/2, water = Q.scene==='tanque', ax = axisC(), sk = sinkCfg();
+    use(prg.forces); C3().t('uVel',0,vel.read).t('uDye',1,dye.read).f('uC',ax[0],ax[1]).f('uGamma',Q.gamma*Q.dir).f('uCore',Q.core)
+      .f('uGain',T.force&&Q.gamma>0?3:0).f('uS',S).f('dt',dt).f('uBuoy',T.force?Q.buoy:0).f('uUpdraft',T.force?Q.updraft:0).f('uFric',water?1.5:3).f('uDown', water&&T.force ? Q.suction*2.2 : 0).i('uScene',water?0:1);
+    blit(vel.write); vel.swap();
+    while(splashes.length){
+      const s = splashes.shift();
+      use(prg.splat); C3().t('uSrc',0,vel.read).f('uPt',...s.p).f('uVec',...s.v).f('uR',s.r); blit(vel.write); vel.swap();
+    }
+    if(Q.confine>0){
+      use(prg.curl); C3().t('uVel',0,vel.read); blit(curl);
+      use(prg.confine); C3().t('uVel',0,vel.read).t('uCurl',1,curl).f('uEps',Q.confine).f('dt',dt); blit(vel.write); vel.swap();
+    }
+    if(T.adv){ use(prg.advect); C3().t('uVel',0,vel.read).t('uSrc',1,vel.read).f('dt',dt).f('uDiss',0); blit(vel.write); vel.swap(); }
+    if(T.visc && Q.nu>0){
+      use(prog.copy).f('texelSize',0,0).t('uTex',0,vel.read); blit(velB);
+      use(prg.viscous); C3().f('uAlpha', 1/(Q.nu*S*S*dt)).t('uB',1,velB);
+      for(let i=0;i<Q.vIters;i++){ U.t('uX',0,vel.read); blit(vel.write); vel.swap(); }
+    }
+    const Qs = (T.press && !water) ? Q.suction*22 : 0;          // só o exaustor do tornado retira ar; o tanque não tem ralo (a água recircula)
+    if(T.press){
+      use(prg.div); C3().t('uVel',0,vel.read).f('uSinkC',...sk.c).f('uSinkR',sk.R).f('uSinkH',sk.H).f('uQ',Qs).f('uComp',Qs*sinkSum/compSum).i('uCompMode',sk.mode);
+      blit(div);
+      use(prog.clear).f('texelSize',0,0).t('uTex',0,pr.read).f('uValue',0.96); blit(pr.write); pr.swap();
+      use(prg.pressure); C3().t('uDiv',1,div);
+      for(let i=0;i<Q.pIters;i++){ U.t('uP',0,pr.read); blit(pr.write); pr.swap(); }
+      use(prg.grad); C3().t('uP',0,pr.read).t('uVel',1,vel.read); blit(vel.write); vel.swap();
+    } else {
+      use(prog.clear).f('texelSize',0,0).t('uTex',0,pr.read).f('uValue',0.9); blit(pr.write); pr.swap();
+    }
+    // corante / fumaça
+    const E = emitters3();
+    const e = new Float32Array(32), ec = new Float32Array(32);
+    E.forEach((q,i)=>{ e.set([...q.p, q.r], i*4); ec.set(q.c, i*4); });
+    use(prg.emit); C3().t('uSrc',0,dye.read).v4('uE',e).v4('uEC',ec).i('uEN',E.length).f('uRate',Math.min(1,dt*(water?3:8)))
+      .f('uDrainK', water&&Qs>0 ? 3 : 0).f('dt',dt).f('uSinkC',...sk.c).f('uSinkR',sk.R).f('uSinkH',sk.H);
+    blit(dye.write); dye.swap();
+    use(prg.advect); C3().t('uVel',0,vel.read).t('uSrc',1,dye.read).f('dt',dt).f('uDiss',Q.dyeDiss); blit(dye.write); dye.swap();
+    // superfície livre (aproximação de "tampa rígida": elevação ∝ pressão no topo)
+    use(prg.height); C3().t('uP',0,pr.read).t('uPrev',1,height.read).f('uK', water ? Q.hScale/(dt*S*S*G_EFF) : 0).f('uMinH', -LEVEL+0.05)
+      .f('uBlend', 1-Math.exp(-dt*7)); blit(height.write); height.swap();
+    // partículas traçadoras
+    if(Q.particles && parts3){
+      const ax2 = axisC();
+      use(prg.pupd); C3().t('uPart',0,parts3.read).t('uVel',1,vel.read).t('uHeight',2,height.read).f('dt',dt).f('uAgeDt',dt).f('uTime',time3%500)
+        .f('uLevel',LEVEL).f('uSettle',water?0:0.22).i('uScene',water?0:1).f('uAxis',ax2[0],ax2[1]).f('uB1',1,1,1,0).f('uB2',0,0,0,0);
+      blit(parts3.write); parts3.swap();
+    }
+    // amostra o campo nas posições dos objetos
+    if(samp && objs.length){
+      const op = new Float32Array(MAXOBJ*4);
+      objs.slice(0,MAXOBJ).forEach((o,i)=>op.set([(o.x+1)*S,o.y*S,(o.z+1)*S,0],i*4));
+      use(prg.sample); C3().t('uVel',0,vel.read).t('uP',1,pr.read).t('uHeight',2,height.read).v4('uOP',op); blit(samp);
+      gl.readPixels(0,0,MAXOBJ,3,gl.RGBA,gl.FLOAT,sampBuf);
+    }
+  }
+  function emitters3(){
+    const E = [];
+    if(!Q.emitDye) return E;
+    if(Q.scene==='tanque'){
+      const pal = PALETTES.tinta;
+      for(let k=0;k<3;k++){ const a = k*2.094+0.4; E.push({p:[0.62*Math.cos(a), LEVEL-0.1, 0.62*Math.sin(a)], r:0.055, c:[pal[k][0]*0.9,pal[k][1]*0.9,pal[k][2]*0.9,0.4]}); }
+    } else {
+      const c = axisC();
+      E.push({p:[c[0],0.04,c[1]], r:0.16, c:[0.78,0.76,0.72,1.0]});
+      for(let k=0;k<6;k++){ const a = k*Math.PI/3 + time3*0.2; E.push({p:[c[0]+0.5*Math.cos(a),0.04,c[1]+0.5*Math.sin(a)], r:0.09, c:[0.62,0.54,0.42,0.7]}); }
+    }
+    return E;
+  }
+
+  // ---------------- objetos ----------------
+  function blowSpawn(o){
+    const B = blowParams(blow.s), a = Math.random()*6.283, rr = (1.9+0.9*Math.random())*B.delta;
+    o.x = rr*Math.cos(a); o.z = rr*Math.sin(a); o.y = 1 + B.zs + (Math.random()-0.5)*1.1*B.Lz;
+    const u = velBlow(o.x,o.y,o.z,B); o.vx = u[0]; o.vy = u[1]; o.vz = u[2];
+  }
+  function addObject(kind, x, z){
+    const k = OBJ[kind]; if(!k) return;
+    if(kind==='bolha' && Q.scene==='tornado') return;
+    if(objs.length>=MAXOBJ) objs.shift();
+    if(Q.scene==='colapso'){
+      const o = {kind, x:0, y:1, z:0, vx:0, vy:0, vz:0, ay:Math.random()*6.28, ax:0, drain:0, wet:true, maxY:0, inCore:false};
+      blowSpawn(o);
+      if(x!==undefined){ const B = blowParams(blow.s), rr = Math.hypot(x,z), lim = 3*B.delta; if(rr>lim){ x*=lim/rr; z*=lim/rr; } o.x = x; o.z = z; }
+      objs.push(o); return;
+    }
+    const water = Q.scene==='tanque';
+    let y = water ? 1.9 : k.r+0.01;
+    if(kind==='bolha') y = 0.08;
+    objs.push({kind, x, y, z, vx:0, vy:0, vz:0, ay:Math.random()*6.28, ax:0, drain:0, wet:false, maxY:y, inDive:false});
+  }
+  function updateObjectsBlow(B, Bn, dtp){
+    if(dtp<=0) return;
+    for(const o of objs){
+      const k = OBJ[o.kind];
+      const u = velBlow(o.x,o.y,o.z,B);
+      const u2 = velBlow(o.x+u[0]*dtp, o.y+u[1]*dtp, o.z+u[2]*dtp, Bn);
+      const af = [(u2[0]-u[0])/dtp, (u2[1]-u[1])/dtp, (u2[2]-u[2])/dtp];   // Du/Dt ao longo do escoamento
+      const beta = 3/(1+2*k.s);
+      const tauO = k.tau*2.5/B.alpha;              // tempo de resposta proporcional ao tempo do escoamento (nº de Stokes fixo)
+      const nsub = Math.min(40, Math.max(1, Math.ceil(dtp/(0.25*tauO)))), h = dtp/nsub;
+      for(let i=0;i<nsub;i++){
+        o.vx += ((u[0]-o.vx)/tauO + beta*af[0])*h; o.vy += ((u[1]-o.vy)/tauO + beta*af[1])*h; o.vz += ((u[2]-o.vz)/tauO + beta*af[2])*h;
+        o.x += o.vx*h; o.y += o.vy*h; o.z += o.vz*h;
+      }
+      const rr = Math.hypot(o.x,o.z)+1e-9;
+      o.ay += (u[0]*o.z - u[2]*o.x)/(rr*rr) * dtp * 0.5 * -1;      // gira em torno de si com metade da vorticidade local
+      o.ax += dtp*Math.hypot(u[0]-o.vx,u[1]-o.vy,u[2]-o.vz)/(k.r*(B.delta/B0.delta));
+      if(rr < 0.8*B.delta && !o.inCore){ o.inCore = true; blow.cored++; }
+      if(rr > 4.5*B.delta || Math.abs(o.y-1-B.zs) > 2.4*B.Lz){ blow.ejected++; o.inCore = false; blowSpawn(o); }
+    }
+  }
+  function randomDrop(kind){
+    if(Q.scene==='colapso'){ addObject(kind); return; }
+    const water = Q.scene==='tanque';
+    const a = Math.random()*6.283, r = water ? 0.25+Math.random()*0.6 : 0.3+Math.random()*0.5;
+    const c = water ? [0,0] : axisC();
+    addObject(kind, Math.max(-0.88,Math.min(0.88,c[0]+r*Math.cos(a))), Math.max(-0.88,Math.min(0.88,c[1]+r*Math.sin(a))));
+  }
+  function updateObjects(dt){
+    const S = n/2, water = Q.scene==='tanque';
+    const rows = MAXOBJ*4;
+    for(let i=objs.length-1;i>=0;i--){
+      const o = objs[i], k = OBJ[o.kind], r = k.r;
+      if(o.drain>0){ o.drain += dt; o.y -= dt*0.5; o.x *= 0.9; o.z *= 0.9; if(o.drain>0.9) objs.splice(i,1); continue; }
+      const si = i*4;
+      const has = samp && i<MAXOBJ;
+      const u = has ? [sampBuf[si]/S, sampBuf[si+1]/S, sampBuf[si+2]/S] : [0,0,0];
+      const gp = has ? [sampBuf[rows+si], sampBuf[rows+si+1], sampBuf[rows+si+2]] : [0,0,0];
+      const eta = has ? sampBuf[2*rows+si] : 0, wy = has ? sampBuf[2*rows+si+1] : 0;
+      let a = [0,0,0];
+      if(water){
+        const H = LEVEL + eta;
+        const f = Math.max(0, Math.min(1, (H-(o.y-r))/(2*r)));           // fração submersa
+        const s = k.s, tau = k.tau;
+        const af = [-gp[0]/(lastDt*S), -gp[1]/(lastDt*S), -gp[2]/(lastDt*S)]; // aceleração do fluido Du/Dt = −∇p/ρ
+        // Maxey–Riley com fração submersa f:  (s + f/2)·dv/dt = 1,5·f·Du/Dt + f·(s + 1/2)·(u − v)/τ + (f − s)·g
+        // (f = 1 → equação completa com β = 3/(1+2s);  f = s, flutuando → o objeto acompanha a água da superfície)
+        const mEff = s + 0.5*Math.max(f,0);
+        a[1] += f>0 ? GRAV*(f-s)/mEff : -GRAV;                              // peso + empuxo (Arquimedes)
+        if(f>0){ const vv = [o.vx,o.vy,o.vz]; for(let d=0; d<3; d++) a[d] += (1.5*f*af[d] + f*(s+0.5)*(u[d]-vv[d])/tau)/mEff; }
+        else { a[0] -= 0.3*o.vx; a[2] -= 0.3*o.vz; }
+        if(f>0 && f<1){ o.vy *= Math.max(0, 1-4*dt); }
+        if(!o.wet && f>0.2){ o.wet = true; if(o.vy<-0.4) splashes.push({p:[o.x,LEVEL-0.08,o.z], v:[0,o.vy*S*0.5,0], r:0.1}); }
+        o.ay += 0.5*wy*dt*(f>0?1:0);
+        if(k.type===3 || k.type===1) o.ax += dt*f*Math.hypot(u[0]-o.vx,u[2]-o.vz)*2;
+        // conta as descidas pelo núcleo (sem ralo: o objeto desce, abre pelo fundo e volta)
+        if(!o.inDive && Math.hypot(o.x,o.z)<0.3 && o.y<0.6 && o.vy<0){ o.inDive = true; swallowed++; }
+        if(o.inDive && o.y>1.1) o.inDive = false;
+      } else {
+        const tau = k.tauAir;
+        a = [(u[0]-o.vx)/tau, (u[1]-o.vy)/tau - GRAV, (u[2]-o.vz)/tau];
+        // sustentação (Bernoulli) perto do chão: vento rápido por cima = pressão menor em cima
+        if(o.y < r+0.12 && k.lift){ const ur = Math.hypot(u[0]-o.vx, u[2]-o.vz); a[1] += k.lift*ur*ur; }
+        // perto do teto: a grade do exaustor barra o objeto e o giro o joga para os lados
+        if(o.y > 1.7){ const cc = axisC(), dx = o.x-cc[0], dz = o.z-cc[1], d = Math.hypot(dx,dz)+1e-3; a[0] += 7*dx/d; a[2] += 7*dz/d; }
+        o.ay += 0.5*wy*dt + dt*Math.hypot(o.vx,o.vz)*2;
+        o.ax += dt*Math.hypot(u[0]-o.vx,u[1]-o.vy,u[2]-o.vz)*1.5*(k.type===0?0:1);
+      }
+      o.vx += a[0]*dt; o.vy += a[1]*dt; o.vz += a[2]*dt;
+      const sp = Math.hypot(o.vx,o.vy,o.vz); if(sp>12){ o.vx*=12/sp; o.vy*=12/sp; o.vz*=12/sp; }
+      o.x += o.vx*dt; o.y += o.vy*dt; o.z += o.vz*dt;
+      // paredes, fundo e teto: contato suave (sem quicar), o objeto desliza junto da parede
+      const lim = 1-r;
+      if(o.x<-lim){ o.x=-lim; o.vx=Math.max(0,o.vx); } if(o.x>lim){ o.x=lim; o.vx=Math.min(0,o.vx); }
+      if(o.z<-lim){ o.z=-lim; o.vz=Math.max(0,o.vz); } if(o.z>lim){ o.z=lim; o.vz=Math.min(0,o.vz); }
+      if(o.y<r){ o.y=r; if(o.vy<0) o.vy = 0; if(k.s>2 || !water){ const fr = water ? 1.5 : 1; o.vx *= Math.max(0,1-fr*dt); o.vz *= Math.max(0,1-fr*dt); } }
+      if(o.y>2-r){ o.y=2-r; o.vy=Math.min(0,o.vy); }
+      if(!water && o.y>o.maxY){ if(o.maxY<0.5 && o.y>=0.5) lifted++; o.maxY = o.y; }
+    }
+    // colisões simples entre objetos
+    for(let i=0;i<objs.length;i++) for(let j=i+1;j<objs.length;j++){
+      const A1 = objs[i], B1 = objs[j]; if(A1.drain||B1.drain) continue;
+      const rr = OBJ[A1.kind].r + OBJ[B1.kind].r;
+      const dx = B1.x-A1.x, dy = B1.y-A1.y, dz = B1.z-A1.z, d = Math.hypot(dx,dy,dz);
+      if(d>0 && d<rr){ const push = (rr-d)/d*0.5; A1.x-=dx*push; A1.y-=dy*push; A1.z-=dz*push; B1.x+=dx*push; B1.y+=dy*push; B1.z+=dz*push; }
+    }
+  }
+
+  // ---------------- câmera e desenho ----------------
+  function camBasis(){
+    const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    let dist = cam.dist;
+    if(Q.scene==='colapso' && Q.simZoom) dist *= Math.sqrt(Math.exp(-blow.s));     // câmera acompanha a escala √τ
+    const pos = [cam.target[0]+dist*cp*Math.sin(cam.yaw), cam.target[1]+dist*sp, cam.target[2]+dist*cp*Math.cos(cam.yaw)];
+    const nrm = v=>{ const l=Math.hypot(...v); return v.map(x=>x/l); };
+    const F = nrm([cam.target[0]-pos[0], cam.target[1]-pos[1], cam.target[2]-pos[2]]);
+    const R = nrm([F[1]*0-F[2]*1, F[2]*0-F[0]*0, F[0]*1-F[1]*0]);
+    const Uv = [R[1]*F[2]-R[2]*F[1], R[2]*F[0]-R[0]*F[2], R[0]*F[1]-R[1]*F[0]];
+    return {pos, F, R, U:Uv};
+  }
+  const TAN = Math.tan(0.42);
+  function render3(){
+    const qs = Q.quality==='auto' ? autoQ : Q.quality;
+    const W = Math.max(2, Math.round(canvas.width*qs)), Hh = Math.max(2, Math.round(canvas.height*qs));
+    if(!rtt || rtt.w!==W || rtt.h!==Hh){ destroy(rtt); rtt = createFBO(W,Hh,gl.RGBA8,gl.UNSIGNED_BYTE,gl.LINEAR); }
+    const b = camBasis();
+    const isBlow = Q.scene==='colapso', B = blowParams(blow.s);
+    const objScale = isBlow ? 0.38*B.delta/B0.delta : 1;          // no colapso, objetos = marcadores do tamanho da estrutura
+    const OA = new Float32Array(96), OB = new Float32Array(96), OC = new Float32Array(96);
+    objs.slice(0,MAXOBJ).forEach((o,i)=>{ const k = OBJ[o.kind]; const sc = (o.drain>0 ? Math.max(0,1-o.drain*1.2) : 1)*objScale;
+      OA.set([o.x,o.y,o.z,k.r*sc],i*4); OB.set([k.type,o.ay,o.ax,0],i*4); OC.set([...k.col,k.shin],i*4); });
+    const pulseAmp = 0.35 + 0.65*Math.pow(0.5+0.5*Math.sin(2*Math.PI*blow.s/1.6), 2);
+    gl.disable(gl.BLEND);
+    use(prg.render); C3().t('uDye',0,dye.read).t('uHeight',1,height.read)
+      .f('uCamPos',...b.pos).f('uCamF',...b.F).f('uCamR',...b.R).f('uCamU',...b.U).f('uTan',TAN).f('uAspect',canvas.width/canvas.height)
+      .f('uLevel',LEVEL).f('uTime',time3).f('uDrainR',0).i('uScene',isBlow?2:(Q.scene==='tanque'?0:1)).i('uShowDye',Q.showDye?1:0)
+      .f('uB1',B.delta,B.Lz,B.R,B.zs).f('uB2',Q.dir*B.Gam,B.alpha,pulseAmp,6*blow.s).f('uB3',1.35*B.delta,2.6*B.delta,blow.spin,B.uth)
+      .i('uObjN',Math.min(MAXOBJ,objs.length)).v4('uOA',OA).v4('uOB',OB).v4('uOC',OC);
+    blit(rtt);
+    use(prog.copy).f('texelSize',0,0).t('uTex',0,rtt); blit(null);
+    if(Q.particles && parts3){
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      const water = Q.scene==='tanque';
+      use(prg.pdraw).t('uPart',0,parts3.read).i('uSize',PN).f('uCamPos',...b.pos).f('uCamF',...b.F).f('uCamR',...b.R).f('uCamU',...b.U)
+        .f('uTan',TAN).f('uAspect',canvas.width/canvas.height).f('uPx',(isBlow ? 0.006*(Q.simZoom ? Math.sqrt(B.tau) : 1) : 0.0085)*canvas.height)
+        .f('uCol', ...(isBlow ? [0.6,0.9,1.0,0.4] : water ? [0.85,0.95,1.0,0.42] : [0.24,0.18,0.12,0.85]));
+      gl.drawArrays(gl.POINTS, 0, PN*PN);
+      gl.disable(gl.BLEND);
+    }
+    maybeShot();
+  }
+
+  // ---------------- interface ----------------
+  function frame(real){
+    if(!inited) init();
+    if(!paused || stepOnce){
+      const dt = Math.min(Math.max(real,1/120),1/20)*P.timeScale;
+      time3 += dt; step3(dt); lastDt = dt; if(Q.scene!=='colapso') updateObjects(dt); stepOnce = false;
+    }
+    if(Q.autoRotate && !drag.active) cam.yaw += real*0.08;
+    if(Q.scene==='colapso' && frameCount3%5===0) drawBlowChart();
+    if(Q.quality==='auto' && frameCount3%45===44){ if(fps<28 && autoQ>0.45) autoQ = Math.max(0.45, autoQ-0.1); else if(fps>52 && autoQ<0.9) autoQ = Math.min(0.9, autoQ+0.05); }
+    render3();
+    octx.clearRect(0,0,overlay.width,overlay.height);
+    if(Q.scene==='colapso' && blow.flash>0) drawFlash();
+    if(frameCount3++ % 10 === 0) hud3();
+  }
+  let frameCount3 = 0, autoQ = 0.7;
+  function drawFlash(){
+    const w = overlay.width, h = overlay.height, k = Math.min(1, blow.flash/2.2);
+    const g = octx.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.max(w,h)*0.6);
+    g.addColorStop(0,`rgba(255,240,220,${0.85*k})`); g.addColorStop(0.35,`rgba(255,120,160,${0.35*k})`); g.addColorStop(1,'rgba(0,0,0,0)');
+    octx.fillStyle = g; octx.fillRect(0,0,w,h);
+    const dpr = w/overlay.clientWidth;
+    octx.textAlign = 'center'; octx.fillStyle = `rgba(20,10,30,${Math.min(1,k*1.5)})`;
+    octx.font = `700 ${28*dpr}px system-ui`; octx.fillText('💥 τ → 0 : |u| → ∞', w/2, h/2);
+    octx.font = `500 ${15*dpr}px system-ui`; octx.fillText('explosão (blow-up) com energia finita', w/2, h/2+26*dpr);
+    octx.textAlign = 'left';
+  }
+  const chart3 = document.getElementById('chart3'), c3 = chart3.getContext('2d');
+  function drawBlowChart(){
+    const dpr = window.devicePixelRatio||1, W = chart3.clientWidth, Hh = chart3.clientHeight;
+    if(!W) return;
+    if(chart3.width !== Math.round(W*dpr)){ chart3.width = Math.round(W*dpr); chart3.height = Math.round(Hh*dpr); }
+    c3.setTransform(dpr,0,0,dpr,0,0); c3.clearRect(0,0,W,Hh);
+    const m = {l:40,r:12,t:10,b:30}, pw = W-m.l-m.r, ph = Hh-m.t-m.b, xmax = S_MAX/Math.LN10, ymin = -3, ymax = 3;
+    const X = x=>m.l+x/xmax*pw, Y = y=>m.t+(ymax-y)/(ymax-ymin)*ph;
+    c3.strokeStyle = '#22304f'; c3.lineWidth = 1; c3.font = '11px system-ui'; c3.fillStyle = '#6b7894';
+    for(let y=ymin;y<=ymax;y++){ c3.beginPath(); c3.moveTo(m.l,Y(y)); c3.lineTo(m.l+pw,Y(y)); c3.stroke(); c3.fillText('10'+(y<0?'⁻':'')+'⁰¹²³'[Math.abs(y)], 6, Y(y)+4); }
+    for(let x=0;x<=Math.floor(xmax);x++){ c3.fillText('10'+(x?'⁻'+'⁰¹²³⁴'[x]:'⁰'), X(x)-10, Hh-12); }
+    c3.fillText('τ (tempo até a explosão) →  menor', m.l+pw-190, Hh-1);
+    const h = Q.hExp;
+    const curves = [['#ff7aa8', 0.5+h], ['#7ee0a1', -(0.5-3*h)], ['#4cc9f0', -0.5], ['#b69cff', -(0.5-h)], ['#ffc247', h]];
+    const xc = blow.s/Math.LN10;
+    for(const [col, slope] of curves){
+      c3.strokeStyle = col; c3.lineWidth = 2; c3.globalAlpha = 0.35; c3.beginPath(); c3.moveTo(X(0),Y(0)); c3.lineTo(X(xmax),Y(slope*xmax)); c3.stroke();
+      c3.globalAlpha = 1; c3.beginPath(); c3.moveTo(X(0),Y(0)); c3.lineTo(X(xc),Y(slope*xc)); c3.stroke();
+      c3.fillStyle = col; c3.beginPath(); c3.arc(X(xc),Y(slope*xc),3.5,0,Math.PI*2); c3.fill();
+    }
+    c3.strokeStyle = 'rgba(255,255,255,0.3)'; c3.setLineDash([3,3]); c3.beginPath(); c3.moveTo(X(xc),m.t); c3.lineTo(X(xc),m.t+ph); c3.stroke(); c3.setLineDash([]);
+  }
+  function hud3(){
+    const sc = SCENES[Q.scene];
+    if(Q.scene==='colapso'){
+      const B = blowParams(blow.s);
+      document.getElementById('hudScene').innerHTML = `<b>${sc.label}</b> · ${sc.scene}`;
+      document.getElementById('hudStats').innerHTML = `τ = <b>${fmtSci(B.tau)}</b> · ln(1/τ) = ${fmtNum(blow.s,1)} · ${Math.round(fps)} FPS`;
+      document.getElementById('hudRe').innerHTML = `Re<sub>θ</sub> = <b>${fmtNum(B.Re,1)}</b> · ℓ<sub>r</sub> = ${fmtSci(B.delta)} · ℓ<sub>z</sub> = ${fmtSci(B.Lz)}`;
+      const hv = document.getElementById('hudV'); hv.style.display = '';
+      hv.innerHTML = blow.flash>0 ? '💥 <b>blow-up</b>: |u| → ∞ com energia finita' : `|u|<sub>máx</sub> = <b>${B.umax<1e4?fmtNum(B.umax,2):fmtSci(B.umax)}</b> · energia do núcleo = <b>${fmtNum(B.E,4)}</b>`;
+      document.getElementById('objStats').innerHTML = `objetos: <b>${objs.length}</b> · passaram pelo núcleo: <b>${blow.cored}</b> · ejetados: <b>${blow.ejected}</b>`;
+      return;
+    }
+    document.getElementById('hudScene').innerHTML = `<b>${sc.label}</b> · ${sc.scene}`;
+    document.getElementById('hudStats').textContent = `t = ${fmtNum(time3,1)} s · ${Math.round(fps)} FPS · grade ${n}×${n}×${n}`;
+    const nuEff = P.terms.visc ? Q.nu : 0;
+    document.getElementById('hudRe').innerHTML = `Re<sub>Γ</sub> = Γ/ν = <b>${nuEff>0?fmtBig(Q.gamma/nuEff):'∞'}</b>`;
+    const hv = document.getElementById('hudV'); hv.style.display = '';
+    hv.innerHTML = Q.scene==='tanque' ? `objetos: <b>${objs.length}</b> · descidas pelo núcleo: <b>${swallowed}</b>` : `objetos: <b>${objs.length}</b> · levantados pelo tornado: <b>${lifted}</b>`;
+    document.getElementById('objStats').innerHTML = hv.innerHTML;
+  }
+  function dropAtScreen(e){
+    const r = canvas.getBoundingClientRect();
+    const u = (e.clientX-r.left)/r.width, v = 1-(e.clientY-r.top)/r.height;
+    const b = camBasis(), asp = canvas.width/canvas.height;
+    const nx = (2*u-1)*asp*TAN, ny = (2*v-1)*TAN;
+    let rd = [0,1,2].map(i=>b.F[i]+nx*b.R[i]+ny*b.U[i]); const l = Math.hypot(...rd); rd = rd.map(x=>x/l);
+    const planeY = Q.scene==='tanque' ? LEVEL : Q.scene==='colapso' ? 1 : 0;
+    if(Math.abs(rd[1])<1e-4) return;
+    const tt = (planeY-b.pos[1])/rd[1]; if(tt<0) return;
+    if(Q.scene==='colapso'){ addObject(Q.objType, b.pos[0]+rd[0]*tt, b.pos[2]+rd[2]*tt); return; }
+    const cl = x=>Math.max(-0.88,Math.min(0.88,x));
+    addObject(Q.objType, cl(b.pos[0]+rd[0]*tt), cl(b.pos[2]+rd[2]*tt));
+  }
+  function pointer(type, e){
+    if(type==='down'){ drag.active = true; drag.moved = false; drag.x = e.clientX; drag.y = e.clientY; canvas.setPointerCapture(e.pointerId); }
+    else if(type==='move' && drag.active){
+      const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
+      if(!drag.moved && Math.abs(dx)+Math.abs(dy)>4) drag.moved = true;
+      if(drag.moved){ cam.yaw -= dx*0.008; cam.pitch = Math.max(0.02, Math.min(1.35, cam.pitch+dy*0.006)); drag.x = e.clientX; drag.y = e.clientY; }
+    } else if(type==='up'){ if(drag.active && !drag.moved) dropAtScreen(e); drag.active = false; }
+  }
+  function wheel(e){ const lo = Q.scene==='colapso' ? 0.6 : 2.2; cam.dist = Math.max(lo, Math.min(9, cam.dist*Math.exp(e.deltaY*0.001))); }
+
+  const fmt3 = { gamma:v=>fmtNum(v,2), core:v=>fmtNum(v,3), suction:v=>Q.scene==='tanque' ? fmtNum(v,2)+'×' : Math.round(v*100)+'%', updraft:v=>Math.round(v*100)+'%',
+    nu:v=>v===0?'0 (Euler)':fmtSci(v), buoy:v=>String(Math.round(v)), confine:v=>fmtNum(v,1), hScale:v=>fmtNum(v,2)+'×', dyeDiss:v=>fmtNum(v,2), pIters:v=>String(v),
+    blowSpeed:v=>fmtNum(v,2)+'×', hExp:v=>fmtNum(v,3)+(v<=0.01?' (valor da prova)':' (exagero)') };
+  function sync3(){
+    const sucEl = document.querySelector('[data-k3=suction]'); if(sucEl) sucEl.max = Q.scene==='tanque' ? '3' : '1';
+    document.querySelectorAll('[data-k3]').forEach(el=>{
+      const k = el.dataset.k3;
+      if(el.type==='checkbox') el.checked = !!Q[k];
+      else if(el.type==='range') el.value = valToSlider(el, Q[k]);
+      else el.value = String(Q[k]);
+    });
+    document.querySelectorAll('[data-o3]').forEach(o=>{ const k=o.dataset.o3; o.textContent = fmt3[k] ? fmt3[k](Q[k]) : Q[k]; });
+    document.querySelectorAll('[data-seg3]').forEach(seg=>{ const k = seg.dataset.seg3; seg.querySelectorAll('button').forEach(b=>b.classList.toggle('on', String(Q[k])===b.dataset.v)); });
+    document.querySelectorAll('#presets3 button').forEach(b=>b.classList.toggle('on', b.dataset.p===Q.scene));
+    document.querySelectorAll('#objGrid button').forEach(b=>{ b.classList.toggle('on', b.dataset.obj===Q.objType); b.hidden = (b.dataset.obj==='bolha' && Q.scene==='tornado'); });
+    const water = Q.scene==='tanque', isBlow = Q.scene==='colapso';
+    document.getElementById('lblSuction3').textContent = water ? '🚀 Acelerador da descida' : 'Exaustor no teto';
+    document.getElementById('subSuction3').hidden = !water;
+    document.getElementById('rowUpdraft3').hidden = water;
+    document.getElementById('rowBuoy3').hidden = water;
+    document.getElementById('rowH3').hidden = !water;
+    document.getElementById('grp3Blow').hidden = !isBlow;
+    document.getElementById('grp3Vortex').hidden = isBlow;
+    document.getElementById('grp3Fluid').hidden = isBlow;
+    if(MODE==='3d'){ document.getElementById('blowCard').hidden = !isBlow; }
+    const sc = SCENES[Q.scene];
+    document.getElementById('obsTitle').textContent = 'O que observar — ' + sc.label;
+    document.getElementById('obsText').innerHTML = '<ul>'+sc.obs.map(s=>'<li>'+s+'</li>').join('')+'</ul>';
+    document.getElementById('hudHint').innerHTML = 'Arraste para girar a câmera · roda do mouse aproxima · <b>clique para soltar</b> o objeto escolhido';
+  }
+  function applyScene(name){
+    const sc = SCENES[name]; if(!sc) return;
+    Q.scene = name; Object.assign(Q, sc.set);
+    P.terms = {adv:true, press:true, visc:true, force:true};
+    if(name==='colapso'){ cam.target = [0,1,0]; cam.dist = 1.7; cam.pitch = 0.5; if(Q.objType==='aco' || !OBJ[Q.objType]) Q.objType = 'bolha'; }
+    else { cam.target = [0,0.85,0]; cam.dist = 4.6; cam.pitch = 0.45; }
+    computeSums(); reset(); sync3(); syncUI();
+  }
+  function buildUI(){
+    const box = document.getElementById('presets3');
+    SCENE_ORDER.forEach((k,i)=>{ const b = document.createElement('button'); b.dataset.p = k; b.innerHTML = `${i+1}. ${SCENES[k].label}<small>${SCENES[k].sub}</small>`; b.onclick = ()=>applyScene(k); box.appendChild(b); });
+    const og = document.getElementById('objGrid');
+    OBJ_ORDER.forEach(k=>{ const o = OBJ[k]; const b = document.createElement('button'); b.dataset.obj = k;
+      b.innerHTML = `<span class="e">${o.e}</span>${o.label}`; b.title = `densidade relativa ${fmtNum(o.s,2)}`;
+      b.onclick = ()=>{ Q.objType = k; randomDrop(k); sync3(); }; og.appendChild(b); });
+    document.getElementById('btnRain').onclick = ()=>{ for(let i=0;i<8;i++) randomDrop(Q.objType); };
+    document.getElementById('btnMix').onclick = ()=>{ OBJ_ORDER.forEach(k=>randomDrop(k)); };
+    document.getElementById('btnClearObj').onclick = ()=>{ objs = []; };
+    document.getElementById('btnInk3').onclick = ()=>{ if(Q.scene==='tanque') inkLayers(); };
+    document.getElementById('btnBlowRestart').onclick = ()=>{ if(inited) resetBlow(); };
+    document.querySelectorAll('[data-k3]').forEach(el=>{
+      const ev = (el.tagName==='SELECT' || el.type==='checkbox') ? 'change' : 'input';
+      el.addEventListener(ev, ()=>{
+        const k = el.dataset.k3;
+        if(el.type==='checkbox') Q[k] = el.checked;
+        else if(el.type==='range') Q[k] = sliderToVal(el);
+        else { const v = Number(el.value); Q[k] = isNaN(v) ? el.value : v; }
+        if(k==='N'){ alloc(); reset(); }
+        sync3();
+      });
+    });
+    document.querySelectorAll('[data-seg3]').forEach(seg=>seg.addEventListener('click', e=>{
+      const b = e.target.closest('button'); if(!b) return; const v = Number(b.dataset.v); Q[seg.dataset.seg3] = isNaN(v) ? b.dataset.v : v; sync3();
+    }));
+  }
+  function init(){
+    for(const k in SH) prg[k] = makeProgram(VS_BASE, HDR + COMMON + SH[k]);
+    prg.pdraw = makeProgram(VS_P3, FS_P3);
+    alloc(); initParts3(); inited = true; applyScene(Q.scene);
+  }
+  buildUI(); sync3();
+  return { frame, pointer, wheel, reset:()=>{ if(inited) reset(); }, applyScene, sync:sync3, drop:()=>randomDrop(Q.objType), sceneOrder:SCENE_ORDER,
+    debug:()=>({Q, cam, objs, time3, swallowed, lifted, sampBuf, n, blow, blowParams}) };
+})();
+
+function maybeShot(){
+  if(!wantShot) return;
+  wantShot = false;
+  const a = document.createElement('a');
+  a.download = 'redemoinho-' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.png';
+  a.href = canvas.toDataURL('image/png'); a.click();
+}
+function setMode(m){
+  MODE = m;
+  document.getElementById('p3d').hidden = m!=='3d';
+  document.getElementById('p2d').hidden = m==='3d';
+  document.getElementById('objCard').hidden = m!=='3d';
+  document.getElementById('chartCard').hidden = m==='3d';
+  document.getElementById('blowCard').hidden = true;
+  document.getElementById('btnImpulse').hidden = m==='3d';
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.v===m));
+  octx.clearRect(0,0,overlay.width,overlay.height);
+  if(m==='3d') Sim3D.sync(); else syncUI();
+}
+document.getElementById('modeSeg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(b) setMode(b.dataset.v); });
+canvas.addEventListener('wheel', e=>{ if(MODE==='3d'){ e.preventDefault(); Sim3D.wheel(e); } }, {passive:false});
+
+// =====================================================================
+//  INÍCIO
+// =====================================================================
+if(matchMedia('(pointer:coarse)').matches && innerWidth<700){ P.simRes = 128; P.dyeRes = 512; P.pCount = 96; }
+resize(true);
+initParticles();
+applyPreset('ralo');
+setMode(location.hash==='#3d' ? '3d' : '2d');
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
