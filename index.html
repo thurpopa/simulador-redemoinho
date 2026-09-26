@@ -20,7 +20,7 @@ a{color:var(--accent)}
 button,select,input{font:inherit;color:inherit}
 
 /* ---------- topo ---------- */
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(7,10,18,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(7,10,18,.97);border-bottom:1px solid var(--line)}
 .top-inner{max-width:1560px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:10px 16px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;white-space:nowrap;letter-spacing:.2px}
 .brand svg{flex:none}
@@ -42,12 +42,16 @@ nav a:hover{color:var(--text);background:var(--panel2)}
 .hud.tl{left:12px;top:10px}
 .hud.tr{right:12px;top:10px;text-align:right}
 .hud.bl{left:12px;bottom:10px;color:#b9c4db}
-.chip{display:inline-block;background:rgba(10,15,28,.62);border:1px solid rgba(120,150,210,.25);border-radius:999px;padding:3px 10px;margin:0 0 5px 0;backdrop-filter:blur(4px)}
+.chip{display:inline-block;background:rgba(10,15,28,.78);border:1px solid rgba(120,150,210,.25);border-radius:999px;padding:3px 10px;margin:0 0 5px 0}
+.toast{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);background:rgba(10,15,28,.92);border:1px solid var(--force);color:var(--text);border-radius:999px;padding:6px 14px;font-size:13px;pointer-events:none;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+.perfrow{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.perfrow .seg{margin-top:0;flex:1}
+.perfrow .seg button{padding:5px 6px;font-size:12px}
 .chip b{color:#fff}
 .paused-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(10,15,28,.7);border:1px solid var(--line);padding:8px 16px;border-radius:999px;font-weight:600;display:none;pointer-events:none}
 .paused .paused-badge{display:block}
 .stage-tools{position:absolute;right:10px;bottom:10px;display:flex;gap:6px}
-.icon-btn{background:rgba(10,15,28,.7);border:1px solid rgba(120,150,210,.3);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:#e8eef9;backdrop-filter:blur(4px)}
+.icon-btn{background:rgba(10,15,28,.85);border:1px solid rgba(120,150,210,.3);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:#e8eef9}
 .icon-btn:hover{border-color:var(--accent)}
 .err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:30px;background:#0a0f1c}
 .err.show{display:grid}
@@ -222,6 +226,7 @@ footer{max-width:1000px;margin:40px auto 0;padding:24px 16px 50px;color:var(--di
         <button class="icon-btn" id="btnFull" title="Tela cheia (F)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
       </div>
       <div class="paused-badge">⏸ Pausado — tecle Espaço</div>
+      <div class="toast" id="toast" hidden></div>
       <div class="err" id="err"><div><h3>Não consegui iniciar a simulação 😕</h3><p id="errMsg">Este navegador não suporta WebGL 2 com texturas de ponto flutuante.</p><p style="color:var(--muted)">Tente abrir no Google Chrome ou Microsoft Edge atualizados.</p></div></div>
     </div>
 
@@ -289,6 +294,10 @@ footer{max-width:1000px;margin:40px auto 0;padding:24px 16px 50px;color:var(--di
     </div>
     <div class="modebar">
       <div class="seg" id="modeSeg"><button data-v="2d">▦ 2D · plano</button><button data-v="3d">🧊 3D · volume + objetos</button></div>
+      <div class="perfrow" title="Auto: começa em qualidade média e fica mais leve sozinho se o computador estiver lento">
+        <span>Desempenho</span>
+        <div class="seg" id="perfSeg"><button data-v="auto">Auto</button><button data-v="leve">Leve</button><button data-v="alta">Alta</button></div>
+      </div>
     </div>
 
     <!-- ===== painel 3D ===== -->
@@ -475,7 +484,7 @@ footer{max-width:1000px;margin:40px auto 0;padding:24px 16px 50px;color:var(--di
         <div class="row"><label>Resolução da grade (altura)</label>
           <select data-k="simRes"><option value="128">128 células (rápido)</option><option value="192">192 células</option><option value="256">256 células</option><option value="384">384 células (pesado)</option></select></div>
         <div class="row"><label>Resolução do corante</label>
-          <select data-k="dyeRes"><option value="512">512</option><option value="1024">1024</option><option value="1536">1536</option></select></div>
+          <select data-k="dyeRes"><option value="512">512</option><option value="768">768</option><option value="1024">1024</option><option value="1536">1536</option></select></div>
         <div class="row"><label>Iterações de pressão (Jacobi)</label><output data-o="pIters"></output>
           <input type="range" data-k="pIters" min="1" max="80" step="1">
           <div class="sub">Poucas iterações = incompressibilidade mal imposta (fluido “vaza”).</div></div>
@@ -822,7 +831,7 @@ const P = {
   layout:'one', gamma:0.10, core:0.05, suction:0.45, dir:-1, sep:0.2, drive:'continuous', wander:false,
   nu:5e-6, buoy:0, wind:0, confine:2, dyeDiss:0.01, timeScale:1,
   view:0, arrows:false, particles:true, markers:true, emit:'ring', pattern:'spokes', tool:'stir', brush:0.04,
-  simRes:256, dyeRes:1024, pIters:30, vIters:20, pCount:160,
+  simRes:192, dyeRes:768, pIters:25, vIters:20, pCount:96,
   obstacle:null,   // {fx, y, r}  fx = fração da largura
   terms:{adv:true, press:true, visc:true, force:true},
 };
@@ -1396,7 +1405,9 @@ function step(dt){
     use(prog.copy).f('texelSize',...vel.texel).t('uTex',0,vel.read); blit(velB);
     const alpha = 1/(P.nu*simH*simH*dt);
     use(prog.viscous).f('texelSize',...vel.texel).f('uAlpha',alpha).t('uB',1,velB);
-    for(let i=0;i<P.vIters;i++){ U.t('uX',0,vel.read); blit(vel.write); vel.swap(); }
+    // com viscosidade pequena (α grande) a solução já está quase pronta: poucas iterações bastam
+    const nIt = alpha>40 ? 2 : alpha>4 ? Math.min(6,P.vIters) : P.vIters;
+    for(let i=0;i<nIt;i++){ U.t('uX',0,vel.read); blit(vel.write); vel.swap(); }
   }
 
   if(obs[2]>0){ use(prog.obstacle).f('texelSize',...vel.texel).t('uTex',0,vel.read).f('uObs',...obs).f('aspect',aspect); blit(vel.write); vel.swap(); }
@@ -1497,15 +1508,41 @@ function render(){
   maybeShot();
 }
 
+// Leitura assíncrona da GPU: pede os dados num quadro e pega no seguinte, sem travar o processador esperando a placa de vídeo.
+function AsyncReader(){ this.buf = gl.createBuffer(); this.fence = null; this.bytes = 0; this.dst = null; }
+AsyncReader.prototype.busy = function(){ return !!this.fence; };
+AsyncReader.prototype.read = function(fbo, w, h, dst){
+  if(this.fence) return false;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.fbo);
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, this.buf);
+  const bytes = w*h*16;
+  if(this.bytes !== bytes){ gl.bufferData(gl.PIXEL_PACK_BUFFER, bytes, gl.STREAM_READ); this.bytes = bytes; }
+  gl.readPixels(0,0,w,h,gl.RGBA,gl.FLOAT,0);
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  this.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0); gl.flush();
+  this.dst = dst; return true;
+};
+AsyncReader.prototype.poll = function(){
+  if(!this.fence) return false;
+  const s = gl.clientWaitSync(this.fence, 0, 0);
+  if(s === gl.TIMEOUT_EXPIRED) return false;
+  gl.deleteSync(this.fence); this.fence = null;
+  if(s === gl.WAIT_FAILED) return false;
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, this.buf);
+  gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, this.dst);
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  return true;
+};
+const profReader = hasFloat32 ? new AsyncReader() : null, profBuf = new Float32Array(64*4);
 function measureProfile(){
   const vs = vortexPositions();
-  if(!profileFBO || !vs.length){ profileData = null; return; }
+  if(!profileFBO || !profReader || !vs.length){ profileData = null; return; }
+  if(profReader.poll()) profileData = profBuf.slice();
+  if(profReader.busy()) return;
   profileCenter = [vs[0].x, vs[0].y];
   use(prog.profile).f('texelSize',0,0).t('uVelocity',0,vel.read).f('uCenter',...profileCenter).f('aspect',aspect).f('uRmax',RMAX).f('uSimH',simH);
   blit(profileFBO);
-  const buf = new Float32Array(64*4);
-  gl.readPixels(0,0,64,1,gl.RGBA,gl.FLOAT,buf);
-  profileData = buf;
+  profReader.read(profileFBO, 64, 1, profBuf);
 }
 const RMAX = 0.4;
 
@@ -1628,12 +1665,55 @@ function updateHUD(){
 // =====================================================================
 //  LAÇO PRINCIPAL
 // =====================================================================
-let last = performance.now(), frame = 0;
+let last = performance.now(), frame = 0, rafLast = performance.now(), rafInterval = 16.7;
+// Só simula quando o simulador está visível na tela (ao rolar para ler a explicação, ele pausa).
+let stageVisible = true;
+new IntersectionObserver(es=>{ stageVisible = es[0].isIntersecting; }, {threshold:0.02}).observe(stage);
+
+// ---- desempenho: níveis de qualidade e ajuste automático ----
+const PERF_LEVELS = [
+  {name:'leve',  simRes:128, dyeRes:512,  pCount:96,  pIters:18, q3max:0.5,  N3:48},
+  {name:'média', simRes:192, dyeRes:768,  pCount:96,  pIters:25, q3max:0.75, N3:64},
+  {name:'alta',  simRes:256, dyeRes:1024, pCount:160, pIters:30, q3max:1.0,  N3:64},
+];
+let perfMode = 'auto', perfLevel = 1, govFrames = 0, govTime = 0, govCooldown = 0, toastTimer = 0;
+function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ t.hidden = true; }, 4000); }
+function applyPerfLevel(l, rebuild){
+  perfLevel = l; const L = PERF_LEVELS[l];
+  const changed = P.simRes!==L.simRes || P.dyeRes!==L.dyeRes || P.pCount!==L.pCount;
+  P.simRes = L.simRes; P.dyeRes = L.dyeRes; P.pCount = L.pCount; P.pIters = L.pIters;
+  if(rebuild && changed){ initFBOs(); resetSim(); }
+  Sim3D.setPerf(L);
+  syncPerfUI(); syncUI();
+}
+function syncPerfUI(){ document.querySelectorAll('#perfSeg button').forEach(b=>b.classList.toggle('on', b.dataset.v===perfMode)); }
+document.getElementById('perfSeg').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  perfMode = b.dataset.v; govCooldown = 3;
+  applyPerfLevel(perfMode==='leve' ? 0 : perfMode==='alta' ? 2 : 1, true);
+});
+function governor(dtReal){
+  // no modo Auto: se ficar abaixo de ~42 quadros/s por alguns segundos, reduz a qualidade um nível
+  if(perfMode!=='auto' || paused || MODE==='3d') { govFrames = 0; govTime = 0; return; }
+  govFrames++; govTime += dtReal;
+  if(govTime < 2) return;
+  const avg = govFrames/govTime; govFrames = 0; govTime = 0;
+  if(govCooldown > 0){ govCooldown--; return; }
+  if(avg < 42 && perfLevel > 0){ applyPerfLevel(perfLevel-1, true); govCooldown = 1; showToast('⚡ Qualidade reduzida automaticamente para ficar mais leve'); }
+}
+
 function loop(now){
+  requestAnimationFrame(loop);
+  const rawDt = now - rafLast; rafLast = now;
+  rafInterval = rafInterval*0.95 + Math.min(rawDt,50)*0.05;
+  if(!stageVisible && !document.fullscreenElement){ last = now; return; }
+  // monitores de 120/144 Hz: limita a ~60 quadros/s (não precisa simular mais que isso)
+  if(rafInterval < 11 && now - last < 15.5) return;
   const real = Math.min((now-last)/1000, 0.1); last = now;
   if(real>0) fps = fps*0.93 + (1/real)*0.07;
   if(frame%30===0) resize(false);
-  if(MODE==='3d'){ Sim3D.frame(real); frame++; requestAnimationFrame(loop); return; }
+  governor(real);
+  if(MODE==='3d'){ Sim3D.frame(real); frame++; return; }
   if(!paused || stepOnce){
     const dt = Math.min(Math.max(real,1/120),1/30)*P.timeScale;
     simTime += dt; impulseTimer -= dt;
@@ -1641,18 +1721,18 @@ function loop(now){
     stepOnce = false;
   }
   render();
-  if(frame%5===0){ measureProfile(); drawChart(); }
+  if(frame%6===0){ measureProfile(); drawChart(); }
   if(frame%10===0) updateHUD();
-  drawOverlay();
+  if(P.markers || frame%30===0) drawOverlay();
   frame++;
-  requestAnimationFrame(loop);
 }
 
 // =====================================================================
 //  TAMANHO DA TELA
 // =====================================================================
 function resize(force){
-  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  // a simulação é suave por natureza: calcular em resolução de tela 1× basta (telas com escala 150% calculariam 2,25× mais pixels)
+  const dpr = perfLevel>=2 ? Math.min(window.devicePixelRatio||1, 1.5) : 1;
   const w = Math.max(2, Math.round(stage.clientWidth*dpr)), h = Math.max(2, Math.round(stage.clientHeight*dpr));
   if(!force && canvas.width===w && canvas.height===h) return;
   const oldAspect = aspect;
@@ -1882,7 +1962,7 @@ window.addEventListener('keydown', e=>{
 let MODE = '2d';
 const Sim3D = (()=>{
   const Q = {scene:'colapso', N:64, gamma:1.0, core:0.16, dir:1, suction:1.2, updraft:0, nu:2e-4, confine:1.0, buoy:0,
-    hScale:1.0, quality:'auto', particles:true, autoRotate:true, showDye:true, emitDye:true, wander:false, dyeDiss:0.02, pIters:30, vIters:8, objType:'bolha',
+    hScale:1.0, quality:'auto', particles:true, autoRotate:true, showDye:true, emitDye:true, wander:false, dyeDiss:0.02, pIters:20, vIters:8, objType:'bolha',
     hExp:0.01, blowSpeed:0.5, simZoom:true, loopBlow:true};
   const LEVEL = 1.45, GRAV = 4.0, MAXOBJ = 24, G_EFF = 1.6;
   const SCENES = {
@@ -1947,7 +2027,8 @@ const Sim3D = (()=>{
   let inited = false, n = 64, t = 8, A = 512;
   let vel, dye, pr, div, curl, velB, height, samp, rtt;
   const prg = {};
-  let time3 = 0, objs = [], swallowed = 0, lifted = 0, lastDt = 1/60, sinkSum = 1, compSum = 1, sampBuf = null;
+  let time3 = 0, objs = [], swallowed = 0, lifted = 0, lastDt = 1/60, sinkSum = 1, compSum = 1, sampBuf = null, sampStage = null, sampReader = null;
+  let qMax = 0.75;                                  // teto da qualidade automática (definido pelo seletor de desempenho)
   const splashes = [];
   const cam = {yaw:0.6, pitch:0.45, dist:4.6, target:[0,0.85,0]};
   const drag = {active:false, moved:false, x:0, y:0};
@@ -2247,7 +2328,7 @@ void main(){
       col += fr*sky(reflect(rd,bn)) + vec3(0.55,0.75,0.9)*edgeGlow(pe)*0.6;
       Tr *= (1.-fr)*vec3(0.93,0.97,0.98);
       float tStop = min(t1, tObj);
-      const int STEPS = 96;
+      const int STEPS = 68;
       float ds = (t1-t0)/float(STEPS);
       vec3 p = pe; bool above = p.y > surfH(p.xz);
       for(int i=0;i<STEPS;i++){
@@ -2294,7 +2375,7 @@ void main(){
     float Ts = 1.;
     if(tbb.x<tbb.y && tbb.y>0.){
       float t0 = max(tbb.x,0.), t1 = min(tbb.y, min(tObj,tG));
-      const int STEPS = 96; float ds = (tbb.y-t0)/float(STEPS);
+      const int STEPS = 64; float ds = (tbb.y-t0)/float(STEPS);
       float k = ds/uB1.x;                                // passo em unidades do núcleo (autossimilar)
       for(int i=0;i<STEPS;i++){
         float t = t0+(float(i)+0.5)*ds; if(t>t1) break;
@@ -2311,7 +2392,7 @@ void main(){
     float Ts = 1.;
     if(inBox){
       float t0 = max(tb.x,0.), t1 = min(tb.y, tEnd);
-      const int STEPS = 80; float ds = (tb.y-t0)/float(STEPS);
+      const int STEPS = 56; float ds = (tb.y-t0)/float(STEPS);
       for(int i=0;i<STEPS;i++){
         float t = t0+(float(i)+0.5)*ds; if(t>t1) break;
         vec3 p = ro+rd*t; vec4 d = dyeAt(p);
@@ -2345,7 +2426,8 @@ void main(){
     height = createDouble(n,n,F16,H16,gl.LINEAR);
     samp = hasFloat32 ? createFBO(MAXOBJ,3,gl.RGBA32F,gl.FLOAT,gl.NEAREST) : null;
     if(samp && !samp.ok){ destroy(samp); samp = null; }
-    sampBuf = new Float32Array(MAXOBJ*3*4);
+    sampBuf = new Float32Array(MAXOBJ*3*4); sampStage = new Float32Array(MAXOBJ*3*4);
+    if(!sampReader) sampReader = new AsyncReader();
     computeSums();
   }
   function sinkCfg(){ return Q.scene==='tanque' ? {c:[0,0.06,0], R:0.11, H:0.08, mode:0} : {c:[0,1.94,0], R:0.28, H:0.1, mode:1}; }
@@ -2418,8 +2500,10 @@ void main(){
     if(T.adv){ use(prg.advect); C3().t('uVel',0,vel.read).t('uSrc',1,vel.read).f('dt',dt).f('uDiss',0); blit(vel.write); vel.swap(); }
     if(T.visc && Q.nu>0){
       use(prog.copy).f('texelSize',0,0).t('uTex',0,vel.read); blit(velB);
-      use(prg.viscous); C3().f('uAlpha', 1/(Q.nu*S*S*dt)).t('uB',1,velB);
-      for(let i=0;i<Q.vIters;i++){ U.t('uX',0,vel.read); blit(vel.write); vel.swap(); }
+      const alpha3 = 1/(Q.nu*S*S*dt);
+      use(prg.viscous); C3().f('uAlpha', alpha3).t('uB',1,velB);
+      const nIt3 = alpha3>40 ? 2 : alpha3>4 ? Math.min(5,Q.vIters) : Q.vIters;
+      for(let i=0;i<nIt3;i++){ U.t('uX',0,vel.read); blit(vel.write); vel.swap(); }
     }
     const Qs = (T.press && !water) ? Q.suction*22 : 0;          // só o exaustor do tornado retira ar; o tanque não tem ralo (a água recircula)
     if(T.press){
@@ -2452,10 +2536,13 @@ void main(){
     }
     // amostra o campo nas posições dos objetos
     if(samp && objs.length){
-      const op = new Float32Array(MAXOBJ*4);
-      objs.slice(0,MAXOBJ).forEach((o,i)=>op.set([(o.x+1)*S,o.y*S,(o.z+1)*S,0],i*4));
-      use(prg.sample); C3().t('uVel',0,vel.read).t('uP',1,pr.read).t('uHeight',2,height.read).v4('uOP',op); blit(samp);
-      gl.readPixels(0,0,MAXOBJ,3,gl.RGBA,gl.FLOAT,sampBuf);
+      if(sampReader.poll()) sampBuf.set(sampStage);             // dados pedidos no quadro anterior
+      if(!sampReader.busy()){
+        const op = new Float32Array(MAXOBJ*4);
+        objs.slice(0,MAXOBJ).forEach((o,i)=>op.set([(o.x+1)*S,o.y*S,(o.z+1)*S,0],i*4));
+        use(prg.sample); C3().t('uVel',0,vel.read).t('uP',1,pr.read).t('uHeight',2,height.read).v4('uOP',op); blit(samp);
+        sampReader.read(samp, MAXOBJ, 3, sampStage);
+      }
     }
   }
   function emitters3(){
@@ -2634,13 +2721,22 @@ void main(){
     }
     if(Q.autoRotate && !drag.active) cam.yaw += real*0.08;
     if(Q.scene==='colapso' && frameCount3%5===0) drawBlowChart();
-    if(Q.quality==='auto' && frameCount3%45===44){ if(fps<28 && autoQ>0.45) autoQ = Math.max(0.45, autoQ-0.1); else if(fps>52 && autoQ<0.9) autoQ = Math.min(0.9, autoQ+0.05); }
+    if(Q.quality==='auto' && frameCount3%45===44){
+      if(fps<40 && autoQ>0.4) autoQ = Math.max(0.4, autoQ-0.1);
+      else if(fps>56 && autoQ<qMax) autoQ = Math.min(qMax, autoQ+0.05);
+      if(autoQ>qMax) autoQ = qMax;
+    }
     render3();
     octx.clearRect(0,0,overlay.width,overlay.height);
     if(Q.scene==='colapso' && blow.flash>0) drawFlash();
     if(frameCount3++ % 10 === 0) hud3();
   }
-  let frameCount3 = 0, autoQ = 0.7;
+  let frameCount3 = 0, autoQ = 0.6;
+  function setPerf(L){
+    qMax = L.q3max; autoQ = Math.min(autoQ, qMax);
+    if(Q.N !== L.N3){ Q.N = L.N3; if(inited){ alloc(); reset(); } }
+    sync3();
+  }
   function drawFlash(){
     const w = overlay.width, h = overlay.height, k = Math.min(1, blow.flash/2.2);
     const g = octx.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.max(w,h)*0.6);
@@ -2788,7 +2884,7 @@ void main(){
     alloc(); initParts3(); inited = true; applyScene(Q.scene);
   }
   buildUI(); sync3();
-  return { frame, pointer, wheel, reset:()=>{ if(inited) reset(); }, applyScene, sync:sync3, drop:()=>randomDrop(Q.objType), sceneOrder:SCENE_ORDER,
+  return { frame, pointer, wheel, reset:()=>{ if(inited) reset(); }, applyScene, sync:sync3, drop:()=>randomDrop(Q.objType), sceneOrder:SCENE_ORDER, setPerf,
     debug:()=>({Q, cam, objs, time3, swallowed, lifted, sampBuf, n, blow, blowParams}) };
 })();
 
@@ -2817,7 +2913,7 @@ canvas.addEventListener('wheel', e=>{ if(MODE==='3d'){ e.preventDefault(); Sim3D
 // =====================================================================
 //  INÍCIO
 // =====================================================================
-if(matchMedia('(pointer:coarse)').matches && innerWidth<700){ P.simRes = 128; P.dyeRes = 512; P.pCount = 96; }
+applyPerfLevel(matchMedia('(pointer:coarse)').matches && innerWidth<900 ? 0 : 1, false);   // celular começa no nível leve
 resize(true);
 initParticles();
 applyPreset('ralo');
