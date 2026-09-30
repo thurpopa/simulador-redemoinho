@@ -386,11 +386,11 @@ body::after{content:"";position:fixed;inset:0;z-index:70;pointer-events:none;opa
 <script>
   // Liga as animações de entrada (antes de a página aparecer, para não piscar).
   // As animações fazem parte da apresentação, então rodam mesmo com os "efeitos de animação"
-  // do Windows desligados. Para uma versão sem movimento, abra o endereço com ?calmo no final.
+  // do Windows desligados. Para uma versão sem movimento, abra o endereço com ?calmo (ou #calmo) no final.
   // Segurança: se o script principal falhar, em 4 s tudo volta a aparecer.
   (function(){
     var d = document.documentElement;
-    if (/[?&]calmo\b/.test(location.search)) { d.classList.add('calm'); return; }
+    if (/[?&]calmo\b/.test(location.search) || location.hash === '#calmo') { d.classList.add('calm'); return; }
     d.classList.add('anim');
     setTimeout(function(){ if (!d.dataset.animReady) d.classList.remove('anim'); }, 4000);
   })();

@@ -37,7 +37,8 @@ CONTROLES DA APRESENTAÇÃO
 
 ANIMAÇÕES
   As páginas animam mesmo com os "efeitos de animação" do Windows
-  desligados. Para uma versão sem movimento, abra com ?calmo no final.
+  desligados. Para uma versão sem movimento, abra com ?calmo (ou #calmo)
+  no final do endereço.
 
 DICA PARA A FEIRA
   Teste antes no computador que vai usar. Se ficar lento, no modo 3D escolha

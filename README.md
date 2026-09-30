@@ -30,7 +30,7 @@ Não precisa instalar nada: cada página é um único arquivo HTML, que funciona
 - `index.html` — o simulador
 - `apresentacao/index.html` — a apresentação
 
-As animações rodam mesmo com os efeitos de animação do sistema desligados. Para uma versão sem movimento, abra o endereço com `?calmo` no final.
+As animações rodam mesmo com os efeitos de animação do sistema desligados. Para uma versão sem movimento, abra o endereço com `?calmo` (ou `#calmo`) no final.
 
 ## Referências
 

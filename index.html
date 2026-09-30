@@ -330,11 +330,11 @@ nav a.navpres:hover{background:rgba(182,156,255,.12);border-color:var(--press)}
 </style>
 <script>
   // Liga as animações antes de a página aparecer (para não piscar). Elas rodam mesmo com os
-  // "efeitos de animação" do Windows desligados; para uma versão sem movimento, abra com ?calmo.
+  // "efeitos de animação" do Windows desligados; para uma versão sem movimento, abra com ?calmo (ou #calmo).
   // Segurança: se o script das animações falhar, em 4 s tudo volta a aparecer.
   (function(){
     var d = document.documentElement;
-    if (/[?&]calmo\b/.test(location.search)) { d.classList.add('calm'); return; }
+    if (/[?&]calmo\b/.test(location.search) || location.hash === '#calmo') { d.classList.add('calm'); return; }
     d.classList.add('anim');
     setTimeout(function(){ if (!d.dataset.animReady) d.classList.remove('anim'); }, 4000);
   })();
