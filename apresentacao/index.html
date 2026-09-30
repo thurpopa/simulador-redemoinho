@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pode um Redemoinho Explodir?</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%233c9dff'/%3E%3Cstop offset='1' stop-color='%23ff6b3d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 32m-4 0a4 4 0 1 1 8 0a10 10 0 1 1-20 0a16 16 0 1 1 32 0a22 22 0 1 1-44 0a28 28 0 0 1 28-28' fill='none' stroke='url(%23g)' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=STIX+Two+Text:ital,wght@0,500;1,500&display=swap">
+<style>
+/* ===== Identidade: tinta escura + par divergente da vorticidade (vermelho = anti-horário, azul = horário) + dourado da força externa ===== */
+:root{
+  color-scheme: dark;
+  --bg:#060911; --bg2:#0a1020; --bg3:#101a2e; --line:#1c2742; --line2:#28365a;
+  --text:#eaf0fa; --muted:#93a0ba; --dim:#5f6c88;
+  --warm:#ff6b3d; --cool:#3c9dff; --gold:#ffc857; --mint:#6ff2d6; --pink:#ff7aa8; --violet:#b89cff;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,"Courier New",monospace;
+  --f-math:"STIX Two Text","Cambria Math",Cambria,"Times New Roman",serif;
+  --gutter:clamp(16px,5vw,56px);
+  --ease:cubic-bezier(.2,.7,.1,1);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+html.calm{scroll-behavior:auto}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:var(--gutter)}
+.math{font-family:var(--f-math);font-style:italic}
+.math .v{font-style:normal;font-weight:500}
+.math .up{font-style:normal}
+
+/* ===== Barra superior, progresso e trilho de capítulos ===== */
+.progress{position:fixed;left:0;right:0;top:0;height:3px;z-index:60;background:linear-gradient(90deg,var(--cool),var(--mint) 50%,var(--warm));transform-origin:0 50%;transform:scaleX(0)}
+.topbar{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:50;display:flex;align-items:center;gap:16px;padding:14px var(--gutter);pointer-events:none}
+.topbar > *{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none}
+.brand svg{flex:none}
+.topbar .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--f-body);font-weight:600;font-size:15px;text-decoration:none;border-radius:999px;padding:12px 20px;border:1px solid var(--line2);background:rgba(10,16,32,.8);color:var(--text);cursor:pointer;transition:border-color .25s,transform .25s var(--ease),background .25s}
+.btn:hover{border-color:var(--mint);transform:translateY(-2px)}
+.btn.primary{background:var(--text);color:#07101c;border-color:var(--text)}
+.btn.primary:hover{background:var(--mint);border-color:var(--mint)}
+.btn.small{padding:8px 14px;font-size:13.5px}
+.btn .arr{transition:transform .25s var(--ease)}
+.btn:hover .arr{transform:translateX(3px)}
+
+.rail{position:fixed;right:calc(12px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:45;display:flex;flex-direction:column;gap:4px}
+.rail-item{display:flex;align-items:center;justify-content:flex-end;gap:10px;background:none;border:0;color:var(--dim);cursor:pointer;padding:5px 6px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.05em}
+.rail-item .rail-l{opacity:0;transform:translateX(6px);transition:opacity .25s,transform .25s var(--ease);white-space:nowrap;background:rgba(6,9,17,.9);padding:2px 8px;border-radius:6px;color:var(--text)}
+.rail-item .rail-bar{width:14px;height:2px;background:currentColor;border-radius:2px;transition:width .3s var(--ease),background .3s}
+.rail-item:hover .rail-l,.rail-item:focus-visible .rail-l{opacity:1;transform:none}
+.rail-item.on{color:var(--text)}
+.rail-item.on .rail-bar{width:30px;background:linear-gradient(90deg,var(--cool),var(--warm))}
+.rail-item.on .rail-l{opacity:1;transform:none;background:transparent;color:var(--muted)}
+@media (max-width:980px){.rail{display:none}}
+
+.keys{position:fixed;left:var(--gutter);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:45;font-family:var(--f-mono);font-size:11.5px;color:var(--dim);display:flex;gap:14px;align-items:center}
+.keys kbd{font-family:var(--f-mono);border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 6px;color:var(--muted);background:var(--bg2)}
+.keys{transition:opacity .3s}
+body.at-hero .keys > span:not(.timer){opacity:0;pointer-events:none}
+.timer{font-family:var(--f-mono);font-size:13px;color:var(--text);background:var(--bg3);border:1px solid var(--gold);border-radius:999px;padding:3px 10px}
+@media (max-width:760px){.keys{display:none}}
+
+/* ===== Capítulos ===== */
+.ch{position:relative;padding-block:clamp(88px,14vh,160px)}
+.eyebrow{font-family:var(--f-mono);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px;margin:0 0 22px}
+.eyebrow .n{color:var(--text)}
+.eyebrow::after{content:"";height:1px;width:64px;background:linear-gradient(90deg,var(--line2),transparent)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+h2{font-size:clamp(38px,6.2vw,88px);line-height:.98;font-weight:800;letter-spacing:-.025em;max-width:16ch}
+h3{font-size:clamp(20px,2.1vw,26px);line-height:1.2;font-weight:700;letter-spacing:-.01em}
+.lead{font-size:clamp(18px,1.6vw,21px);line-height:1.6;color:#cfd8ea;max-width:60ch;margin:26px 0 0}
+p{max-width:64ch}
+.muted{color:var(--muted)}
+.hl-warm{color:var(--warm)} .hl-cool{color:var(--cool)} .hl-gold{color:var(--gold)} .hl-mint{color:var(--mint)}
+
+/* ===== 00 · Abertura ===== */
+.hero{min-height:100svh;display:flex;align-items:flex-end;padding-block:120px clamp(84px,13vh,140px);overflow:hidden;isolation:isolate}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;z-index:-1;display:block}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(6,9,17,.55),transparent 30%,transparent 55%,rgba(6,9,17,.92))}
+.kicker{font-family:var(--f-mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint);margin:0 0 20px;display:flex;gap:12px;align-items:center}
+.kicker i{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 14px var(--mint);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.hero h1{font-size:clamp(52px,10.5vw,168px);line-height:.9;font-weight:800;letter-spacing:-.035em;max-width:11ch}
+.hero h1 .swirl{background:linear-gradient(100deg,var(--cool) 10%,var(--mint) 45%,var(--warm) 85%);-webkit-background-clip:text;background-clip:text;color:transparent;background-size:200% 100%;animation:sheen 9s ease-in-out infinite alternate}
+@keyframes sheen{to{background-position:100% 0}}
+.hero .lead{margin-top:28px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:40px;font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+.hero-meta b{color:var(--text);font-weight:500}
+.hint-mouse{position:absolute;right:var(--gutter);bottom:clamp(84px,13vh,140px);font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right;line-height:1.5}
+.hint-mouse b{color:var(--text);font-weight:500}
+@media (max-width:760px){.hint-mouse{display:none}}
+
+/* ===== 01 · O problema ===== */
+.everywhere{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:56px}
+.ew{background:var(--bg);padding:26px 24px 28px;display:flex;flex-direction:column;gap:10px;min-height:190px;transition:background .3s}
+.ew:hover{background:var(--bg2)}
+.ew svg{width:44px;height:44px;flex:none}
+.ew h3{font-size:20px}
+.ew p{margin:0;color:var(--muted);font-size:15px;line-height:1.55}
+.ew .num{font-family:var(--f-mono);font-size:12px;color:var(--dim);margin-top:auto}
+@media (max-width:900px){.everywhere{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.everywhere{grid-template-columns:1fr}}
+.question{margin-top:64px;display:grid;grid-template-columns:auto 1fr;gap:18px 26px;align-items:start;border-top:1px solid var(--line);padding-top:36px}
+.question .q{font-family:var(--f-display);font-size:clamp(24px,2.8vw,36px);line-height:1.2;font-weight:700;letter-spacing:-.01em;max-width:30ch}
+.question .tag{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);padding-top:10px}
+@media (max-width:640px){.question{grid-template-columns:1fr}}
+
+/* ===== 02 · A equação (cena fixa + passos) ===== */
+.eqscene{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(24px,5vw,80px);margin-top:48px}
+.eqsticky{position:sticky;top:18vh;align-self:start}
+.eqbox{border:1px solid var(--line);border-radius:22px;padding:clamp(22px,3.5vw,44px);background:radial-gradient(120% 140% at 0% 0%,rgba(60,157,255,.08),transparent 55%),radial-gradient(120% 140% at 100% 100%,rgba(255,107,61,.07),transparent 55%),var(--bg2)}
+.eq{font-family:var(--f-math);font-style:italic;font-size:clamp(24px,3.3vw,46px);line-height:1.5;display:flex;flex-wrap:wrap;align-items:center;gap:.08em .32em}
+.eq .v{font-style:normal;font-weight:500}
+.eq .up{font-style:normal}
+.term{padding:.02em .22em;border-radius:.3em;transition:color .45s,background .45s,box-shadow .45s,opacity .45s;color:var(--text)}
+.eq[data-active] .term{opacity:.3}
+.eq[data-active="adv"] .term[data-t="adv"],.eq[data-active="press"] .term[data-t="press"],.eq[data-active="visc"] .term[data-t="visc"],.eq[data-active="force"] .term[data-t="force"],.eq[data-active="inc"] .term[data-t="inc"],.eq[data-active="all"] .term{opacity:1}
+.eq[data-active="adv"] .term[data-t="adv"]{color:var(--cool);background:rgba(60,157,255,.12);box-shadow:0 0 0 1px rgba(60,157,255,.4)}
+.eq[data-active="press"] .term[data-t="press"]{color:var(--violet);background:rgba(184,156,255,.12);box-shadow:0 0 0 1px rgba(184,156,255,.4)}
+.eq[data-active="visc"] .term[data-t="visc"]{color:var(--mint);background:rgba(111,242,214,.1);box-shadow:0 0 0 1px rgba(111,242,214,.4)}
+.eq[data-active="force"] .term[data-t="force"]{color:var(--gold);background:rgba(255,200,87,.12);box-shadow:0 0 0 1px rgba(255,200,87,.45)}
+.eq[data-active="inc"] .term[data-t="inc"]{color:var(--pink);background:rgba(255,122,168,.1);box-shadow:0 0 0 1px rgba(255,122,168,.4)}
+.eq[data-active="all"] .term[data-t="adv"]{color:var(--cool)} .eq[data-active="all"] .term[data-t="press"]{color:var(--violet)} .eq[data-active="all"] .term[data-t="visc"]{color:var(--mint)} .eq[data-active="all"] .term[data-t="force"]{color:var(--gold)} .eq[data-active="all"] .term[data-t="inc"]{color:var(--pink)}
+.eqcap{margin:22px 0 0;font-size:14.5px;color:var(--muted);max-width:52ch}
+.fma{display:flex;align-items:baseline;gap:14px;margin-top:22px;padding-top:18px;border-top:1px dashed var(--line2);font-size:15px;color:var(--muted)}
+.fma .math{font-size:26px;color:var(--text)}
+.steps{display:flex;flex-direction:column;gap:0}
+.step{min-height:62vh;display:flex;flex-direction:column;justify-content:center;padding-block:24px;border-left:1px solid var(--line);padding-left:clamp(18px,2.5vw,32px);position:relative}
+.step::before{content:"";position:absolute;left:-1px;top:50%;height:0;width:2px;background:var(--c,var(--mint));transform:translateY(-50%);transition:height .5s var(--ease)}
+.step.on::before{height:60%}
+.step .k{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--c,var(--mint));margin-bottom:10px}
+.step h3{margin-bottom:10px}
+.step p{margin:0;color:#c7d0e3}
+.step .try{margin-top:14px;font-size:14.5px;color:var(--muted)}
+@media (max-width:900px){.eqscene{grid-template-columns:1fr}.eqsticky{top:64px;z-index:5}.eqbox{padding:16px 18px;background:rgba(10,16,32,.96)}.eq{font-size:clamp(20px,5.4vw,30px)}.eqcap,.fma{display:none}.step{min-height:55vh}}
+
+/* ===== 03 · Por que é difícil ===== */
+.hard{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.hcard{border:1px solid var(--line);border-radius:18px;padding:26px;background:var(--bg2);display:flex;flex-direction:column;gap:12px}
+.hcard .k{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.hcard p{margin:0;color:#c7d0e3;font-size:15.5px}
+@media (max-width:900px){.hard{grid-template-columns:1fr}}
+.stretch{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-top:28px}
+.sp-panel{background:var(--bg);padding:26px 26px 22px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+.sp-panel svg{width:100%;max-width:300px;height:210px}
+.sp-panel .t{font-family:var(--f-display);font-weight:700;font-size:20px}
+.sp-panel p{margin:0;font-size:14.5px;color:var(--muted);max-width:40ch}
+@media (max-width:640px){.stretch{grid-template-columns:1fr}}
+.disc-spin{transform-origin:150px 105px;animation:spin 3.2s linear infinite, spread 6s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spread{0%,100%{opacity:1}50%{opacity:.75}}
+.disc-halo{transform-origin:150px 105px;animation:halo 6s ease-in-out infinite}
+@keyframes halo{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.35);opacity:.15}}
+.tube{transform-origin:150px 105px;animation:stretchy 5s cubic-bezier(.5,0,.3,1) infinite}
+@keyframes stretchy{0%,100%{transform:scale(1,.62)}55%{transform:scale(.36,1.08)}}
+.tube-stripes{animation:stripes .9s linear infinite}
+@keyframes stripes{to{transform:translateX(-24px)}}
+.jet{animation:jet 5s cubic-bezier(.5,0,.3,1) infinite;transform-origin:150px 105px}
+@keyframes jet{0%,100%{opacity:.15;transform:scaleY(.6)}55%{opacity:.9;transform:scaleY(1.05)}}
+
+/* ===== 04 · Problema do Milênio + linha do tempo ===== */
+.million{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,80px);align-items:end;margin-top:40px}
+.bigmoney .cur{font-size:.36em;letter-spacing:0;vertical-align:.95em;margin-right:.12em}
+.bigmoney{font-family:var(--f-display);font-weight:800;font-size:clamp(48px,7.2vw,112px);line-height:.9;letter-spacing:-.04em;background:linear-gradient(180deg,#fff,#b8c4dc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bigmoney small{display:block;font-family:var(--f-mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);-webkit-text-fill-color:var(--gold);margin-top:14px;font-weight:500}
+.clay{border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.clay-row{display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:center;padding:14px 18px;border-top:1px solid var(--line);font-size:15px}
+.clay-row:first-child{border-top:0}
+.clay-row .opt{font-family:var(--f-display);font-weight:800;font-size:22px;color:var(--muted)}
+.clay-row .f{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.clay-row.hot{background:linear-gradient(90deg,rgba(255,200,87,.1),transparent)}
+.clay-row.hot .opt,.clay-row.hot .f{color:var(--gold)}
+@media (max-width:900px){.million{grid-template-columns:1fr}}
+
+.tl{position:relative;margin-top:clamp(64px,10vh,120px)}
+.tl-pin{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.tl-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding-inline:var(--gutter);max-width:1200px;margin:0 auto 34px;width:100%}
+.tl-head h3{font-size:clamp(22px,2.4vw,30px)}
+.tl-head span{font-family:var(--f-mono);font-size:12px;color:var(--dim)}
+.tl-track{display:flex;gap:18px;padding-inline:var(--gutter);will-change:transform}
+.tl-line{position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,transparent,var(--line2) 10%,var(--line2) 90%,transparent);z-index:-1}
+.ev{flex:0 0 clamp(250px,26vw,330px);border:1px solid var(--line);border-radius:18px;padding:22px;background:var(--bg2);display:flex;flex-direction:column;gap:10px;min-height:250px}
+.ev .yr{font-family:var(--f-display);font-weight:800;font-size:clamp(34px,3.6vw,48px);line-height:1;letter-spacing:-.02em}
+.ev .who{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ev p{margin:0;font-size:15px;color:#c7d0e3}
+.ev.gold{border-color:rgba(255,200,87,.55);background:linear-gradient(180deg,rgba(255,200,87,.09),var(--bg2) 60%)}
+.ev.gold .yr{color:var(--gold)}
+.ev.mint .yr{color:var(--mint)}
+@media (max-width:760px){
+  .tl{height:auto!important}
+  .tl-pin{position:relative;height:auto;padding-block:20px}
+  .tl-track{overflow-x:auto;transform:none!important;scroll-snap-type:x mandatory;padding-bottom:12px}
+  .ev{scroll-snap-align:start}
+}
+
+/* ===== 05 · Setembro de 2026 ===== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:56px}
+.stat{padding:30px 22px 26px;border-left:1px solid var(--line)}
+.stat:first-child{border-left:0;padding-left:0}
+.stat .big{font-family:var(--f-display);font-weight:800;font-size:clamp(40px,5vw,72px);line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat .big sup{font-size:.45em;vertical-align:top;color:var(--mint)}
+.stat .lbl{margin-top:10px;font-size:14.5px;color:var(--muted);max-width:22ch}
+@media (max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.stat:nth-child(3){border-left:0;padding-left:0}.stat{border-top:1px solid var(--line)}.stat:nth-child(-n+2){border-top:0}}
+.claims{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(24px,5vw,72px);margin-top:64px}
+.claim-box{border:1px solid var(--line);border-radius:18px;padding:26px;background:var(--bg2)}
+.claim-box h3{margin-bottom:12px}
+.claim-box p{margin:0 0 10px;color:#c7d0e3;font-size:15.5px}
+.debate{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+.debate > div{display:grid;grid-template-columns:40px 1fr;gap:14px;padding:20px 0;border-bottom:1px solid var(--line)}
+.debate .ic{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-mono);font-size:13px;border:1px solid var(--line2);color:var(--gold)}
+.debate h3{font-size:19px;margin-bottom:4px}
+.debate p{margin:0;font-size:15px;color:var(--muted)}
+.say{margin-top:34px;display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border-radius:14px;border:1px dashed rgba(255,200,87,.5);font-size:15.5px;max-width:720px}
+.say b{color:var(--gold)}
+@media (max-width:900px){.claims{grid-template-columns:1fr}}
+
+/* ===== 06 · O colapso (rolar = o tempo acabar) ===== */
+.collapse{position:relative;height:340vh;padding:0}
+.col-pin{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.9fr);align-items:center;gap:clamp(12px,3vw,40px);padding:80px var(--gutter) 40px;max-width:1440px;margin:0 auto}
+.col-canvas-wrap{position:relative;height:min(78vh,760px);border-radius:24px;overflow:hidden;border:1px solid var(--line);background:#04060d}
+.col-canvas-wrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.col-tag{position:absolute;left:18px;top:16px;font-family:var(--f-mono);font-size:12px;color:var(--muted);line-height:1.6}
+.col-tag b{color:var(--text);font-weight:500}
+.col-zoom{position:absolute;left:18px;bottom:16px;font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px}
+.col-zoom i{display:block;height:2px;background:var(--text);width:60px}
+.col-side h2{font-size:clamp(32px,4.2vw,62px);max-width:12ch}
+.col-side .lead{font-size:16.5px;margin-top:16px}
+.readout{margin-top:24px;display:flex;flex-direction:column;gap:12px;font-family:var(--f-mono);font-size:13px}
+.ro{display:grid;grid-template-columns:118px 1fr 92px;gap:10px;align-items:center}
+.ro .name{color:var(--muted)}
+.ro .bar{height:6px;border-radius:6px;background:var(--bg3);overflow:hidden}
+.ro .bar i{display:block;height:100%;width:50%;border-radius:6px;background:var(--c);transition:width .12s linear}
+.ro .val{text-align:right;color:var(--text);font-variant-numeric:tabular-nums}
+.ro .law{grid-column:2 / 4;color:var(--dim);font-size:11.5px;margin-top:-8px}
+.col-scroll-hint{margin-top:22px;font-family:var(--f-mono);font-size:12px;color:var(--dim);display:flex;align-items:center;gap:10px}
+.col-scroll-hint .track{flex:1;max-width:180px;height:2px;background:var(--line2);position:relative;border-radius:2px}
+.col-scroll-hint .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--cool),var(--warm));border-radius:2px}
+.flash{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none;opacity:0;transition:opacity .35s;background:radial-gradient(circle at 50% 50%,rgba(255,240,220,.92),rgba(255,120,160,.45) 35%,rgba(4,6,13,0) 70%)}
+.flash.on{opacity:1}
+.flash div{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,4vw,54px);color:#12081a;line-height:1.05;letter-spacing:-.02em}
+.flash small{display:block;font-family:var(--f-body);font-weight:600;font-size:15px;margin-top:8px}
+@media (max-width:900px){
+  .collapse{height:300vh}
+  .col-pin{grid-template-columns:1fr;grid-template-rows:auto 1fr;padding-top:70px;align-content:start}
+  .col-canvas-wrap{height:44vh;order:-1}
+  .col-side h2{font-size:28px}.col-side .lead{display:none}
+  .readout{margin-top:14px;gap:8px}
+}
+
+/* ===== 07 · Do papel ao computador ===== */
+.pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:56px;counter-reset:st;position:relative}
+.pipe::before{content:"";position:absolute;left:0;right:0;top:27px;height:2px;background:linear-gradient(90deg,var(--gold),var(--cool),var(--mint),var(--violet),var(--pink));opacity:.35}
+.pipe::after{content:"";position:absolute;top:24px;left:0;width:10px;height:8px;border-radius:4px;background:#fff;box-shadow:0 0 16px #fff;animation:packet 5s linear infinite}
+@keyframes packet{from{left:0}to{left:calc(100% - 10px)}}
+.calm .pipe::after{animation:none;display:none}
+.pst{padding-right:18px;position:relative}
+.pst .dot{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:2px solid var(--c);font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--c);position:relative;z-index:1}
+.pst h3{font-size:19px;margin:18px 0 6px}
+.pst p{margin:0;font-size:14.5px;color:var(--muted)}
+@media (max-width:900px){.pipe{grid-template-columns:1fr;gap:26px}.pipe::before{left:27px;right:auto;top:0;bottom:0;width:2px;height:auto;background:linear-gradient(180deg,var(--gold),var(--cool),var(--mint),var(--violet),var(--pink))}.pipe::after{display:none}.pst{display:grid;grid-template-columns:56px 1fr;gap:4px 18px}.pst .dot{grid-row:span 2}.pst h3{margin:6px 0 0}}
+.numbers{display:flex;flex-wrap:wrap;gap:12px 40px;margin-top:56px;padding-top:28px;border-top:1px solid var(--line)}
+.numbers div{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.numbers b{display:block;font-family:var(--f-display);font-weight:800;font-size:clamp(28px,3vw,40px);color:var(--text);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* ===== 08 · A simulação ===== */
+.show{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:56px}
+.feat{border:1px solid var(--line);border-radius:20px;padding:26px;background:var(--bg2);display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.feat .k{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--c)}
+.feat p{margin:0;color:#c7d0e3;font-size:15.5px}
+.feat ul{margin:4px 0 0;padding-left:18px;color:var(--muted);font-size:14.5px}
+.feat::after{content:"";position:absolute;right:-60px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,var(--c),transparent 70%);opacity:.12}
+@media (max-width:760px){.show{grid-template-columns:1fr}}
+.cta{margin-top:40px;border-radius:26px;padding:1px;background:linear-gradient(120deg,var(--cool),var(--mint),var(--warm))}
+.cta-in{border-radius:25px;background:radial-gradient(90% 140% at 100% 0%,rgba(255,107,61,.16),transparent 60%),radial-gradient(90% 140% at 0% 100%,rgba(60,157,255,.18),transparent 60%),var(--bg);padding:clamp(28px,5vw,64px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center}
+.cta h3{font-size:clamp(28px,3.6vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.02}
+.cta p{margin:12px 0 0;color:var(--muted)}
+.cta .btn.primary{font-size:17px;padding:16px 26px}
+.cta .url{display:block;margin-top:12px;font-family:var(--f-mono);font-size:12.5px;color:var(--dim);word-break:break-all}
+@media (max-width:760px){.cta-in{grid-template-columns:1fr}}
+
+/* ===== 09 · Conclusões ===== */
+.learn{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-top:56px}
+.learn > div{background:var(--bg);padding:28px 26px}
+.learn h3{font-size:clamp(20px,2vw,24px);margin-bottom:8px}
+.learn p{margin:0;color:var(--muted);font-size:15.5px}
+@media (max-width:760px){.learn{grid-template-columns:1fr}}
+.limits{margin-top:44px;display:grid;grid-template-columns:auto 1fr;gap:10px 28px;align-items:start}
+.limits .tag{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);padding-top:4px}
+.limits ul{margin:0;padding-left:18px;color:var(--muted);font-size:15.5px}
+.limits li{margin:6px 0}
+@media (max-width:640px){.limits{grid-template-columns:1fr}}
+.refs{margin-top:64px;padding-top:28px;border-top:1px solid var(--line);columns:2;column-gap:40px;font-size:14px;color:var(--muted)}
+.refs h3{column-span:all;font-size:16px;font-family:var(--f-mono);font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:14px}
+.refs p{margin:0 0 10px;break-inside:avoid}
+.refs a{color:var(--text);text-decoration-color:var(--line2);text-underline-offset:3px}
+.refs a:hover{text-decoration-color:var(--mint)}
+@media (max-width:760px){.refs{columns:1}}
+footer{padding:40px var(--gutter) calc(60px + env(safe-area-inset-bottom,0px));max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 30px;justify-content:space-between;font-family:var(--f-mono);font-size:12px;color:var(--dim);border-top:1px solid var(--line)}
+
+/* ===== Animações =====
+   Os estados "escondidos" só valem com a classe .anim, que o script do <head> coloca quando o
+   sistema não pede "reduzir movimento". Sem JavaScript, tudo aparece normalmente. */
+
+/* abertura: o logo se desenha e a cortina some */
+.intro{display:none}
+.anim .intro{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--bg);transition:opacity .7s var(--ease),visibility .7s}
+.intro.out{opacity:0;visibility:hidden}
+.intro-in{display:flex;flex-direction:column;align-items:center;gap:18px}
+.intro svg{width:84px;height:84px}
+.intro path{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1s cubic-bezier(.6,0,.2,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.intro span{font-family:var(--f-mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);opacity:0;animation:fadeup .6s var(--ease) .35s forwards}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* revelar ao rolar: sobe, ganha nitidez e aparece, em cascata */
+.anim [data-rv]{opacity:0;transform:translate3d(0,30px,0);filter:blur(5px);transition:opacity .9s var(--ease),transform 1s var(--ease),filter .9s var(--ease);transition-delay:calc(var(--i,0) * 75ms)}
+.anim [data-rv].in{opacity:1;transform:none;filter:none}
+.anim .eyebrow[data-rv]::after{width:0;transition:width 1.1s var(--ease) .25s}
+.anim .eyebrow[data-rv].in::after{width:64px}
+
+/* títulos: as palavras caem do céu ou saem girando de um vórtice (o JS anima cada uma) */
+.words .w{display:inline-block;white-space:nowrap}
+.words .c{display:inline-block}
+.anim .fx-w .w,.anim .fx-c .c{opacity:0}
+.anim .fx-w .w,.anim .fx-c .c{will-change:transform,opacity}
+
+/* linha do pipeline se desenha */
+.anim .pipe[data-draw]::before{transform:scaleX(0);transform-origin:0 50%;transition:transform 1.8s var(--ease) .2s}
+.anim .pipe[data-draw].in::before{transform:none}
+@media (max-width:900px){.anim .pipe[data-draw]::before{transform:scaleY(0);transform-origin:50% 0}.anim .pipe[data-draw].in::before{transform:none}}
+
+/* números gigantes de fundo em cada capítulo (com parallax) */
+.ch{isolation:isolate}
+.chnum{position:absolute;right:calc(var(--gutter) + 40px);top:clamp(40px,7vh,90px);z-index:-1;pointer-events:none;font-family:var(--f-display);font-weight:800;font-size:clamp(140px,22vw,340px);line-height:.8;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:1px rgba(147,160,186,.12);will-change:transform;user-select:none}
+.chnum::after{content:attr(data-n);position:absolute;inset:0;background:linear-gradient(180deg,rgba(60,157,255,.07),transparent 70%);-webkit-background-clip:text;background-clip:text;-webkit-text-stroke:0}
+@media (max-width:980px){.chnum{right:var(--gutter)}}
+
+/* brilho que segue o mouse nos cartões */
+.spot{position:relative;isolation:isolate}
+.spot::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;opacity:0;transition:opacity .4s;background:radial-gradient(380px circle at var(--mx,50%) var(--my,50%),rgba(111,242,214,.10),rgba(60,157,255,.05) 35%,transparent 60%)}
+.spot:hover::before{opacity:1}
+.spot > *{position:relative;z-index:1}
+.hcard,.claim-box,.feat,.ev{transition:border-color .35s,box-shadow .35s}
+.hcard:hover,.claim-box:hover,.feat:hover{border-color:var(--line2);box-shadow:0 30px 70px -40px rgba(60,157,255,.45)}
+
+/* botões: reflexo que atravessa e efeito magnético (o JS move o botão) */
+.btn{position:relative;overflow:hidden}
+.btn.primary::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.6) 50%,transparent 70%);transform:translateX(-120%);transition:transform .9s var(--ease);pointer-events:none}
+.btn.primary:hover::after{transform:translateX(120%)}
+.btn.mag{transition:border-color .25s,background .25s,transform .35s var(--ease)}
+.anim .btn.mag[data-rv]{transition:opacity .9s var(--ease),transform 1s var(--ease),filter .9s var(--ease);transition-delay:calc(var(--i,0) * 75ms)}
+
+/* borda do CTA com gradiente que flui */
+.cta{background-size:220% 220%;animation:flow 7s ease-in-out infinite alternate}
+@keyframes flow{from{background-position:0% 50%}to{background-position:100% 50%}}
+
+/* linha da opção C/D do Clay com brilho dourado passando */
+.clay-row.hot{background-size:250% 100%;background-image:linear-gradient(90deg,rgba(255,200,87,.1),transparent 40%,rgba(255,200,87,.16) 55%,transparent 70%);animation:goldsweep 5s ease-in-out infinite}
+@keyframes goldsweep{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+
+/* indicador "role para baixo" na abertura */
+.scrollcue{position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:24px;height:38px;border:1.5px solid var(--line2);border-radius:14px;display:block}
+.scrollcue::before{content:"";position:absolute;left:50%;top:8px;width:3px;height:8px;margin-left:-1.5px;border-radius:3px;background:var(--mint);animation:wheel 1.8s var(--ease) infinite}
+@keyframes wheel{0%{opacity:0;transform:translateY(-3px)}30%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
+.scrollcue:hover{border-color:var(--mint)}
+@media (max-height:640px){.scrollcue{display:none}}
+
+/* granulado de filme bem sutil sobre a página */
+body::after{content:"";position:fixed;inset:0;z-index:70;pointer-events:none;opacity:.05;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* logo do topo gira devagar ao passar o mouse */
+.brand svg{transition:transform 1.2s var(--ease)}
+.brand:hover svg{transform:rotate(-360deg)}
+
+/* modo calmo (endereço terminado em ?calmo): sem animações */
+.calm .cta,.calm .clay-row.hot,.calm .scrollcue::before{animation:none}
+.calm .btn.primary::after{display:none}
+</style>
+<script>
+  // Liga as animações de entrada (antes de a página aparecer, para não piscar).
+  // As animações fazem parte da apresentação, então rodam mesmo com os "efeitos de animação"
+  // do Windows desligados. Para uma versão sem movimento, abra o endereço com ?calmo no final.
+  // Segurança: se o script principal falhar, em 4 s tudo volta a aparecer.
+  (function(){
+    var d = document.documentElement;
+    if (/[?&]calmo\b/.test(location.search)) { d.classList.add('calm'); return; }
+    d.classList.add('anim');
+    setTimeout(function(){ if (!d.dataset.animReady) d.classList.remove('anim'); }, 4000);
+  })();
+</script>
+</head>
+<body class="at-hero">
+
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro-in">
+    <svg viewBox="0 0 64 64"><defs><linearGradient id="lgi" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#3c9dff"/><stop offset=".5" stop-color="#6ff2d6"/><stop offset="1" stop-color="#ff6b3d"/></linearGradient></defs><path pathLength="1" d="M32 32m-4 0a4 4 0 1 1 8 0a10 10 0 1 1-20 0a16 16 0 1 1 32 0a22 22 0 1 1-44 0a28 28 0 0 1 28-28" fill="none" stroke="url(#lgi)" stroke-width="3.5" stroke-linecap="round"/></svg>
+    <span>Navier–Stokes · 2026</span>
+  </div>
+</div>
+
+<div class="progress" id="progress"></div>
+<header class="topbar">
+  <a class="brand" href="#abertura" aria-label="Voltar ao início">
+    <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#3c9dff"/><stop offset="1" stop-color="#ff6b3d"/></linearGradient></defs><path d="M32 32m-4 0a4 4 0 1 1 8 0a10 10 0 1 1-20 0a16 16 0 1 1 32 0a22 22 0 1 1-44 0a28 28 0 0 1 28-28" fill="none" stroke="url(#lg)" stroke-width="5" stroke-linecap="round"/></svg>
+    Redemoinho · Navier–Stokes
+  </a>
+  <span class="sp"></span>
+  <a class="btn small" data-sim href="https://thurpopa.github.io/simulador-redemoinho/" target="_blank" rel="noopener">Abrir o simulador <span class="arr">↗</span></a>
+</header>
+<nav class="rail" id="rail" aria-label="Capítulos da apresentação"></nav>
+<div class="keys" id="keys"><span><kbd>←</kbd> <kbd>→</kbd> capítulos</span><span><kbd>F</kbd> tela cheia</span><span><kbd>T</kbd> cronômetro</span><span class="timer" id="timer" hidden>00:00</span></div>
+
+<main>
+<!-- ============ 00 · ABERTURA ============ -->
+<section class="ch hero" id="abertura" data-chapter="Abertura">
+  <canvas id="heroCanvas" aria-hidden="true"></canvas>
+  <div class="wrap" style="width:100%">
+    <p class="kicker"><i></i>Feira de Ciências · 2026</p>
+    <h1>Pode um <span class="swirl">redemoinho</span> explodir?</h1>
+    <p class="lead">As equações de Navier–Stokes descrevem a fumaça, a água do ralo e os furacões. Mesmo assim, ninguém sabe provar que elas nunca “quebram”. É um dos sete Problemas do Milênio, vale US$ 1 milhão, e em setembro de 2026 uma IA disse ter encontrado uma resposta.</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="#problema">Começar a apresentação <span class="arr">↓</span></a>
+      <a class="btn" data-sim href="https://thurpopa.github.io/simulador-redemoinho/" target="_blank" rel="noopener">Ir direto ao simulador <span class="arr">↗</span></a>
+    </div>
+    <div class="hero-meta"><span><b>9</b> capítulos</span><span><b>~5</b> minutos</span><span>simulação <b>2D e 3D</b> no navegador</span><span><b>← →</b> capítulos · <b>F</b> tela cheia · <b>T</b> cronômetro</span></div>
+  </div>
+  <div class="hint-mouse">Mexa o mouse aqui:<br><b>você é um redemoinho.</b><br>Cada traço é uma partícula de fluido.</div>
+  <a class="scrollcue" href="#problema" aria-label="Rolar para o primeiro capítulo"></a>
+</section>
+
+<!-- ============ 01 · O PROBLEMA ============ -->
+<section class="ch" id="problema" data-chapter="O problema">
+  <div class="wrap">
+    <p class="eyebrow"><span class="n">01</span> O problema</p>
+    <h2>Fluidos estão em <span class="hl-cool">todo</span> lugar.</h2>
+    <p class="lead">Ar e água são fluidos: coisas que escoam. Prever como eles se movem é essencial para a previsão do tempo, para projetar aviões e até para entender o sangue nas artérias. Todos esses movimentos obedecem às mesmas equações.</p>
+    <div class="everywhere">
+      <div class="ew"><svg viewBox="0 0 48 48" fill="none" stroke="#3c9dff" stroke-width="2.2" stroke-linecap="round"><path d="M24 24m-2 0a2 2 0 1 1 4 0a6 6 0 1 1-12 0a10 10 0 1 1 20 0a14 14 0 1 1-28 0"/></svg><h3>O ralo da pia</h3><p>A água gira e forma um funil: a pressão no centro é menor.</p><span class="num">Re ≈ 10⁴</span></div>
+      <div class="ew"><svg viewBox="0 0 48 48" fill="none" stroke="#6ff2d6" stroke-width="2.2" stroke-linecap="round"><path d="M24 42V30M24 30c-6-4 4-8-2-13s3-9-1-13M24 30c5-3-2-8 4-12"/></svg><h3>A fumaça do incenso</h3><p>Sobe lisa e de repente se enrola em redemoinhos: turbulência.</p><span class="num">Re ≈ 10²–10³</span></div>
+      <div class="ew"><svg viewBox="0 0 48 48" fill="none" stroke="#ff6b3d" stroke-width="2.2" stroke-linecap="round"><path d="M24 24m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M24 8c10 0 16 8 16 16M24 40C14 40 8 32 8 24M40 24c0 6-4 11-10 13M8 24c0-6 4-11 10-13"/></svg><h3>Furacões</h3><p>Redemoinhos de centenas de quilômetros com o “olho” de pressão mínima.</p><span class="num">Re ≈ 10¹¹</span></div>
+      <div class="ew"><svg viewBox="0 0 48 48" fill="none" stroke="#b89cff" stroke-width="2.2" stroke-linecap="round"><path d="M4 28c10-10 30-10 40 0M10 34h28M14 20c4-2 16-2 20 0"/></svg><h3>Asas de avião</h3><p>O ar acelera por cima da asa e a pressão cai: é isso que sustenta o avião.</p><span class="num">Re ≈ 10⁷</span></div>
+      <div class="ew"><svg viewBox="0 0 48 48" fill="none" stroke="#ff7aa8" stroke-width="2.2" stroke-linecap="round"><path d="M6 24h8l4-9 6 18 5-12 3 3h10"/></svg><h3>Sangue</h3><p>O coração bombeia um fluido viscoso por tubos que se dividem.</p><span class="num">Re ≈ 10³</span></div>
+      <div class="ew"><svg viewBox="0 0 48 48" fill="none" stroke="#ffc857" stroke-width="2.2" stroke-linecap="round"><path d="M4 30c5-5 9-5 14 0s9 5 14 0 9-5 14 0M4 38c5-5 9-5 14 0s9 5 14 0 9-5 14 0M14 18a8 8 0 0 1 16-2 6 6 0 0 1 2 12H14a6 6 0 0 1 0-10"/></svg><h3>Clima e oceanos</h3><p>Correntes e ventos do planeta inteiro, calculados em supercomputadores.</p><span class="num">Re ≈ 10¹⁰</span></div>
+    </div>
+    <div class="question">
+      <span class="tag">A pergunta do projeto</span>
+      <p class="q">As equações que descrevem tudo isso funcionam <span class="hl-mint">sempre</span>? Ou existe um redemoinho que gira tão rápido que a velocidade vira infinito?</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 · A EQUAÇÃO ============ -->
+<section class="ch" id="equacao" data-chapter="A equação">
+  <div class="wrap">
+    <p class="eyebrow"><span class="n">02</span> A equação</p>
+    <h2>F = m·a para cada gota.</h2>
+    <p class="lead">Navier (1822) e Stokes (1845) escreveram a 2ª Lei de Newton para um fluido. Role a página: cada termo acende quando for a vez dele.</p>
+    <div class="eqscene">
+      <div class="eqsticky">
+        <div class="eqbox">
+          <div class="eq" id="eq" data-active="all">
+            <span class="up">∂</span><span class="v">u</span>/<span class="up">∂</span>t
+            <span class="up">+</span>
+            <span class="term" data-t="adv">(<span class="v">u</span>·<span class="up">∇</span>)<span class="v">u</span></span>
+            <span class="up">=</span>
+            <span class="term" data-t="press">−<span class="up">∇</span>p/ρ</span>
+            <span class="up">+</span>
+            <span class="term" data-t="visc">ν<span class="up">∇²</span><span class="v">u</span></span>
+            <span class="up">+</span>
+            <span class="term" data-t="force"><span class="v">f</span></span>
+          </div>
+          <div class="eq" style="margin-top:6px;font-size:.72em" id="eq2" data-active="all">
+            <span class="term" data-t="inc"><span class="up">∇</span>·<span class="v">u</span> <span class="up">=</span> 0</span>
+          </div>
+          <p class="eqcap"><b>u</b> é a velocidade do fluido em cada ponto, <i>p</i> a pressão, ρ a densidade e ν a viscosidade.</p>
+          <div class="fma"><span class="math">m·<span class="v">a</span> = <span class="v">F</span></span><span>aceleração de uma gota = soma das forças sobre ela</span></div>
+        </div>
+      </div>
+      <div class="steps" id="steps">
+        <div class="step" data-t="adv" style="--c:var(--cool)"><span class="k">Advecção</span><h3>O fluido carrega a própria velocidade</h3><p>A velocidade aparece multiplicada por ela mesma. Esse termo <b>não linear</b> faz pequenas perturbações crescerem: é a origem da turbulência e de quase toda a dificuldade matemática.</p><p class="try">No simulador: desligue este termo e o redemoinho perde a capacidade de se enrolar.</p></div>
+        <div class="step" data-t="press" style="--c:var(--violet)"><span class="k">Pressão</span><h3>Empurra do alto para o baixo</h3><p>O fluido é empurrado de onde a pressão é alta para onde é baixa. No redemoinho, a <b>pressão mínima no centro</b> puxa a água para dentro e forma o funil.</p><p class="try">No simulador: a visualização “Pressão” mostra o centro em azul.</p></div>
+        <div class="step" data-t="visc" style="--c:var(--mint)"><span class="k">Viscosidade</span><h3>O atrito interno que suaviza</h3><p>Camadas vizinhas se esfregam e tendem a igualar a velocidade. O mel é muito viscoso, a água pouco. A viscosidade <b>espalha</b> e <b>freia</b> o giro.</p><p class="try">No simulador: troque a água por mel e veja o redemoinho morrer.</p></div>
+        <div class="step" data-t="force" style="--c:var(--gold)"><span class="k">Forças externas</span><h3>Gravidade, empuxo, uma colher…</h3><p>Tudo que empurra o fluido de fora. Guarde este termo: <b>ele é o centro da polêmica</b> do anúncio da OpenAI.</p><p class="try">No simulador: o “motor do redemoinho” e o seu mouse são forças externas.</p></div>
+        <div class="step" data-t="inc" style="--c:var(--pink)"><span class="k">Incompressibilidade</span><h3>O que entra, sai</h3><p>A água quase não se comprime: em qualquer pedacinho, a quantidade que entra é igual à que sai. É a pressão que se ajusta, a cada instante, para garantir isso.</p><p class="try">No simulador: desligue a pressão e o fluido passa a “sumir” e se amontoar.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 · POR QUE É DIFÍCIL ============ -->
+<section class="ch" id="dificil" data-chapter="Por que é difícil">
+  <div class="wrap">
+    <p class="eyebrow"><span class="n">03</span> Por que é difícil</p>
+    <h2>Em 3D, esticar um redemoinho o faz girar <span class="hl-warm">mais rápido</span>.</h2>
+    <p class="lead">Não existe uma fórmula que resolva a equação para qualquer situação. Três motivos tornam o problema tão difícil:</p>
+    <div class="hard">
+      <div class="hcard"><span class="k">Não linearidade</span><h3>O efeito dominó</h3><p>Como a velocidade carrega a si mesma, um redemoinho grande gera menores, que geram menores ainda: a cascata da turbulência.</p></div>
+      <div class="hcard"><span class="k">Número de Reynolds</span><h3>Calmo ou caótico</h3><p>Re = U·L/ν compara inércia e atrito. Mel escorrendo tem Re ≈ 1 (liso); um furacão, Re ≈ 10¹¹ (turbulento).</p></div>
+      <div class="hcard"><span class="k">Esticamento de vórtices</span><h3>O perigo mora no 3D</h3><p>Em 3D, a equação da vorticidade ganha o termo (<i>ω</i>·∇)<b>u</b>: esticar um tubo de vórtice o deixa mais fino e mais rápido, como a patinadora que fecha os braços.</p></div>
+    </div>
+    <div class="stretch" aria-label="Comparação entre um vórtice em 2D e em 3D">
+      <div class="sp-panel">
+        <svg viewBox="0 0 300 210" aria-hidden="true">
+          <defs><radialGradient id="dg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#3c9dff" stop-opacity=".9"/><stop offset="1" stop-color="#3c9dff" stop-opacity="0"/></radialGradient></defs>
+          <circle class="disc-halo" cx="150" cy="105" r="80" fill="url(#dg)"/>
+          <g class="disc-spin"><circle cx="150" cy="105" r="52" fill="none" stroke="#3c9dff" stroke-width="2" stroke-dasharray="14 10"/><circle cx="150" cy="105" r="34" fill="none" stroke="#6ff2d6" stroke-width="2" stroke-dasharray="10 8"/><circle cx="150" cy="105" r="16" fill="none" stroke="#eaf0fa" stroke-width="2" stroke-dasharray="6 6"/></g>
+        </svg>
+        <span class="t">2D: o giro só se espalha</span>
+        <p>No plano, a viscosidade vai espalhando o redemoinho. Já foi provado: em 2D as soluções nunca explodem.</p>
+      </div>
+      <div class="sp-panel">
+        <svg viewBox="0 0 300 210" aria-hidden="true">
+          <defs>
+            <linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#3c9dff"/><stop offset=".5" stop-color="#eaf0fa"/><stop offset="1" stop-color="#ff6b3d"/></linearGradient>
+            <pattern id="stp" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="skewX(-35)"><g class="tube-stripes"><rect width="10" height="24" fill="rgba(6,9,17,.55)"/><rect x="24" width="10" height="24" fill="rgba(6,9,17,.55)"/></g></pattern>
+            <clipPath id="tclip"><rect x="110" y="20" width="80" height="170" rx="40"/></clipPath>
+          </defs>
+          <g class="jet"><rect x="146" y="0" width="8" height="210" rx="4" fill="#ff7aa8" opacity=".6"/></g>
+          <g class="tube"><g clip-path="url(#tclip)"><rect x="110" y="20" width="80" height="170" fill="url(#tg)"/><rect x="80" y="20" width="140" height="170" fill="url(#stp)"/></g><rect x="110" y="20" width="80" height="170" rx="40" fill="none" stroke="#eaf0fa" stroke-opacity=".4"/></g>
+        </svg>
+        <span class="t">3D: esticar afina e acelera</span>
+        <p>Quando o tubo é esticado, ele fica fino e gira mais rápido. Será que isso pode chegar ao infinito em tempo finito?</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 · O PROBLEMA DO MILÊNIO ============ -->
+<section class="ch" id="milenio" data-chapter="Problema do Milênio" style="padding-bottom:0">
+  <div class="wrap">
+    <p class="eyebrow"><span class="n">04</span> O Problema do Milênio</p>
+    <h2>Suave para sempre, ou <span class="hl-warm">explode</span>?</h2>
+    <div class="million">
+      <div>
+        <div class="bigmoney"><span class="cur">US$</span><span data-count="1000000" data-sep data-free>1&nbsp;000&nbsp;000</span><small>Clay Mathematics Institute · 2000</small></div>
+        <p class="lead">Em 3D, começando com um escoamento suave e de energia finita, a solução continua suave para sempre? Ou a velocidade pode ficar <b>infinita</b> num ponto, em tempo finito (uma “explosão”, ou <i>blow-up</i>)?</p>
+      </div>
+      <div class="clay" aria-label="As quatro formas de resolver o problema">
+        <div class="clay-row"><span class="opt">A</span><span>Provar que é sempre suave, em todo o espaço</span><span class="f">sem força</span></div>
+        <div class="clay-row"><span class="opt">B</span><span>Provar que é sempre suave, num domínio periódico</span><span class="f">sem força</span></div>
+        <div class="clay-row hot"><span class="opt">C</span><span>Mostrar um exemplo de explosão, em todo o espaço</span><span class="f">força permitida</span></div>
+        <div class="clay-row hot"><span class="opt">D</span><span>Mostrar um exemplo de explosão, periódico</span><span class="f">força permitida</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="tl" id="tl">
+    <div class="tl-pin">
+      <div class="tl-head"><h3>Duzentos anos de tentativas</h3><span id="tlHint">role para avançar no tempo →</span></div>
+      <div class="tl-track" id="tlTrack">
+        <div class="ev"><span class="yr">1822</span><span class="who">Claude-Louis Navier</span><p>Escreve a equação do movimento de um fluido viscoso.</p></div>
+        <div class="ev"><span class="yr">1845</span><span class="who">George Gabriel Stokes</span><p>Deduz a equação de outra forma e ela ganha o nome dos dois.</p></div>
+        <div class="ev"><span class="yr">1934</span><span class="who">Jean Leray</span><p>Prova que existem soluções “fracas” para sempre, mas não que sejam suaves.</p></div>
+        <div class="ev mint"><span class="yr">1960s</span><span class="who">Olga Ladyzhenskaya</span><p>Em <b>2D</b> as soluções são suaves para sempre. O caso plano está resolvido.</p></div>
+        <div class="ev"><span class="yr">1982</span><span class="who">Caffarelli, Kohn, Nirenberg</span><p>Se houver explosões em 3D, elas ocupam um conjunto minúsculo de pontos.</p></div>
+        <div class="ev"><span class="yr">2000</span><span class="who">Clay Institute</span><p>Entra na lista dos sete Problemas do Milênio: US$ 1 milhão pela solução.</p></div>
+        <div class="ev"><span class="yr">2016</span><span class="who">Terence Tao</span><p>Uma versão “modificada” da equação explode, sinal de que o problema é sutil.</p></div>
+        <div class="ev"><span class="yr">2022</span><span class="who">Jiajie Chen e Thomas Hou</span><p>Prova, com ajuda de computador, de explosão para as equações de Euler (sem viscosidade) com parede.</p></div>
+        <div class="ev gold"><span class="yr">set/2026</span><span class="who">OpenAI</span><p>Anuncia uma explosão com força externa suave: a opção <b>C</b> do Clay.</p></div>
+      </div>
+      <div class="tl-line" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 · SETEMBRO DE 2026 ============ -->
+<section class="ch" id="openai" data-chapter="Setembro de 2026">
+  <div class="wrap">
+    <p class="eyebrow"><span class="n">05</span> Setembro de 2026</p>
+    <h2>Uma IA anuncia uma explosão.</h2>
+    <p class="lead">Em 8 de setembro de 2026, a OpenAI publicou uma prova de que as equações de Navier–Stokes podem explodir, desde que haja uma força externa suave. Os números do anúncio:</p>
+    <div class="stats">
+      <div class="stat"><div class="big"><span data-count="10">10</span> mil<sup>+</sup></div><div class="lbl">agentes de IA trabalhando juntos</div></div>
+      <div class="stat"><div class="big"><span data-count="88">88</span> h</div><div class="lbl">de trabalho contínuo, a partir de 1º de setembro</div></div>
+      <div class="stat"><div class="big"><span data-count="166">166</span></div><div class="lbl">páginas de demonstração matemática</div></div>
+      <div class="stat"><div class="big">Lean</div><div class="lbl">verificação formal: um computador confere cada passo</div></div>
+    </div>
+    <div class="claims">
+      <div class="claim-box">
+        <h3>O que foi anunciado</h3>
+        <p>Uma construção de <b>explosão com força externa</b>, que é a opção C do enunciado do Clay.</p>
+        <p>A OpenAI disse que <b>não vai reivindicar</b> o prêmio de US$ 1 milhão.</p>
+        <p class="muted" style="font-size:14px">Não é uma simulação de computador: é uma prova matemática.</p>
+      </div>
+      <div class="debate">
+        <div><span class="ic">1</span><div><h3>Uma força “artificial”</h3><p>Para muitos matemáticos, a pergunta importante é se o fluido explode <i>sozinho</i>. A força usada é permitida pelo enunciado, mas não existe na natureza. Outros pesquisadores mostraram que o método não funciona sem ela.</p></div></div>
+        <div><span class="ic">2</span><div><h3>Disputa de autoria</h3><p>Horas antes do anúncio, o matemático Tristan Buckmaster afirmou que ideias dele e de Levent Alpöge teriam inspirado os comandos dados às IAs.</p></div></div>
+        <div><span class="ic">3</span><div><h3>Ainda em verificação</h3><p>Na matemática, uma prova só é aceita depois que outros especialistas a conferem por completo. Isso ainda estava em andamento nas últimas notícias.</p></div></div>
+      </div>
+    </div>
+    <p class="say"><span class="hl-gold">▸</span><span>Por isso, neste projeto, falamos em <b>“solução anunciada”</b>, e não em “problema resolvido”.</span></p>
+  </div>
+</section>
+
+<!-- ============ 06 · O COLAPSO ============ -->
+<section class="ch collapse" id="colapso" data-chapter="O colapso">
+  <div class="col-pin">
+    <div class="col-canvas-wrap">
+      <canvas id="colCanvas" aria-label="Vórtice autossimilar encolhendo e girando mais rápido conforme o tempo τ diminui"></canvas>
+      <div class="col-tag">τ = tempo que falta para a explosão<br><b id="tauBig">τ = 1,00</b></div>
+      <div class="col-zoom"><i id="zoomBar"></i><span id="zoomTxt">zoom ×1</span></div>
+      <div class="flash" id="flash"><div>💥 τ → 0<small>velocidade infinita, energia finita</small></div></div>
+    </div>
+    <div class="col-side">
+      <p class="eyebrow" style="margin-bottom:14px"><span class="n">06</span> O colapso</p>
+      <h2>Role para o tempo <span class="hl-warm">acabar</span>.</h2>
+      <p class="lead">Este é o escoamento descrito na prova: um vórtice que <b>encolhe e gira cada vez mais rápido</b>. O fluido entra em espiral, sai pelo eixo, e a força externa age só no anel dourado. Aqui a câmera acompanha o encolhimento.</p>
+      <div class="readout">
+        <div class="ro" style="--c:var(--warm)"><span class="name">velocidade |u|</span><span class="bar"><i id="bU"></i></span><span class="val" id="vU">×1</span><span class="law">cresce como τ^(−1/2−h) → ∞</span></div>
+        <div class="ro" style="--c:var(--mint)"><span class="name">energia do núcleo</span><span class="bar"><i id="bE"></i></span><span class="val" id="vE">×1</span><span class="law">cai como τ^(1/2−3h) → 0</span></div>
+        <div class="ro" style="--c:var(--cool)"><span class="name">raio ℓr</span><span class="bar"><i id="bR"></i></span><span class="val" id="vR">×1</span><span class="law">encolhe como τ^(1/2)</span></div>
+        <div class="ro" style="--c:var(--violet)"><span class="name">comprimento ℓz</span><span class="bar"><i id="bZ"></i></span><span class="val" id="vZ">×1</span><span class="law">encolhe como τ^(1/2−h), mais devagar</span></div>
+      </div>
+      <div class="col-scroll-hint"><span>τ = 1</span><span class="track"><i id="colTrack"></i></span><span>τ → 0</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 · DO PAPEL AO COMPUTADOR ============ -->
+<section class="ch" id="computador" data-chapter="Do papel ao computador">
+  <div class="wrap">
+    <p class="eyebrow"><span class="n">07</span> Do papel ao computador</p>
+    <h2>Cinco passos, sessenta vezes por segundo.</h2>
+    <p class="lead">O computador não resolve a equação de uma vez. Ele divide o espaço numa grade de células e avança o tempo em passos pequenos, aplicando um termo da equação por vez. É o método <i>Stable Fluids</i> (Jos Stam, 1999), que roda na placa de vídeo.</p>
+    <div class="pipe">
+      <div class="pst" style="--c:var(--gold)"><span class="dot">1</span><h3>Forças</h3><p>Motor do vórtice, empuxo, vento e o mouse empurram o fluido.</p></div>
+      <div class="pst" style="--c:var(--cool)"><span class="dot">2</span><h3>Advecção</h3><p>Cada célula pergunta “de onde veio o fluido que está aqui?” e copia a velocidade de lá.</p></div>
+      <div class="pst" style="--c:var(--mint)"><span class="dot">3</span><h3>Viscosidade</h3><p>Cada célula vira uma média das vizinhas: o atrito suaviza o movimento.</p></div>
+      <div class="pst" style="--c:var(--violet)"><span class="dot">4</span><h3>Pressão</h3><p>Resolve a equação de Poisson e corrige a velocidade para que o que entra seja igual ao que sai.</p></div>
+      <div class="pst" style="--c:var(--pink)"><span class="dot">5</span><h3>Transporte</h3><p>Tinta, fumaça, partículas e objetos são levados pelo campo final.</p></div>
+    </div>
+    <div class="numbers">
+      <div><b>~<span data-count="110">110</span> mil</b>células no modo 2D</div>
+      <div><b><span data-count="262144" data-sep>262 144</span></b>células no modo 3D (64³)</div>
+      <div><b>~<span data-count="40">40</span></b>etapas na placa de vídeo por quadro</div>
+      <div><b><span data-count="60">60</span>–<span data-count="200">200</span></b>quadros por segundo</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 · A SIMULAÇÃO ============ -->
+<section class="ch" id="simulacao" data-chapter="A simulação">
+  <div class="wrap">
+    <p class="eyebrow"><span class="n">08</span> A simulação</p>
+    <h2>Agora é com você.</h2>
+    <p class="lead">Construímos um simulador que resolve Navier–Stokes ao vivo, no navegador, sem instalar nada. Ele mostra tudo o que vimos até aqui.</p>
+    <div class="show">
+      <div class="feat" style="--c:var(--cool)"><span class="k">Modo 2D</span><h3>Sete cenários clássicos</h3><p>Ralo da pia, furacão, fumaça subindo, fusão de vórtices, dipolo, esteira de von Kármán e laboratório livre.</p><ul><li>visualizações de vorticidade, pressão e velocidade</li><li>gráfico da teoria comparada com a medida</li></ul></div>
+      <div class="feat" style="--c:var(--warm)"><span class="k">Modo 3D</span><h3>O colapso da OpenAI</h3><p>O vórtice autossimilar da prova, com as leis de escala, o anel da força e o momento da explosão.</p><ul><li>tanque de água com funil e jato no eixo</li><li>tornado de fumaça</li></ul></div>
+      <div class="feat" style="--c:var(--gold)"><span class="k">Interativo</span><h3>Solte objetos no redemoinho</h3><p>Isopor, patinho, madeira, folha, aço e bolha: os leves vão para o centro, os pesados são jogados para fora.</p></div>
+      <div class="feat" style="--c:var(--mint)"><span class="k">Experimente</span><h3>Desligue a física</h3><p>Clique em cada termo da equação para ligar ou desligar a advecção, a pressão, a viscosidade e as forças, e veja o que muda.</p></div>
+    </div>
+    <div class="cta">
+      <div class="cta-in">
+        <div>
+          <h3>Abrir o simulador</h3>
+          <p>Dica para a apresentação: dentro do simulador, a tecla <b>F</b> coloca a simulação em tela cheia.</p>
+          <span class="url">thurpopa.github.io/simulador-redemoinho</span>
+          <span class="url offline-note" hidden>Aberto do computador: o botão usa a cópia local do simulador e funciona sem internet.</span>
+        </div>
+        <a class="btn primary" data-sim href="https://thurpopa.github.io/simulador-redemoinho/" target="_blank" rel="noopener">Começar a simulação <span class="arr">↗</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 · CONCLUSÕES ============ -->
+<section class="ch" id="conclusoes" data-chapter="Conclusões">
+  <div class="wrap">
+    <p class="eyebrow"><span class="n">09</span> Conclusões</p>
+    <h2>O que aprendemos.</h2>
+    <div class="learn">
+      <div><h3>Uma equação de 1845 ainda guarda um mistério</h3><p>Ela descreve fumaça, água e furacões, mas ninguém provou que nunca “quebra”.</p></div>
+      <div><h3>O perigo mora no 3D</h3><p>Em 2D tudo é bem-comportado. O esticamento de vórtices, que só existe em 3D, é o que pode levar à explosão.</p></div>
+      <div><h3>O computador aproxima</h3><p>A simulação avança em passos pequenos numa grade. Ela mostra o comportamento, mas não prova nada sozinha.</p></div>
+      <div><h3>A IA mudou a matemática, mas a verificação continua</h3><p>O anúncio de 2026 é impressionante, depende de uma força externa e ainda precisa ser conferido por especialistas.</p></div>
+    </div>
+    <div class="limits">
+      <span class="tag">Limites do projeto</span>
+      <ul>
+        <li>A grade tem tamanho finito e cria uma viscosidade numérica extra.</li>
+        <li>O modo 3D usa uma grade mais grossa (64³) e trata a superfície da água de forma aproximada.</li>
+        <li>O colapso usa fórmulas com as mesmas leis de escala da prova, e não o perfil exato calculado nela.</li>
+      </ul>
+    </div>
+    <div class="refs">
+      <h3>Referências</h3>
+      <p>Stam, J. <i>Stable Fluids</i>. SIGGRAPH, 1999.</p>
+      <p>Fefferman, C. <i>Existence and Smoothness of the Navier–Stokes Equation</i>. Clay Mathematics Institute, 2000.</p>
+      <p>OpenAI. <a href="https://openai.com/index/navier-stokes-solution/" target="_blank" rel="noopener">On the Navier–Stokes Millennium Prize Problem</a>, set. 2026.</p>
+      <p><a href="https://arxiv.org/abs/2609.17642" target="_blank" rel="noopener">arXiv 2609.17642</a>: análise das variáveis de similaridade da construção de 2026.</p>
+      <p>Scientific American. <a href="https://www.scientificamerican.com/article/did-openai-solve-the-wrong-navier-stokes-problem/" target="_blank" rel="noopener">Did OpenAI solve the wrong Navier-Stokes problem?</a></p>
+      <p>CNBC, <a href="https://www.cnbc.com/2026/09/09/openai-navier-stokes-math-problem-solved.html" target="_blank" rel="noopener">9 set. 2026</a> · Axios, <a href="https://www.axios.com/2026/09/08/openai-math-solution-navier-stokes-credit" target="_blank" rel="noopener">8 set. 2026</a>.</p>
+      <p>Harris, M. <i>Fast Fluid Dynamics Simulation on the GPU</i>. GPU Gems, cap. 38, 2004.</p>
+      <p>Simulador: <a href="https://thurpopa.github.io/simulador-redemoinho/" target="_blank" rel="noopener">thurpopa.github.io/simulador-redemoinho</a></p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span>Pode um redemoinho explodir? · Feira de Ciências 2026</span>
+  <span>Navier–Stokes em 2D e 3D, no navegador</span>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const reduce = document.documentElement.classList.contains('calm');   // só no modo ?calmo
+  const clamp = (x,a,b) => Math.max(a, Math.min(b, x));
+
+  // ---------- capítulos, trilho, progresso e teclado ----------
+  const chapters = $$('[data-chapter]');
+  const rail = $('#rail');
+  chapters.forEach((c,i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'rail-item';
+    b.innerHTML = `<span class="rail-l"></span><span class="rail-bar"></span>`;
+    b.querySelector('.rail-l').textContent = `${String(i).padStart(2,'0')} · ${c.dataset.chapter}`;
+    b.setAttribute('aria-label', c.dataset.chapter);
+    b.addEventListener('click', () => go(i));
+    rail.appendChild(b);
+  });
+  let current = 0;
+  const railItems = $$('.rail-item');
+  const chIO = new IntersectionObserver(es => {
+    es.forEach(e => { if(e.isIntersecting){ current = chapters.indexOf(e.target); railItems.forEach((b,k) => b.classList.toggle('on', k===current)); document.body.classList.toggle('at-hero', current===0); } });
+  }, {rootMargin:'-48% 0px -50% 0px'});
+  chapters.forEach(c => chIO.observe(c));
+  function go(i){ i = clamp(i, 0, chapters.length-1); chapters[i].scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block:'start'}); }
+  function next(){
+    // dentro de um capítulo longo (equação, linha do tempo, colapso), avança uma tela antes de pular
+    const r = chapters[current].getBoundingClientRect();
+    if(r.bottom > innerHeight + 40) scrollBy({top: innerHeight*0.85, behavior: reduce ? 'auto' : 'smooth'});
+    else go(current+1);
+  }
+  function prev(){
+    const r = chapters[current].getBoundingClientRect();
+    if(r.top < -40) scrollBy({top: -innerHeight*0.85, behavior: reduce ? 'auto' : 'smooth'});
+    else go(current-1);
+  }
+  addEventListener('keydown', e => {
+    if(e.target.closest && e.target.closest('input,textarea,select')) return;
+    if(e.key==='ArrowRight' || e.key==='PageDown'){ e.preventDefault(); next(); }
+    else if(e.key==='ArrowLeft' || e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if(e.key==='Home'){ e.preventDefault(); go(0); }
+    else if(e.key==='End'){ e.preventDefault(); go(chapters.length-1); }
+    else if(e.key==='f' || e.key==='F'){ toggleFull(); }
+    else if(e.key==='t' || e.key==='T'){ toggleTimer(); }
+  });
+  function toggleFull(){
+    try{
+      if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+      else if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
+    }catch(err){}
+  }
+  let timerStart = 0, timerId = 0;
+  function toggleTimer(){
+    const el = $('#timer');
+    if(timerId){ clearInterval(timerId); timerId = 0; el.hidden = true; return; }
+    timerStart = performance.now(); el.hidden = false; el.textContent = '00:00';
+    timerId = setInterval(() => { const s = Math.floor((performance.now()-timerStart)/1000); el.textContent = `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }, 250);
+  }
+
+  const bar = $('#progress');
+  let ticking = false;
+  addEventListener('scroll', () => { if(!ticking){ ticking = true; requestAnimationFrame(onScroll); } }, {passive:true});
+  addEventListener('resize', () => { layoutTimeline(); sizeHero(); sizeCol(); onScroll(); });
+  function onScroll(){
+    ticking = false;
+    const h = document.documentElement, max = h.scrollHeight - h.clientHeight;
+    bar.style.transform = `scaleX(${max>0 ? h.scrollTop/max : 0})`;
+    scrollTimeline(); scrollCollapse(); scrollParallax();
+  }
+
+  // ---------- 00 · campo de redemoinhos da abertura (você é um vórtice) ----------
+  const hero = $('#heroCanvas'), hctx = hero.getContext('2d');
+  let HW = 0, HH = 0, HDPR = 1, heroVisible = true, parts = [];
+  const mouse = {x:0, y:0, g:0, on:false};
+  function sizeHero(){
+    HDPR = Math.min(devicePixelRatio || 1, 1.5);
+    HW = hero.clientWidth; HH = hero.clientHeight;
+    hero.width = Math.round(HW*HDPR); hero.height = Math.round(HH*HDPR);
+    hctx.setTransform(HDPR,0,0,HDPR,0,0);
+    hctx.fillStyle = '#060911'; hctx.fillRect(0,0,HW,HH);
+    const N = HW < 760 ? 650 : 1500;
+    parts = Array.from({length:N}, () => spawn({}));
+  }
+  function spawn(p){ p.x = Math.random()*HW; p.y = Math.random()*HH; p.age = 0; p.life = 90 + Math.random()*220; return p; }
+  function vortices(t){
+    const m = Math.min(HW, HH);
+    return [
+      {x: HW*0.7 + Math.cos(t*0.13)*m*0.05, y: HH*0.45 + Math.sin(t*0.11)*m*0.05, g: 26000, rc: m*0.11},
+      {x: HW*0.3 + Math.sin(t*0.09)*m*0.06, y: HH*0.3, g: -12000, rc: m*0.08},
+      {x: HW*0.45, y: HH*0.82 + Math.sin(t*0.07)*m*0.04, g: 9000, rc: m*0.09},
+    ];
+  }
+  function heroVel(x, y, V){
+    let vx = 14, vy = 0;
+    for(const v of V){ const dx = x-v.x, dy = y-v.y, r2 = dx*dx+dy*dy+1; const f = v.g*(1-Math.exp(-r2/(v.rc*v.rc)))/(6.2832*r2); vx += -dy*f; vy += dx*f; }
+    if(mouse.g > 1){ const dx = x-mouse.x, dy = y-mouse.y, r2 = dx*dx+dy*dy+1, rc = 70; const f = mouse.g*(1-Math.exp(-r2/(rc*rc)))/(6.2832*r2); vx += -dy*f; vy += dx*f; }
+    return [vx, vy];
+  }
+  const COLORS = ['rgba(60,157,255,0.55)','rgba(111,242,214,0.6)','rgba(234,240,250,0.7)','rgba(255,107,61,0.75)'];
+  let heroT = 0, heroLast = 0, heroRunning = false;
+  function startHero(){ if(!heroRunning){ heroRunning = true; heroLast = 0; requestAnimationFrame(heroFrame); } }
+  function heroFrame(now){
+    if(!heroVisible) { heroRunning = false; return; }
+    requestAnimationFrame(heroFrame);
+    const dt = heroLast ? Math.min(0.033, (now-heroLast)/1000) : 0.016; heroLast = now; heroT += dt;
+    mouse.g += ((mouse.on ? 30000 : 0) - mouse.g)*Math.min(1, dt*3);
+    hctx.fillStyle = 'rgba(6,9,17,0.085)'; hctx.fillRect(0,0,HW,HH);
+    const V = vortices(heroT);
+    const paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+    for(const p of parts){
+      const [vx, vy] = heroVel(p.x, p.y, V);
+      const nx = p.x + vx*dt, ny = p.y + vy*dt;
+      const s = Math.hypot(vx, vy), k = s < 60 ? 0 : s < 140 ? 1 : s < 260 ? 2 : 3;
+      paths[k].moveTo(p.x, p.y); paths[k].lineTo(nx, ny);
+      p.x = nx; p.y = ny; p.age++;
+      if(p.age > p.life || p.x < -20 || p.x > HW+20 || p.y < -20 || p.y > HH+20) spawn(p);
+    }
+    hctx.lineWidth = 1.2; hctx.lineCap = 'round';
+    paths.forEach((pa,k) => { hctx.strokeStyle = COLORS[k]; hctx.stroke(pa); });
+  }
+  const heroSec = $('#abertura');
+  heroSec.addEventListener('pointermove', e => { const r = hero.getBoundingClientRect(); mouse.x = e.clientX-r.left; mouse.y = e.clientY-r.top; mouse.on = true; });
+  heroSec.addEventListener('pointerleave', () => { mouse.on = false; });
+  sizeHero();
+  // a animação é parte do conteúdo da apresentação: roda sempre, mas só enquanto a abertura está visível
+  new IntersectionObserver(es => { heroVisible = es[0].isIntersecting; if(heroVisible) startHero(); }, {threshold:0}).observe(heroSec);
+  startHero();
+
+  // ---------- 02 · a equação acende termo a termo ----------
+  const eq = $('#eq'), eq2 = $('#eq2');
+  const stepIO = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if(e.isIntersecting){
+        $$('.step').forEach(s => s.classList.toggle('on', s===e.target));
+        eq.dataset.active = e.target.dataset.t; eq2.dataset.active = e.target.dataset.t;
+      }
+    });
+  }, {rootMargin:'-45% 0px -45% 0px'});
+  $$('.step').forEach(s => stepIO.observe(s));
+  new IntersectionObserver(es => { es.forEach(e => { if(!e.isIntersecting){ eq.dataset.active = 'all'; eq2.dataset.active = 'all'; $$('.step').forEach(s=>s.classList.remove('on')); } }); }, {rootMargin:'-45% 0px -45% 0px'}).observe($('#steps'));
+
+  // ---------- 04 · linha do tempo horizontal (rolar vertical = andar no tempo) ----------
+  const tl = $('#tl'), track = $('#tlTrack');
+  const wide = matchMedia('(min-width: 761px)');
+  let tlDist = 0, evCenters = [];
+  const evs = $$('.tl .ev');
+  function layoutTimeline(){
+    if(!wide.matches){ tl.style.height = ''; track.style.transform = ''; evs.forEach(ev => { ev.style.opacity = ''; ev.style.transform = ''; }); return; }
+    tlDist = Math.max(0, track.scrollWidth - innerWidth);
+    tl.style.height = `${innerHeight + tlDist}px`;
+    evCenters = evs.map(ev => ev.offsetLeft + ev.offsetWidth/2);   // offsetLeft não muda com o transform
+  }
+  function scrollTimeline(){
+    if(!wide.matches) return;
+    const r = tl.getBoundingClientRect();
+    const p = clamp(-r.top / Math.max(1, tl.offsetHeight - innerHeight), 0, 1);
+    track.style.transform = `translate3d(${-p*tlDist}px,0,0)`;
+    if(reduce) return;
+    // o cartão mais perto do "foco" (que anda da esquerda para a direita) fica em destaque
+    const focus = innerWidth*(0.22 + 0.56*p);
+    evs.forEach((ev,k) => {
+      const d = Math.abs(evCenters[k] - p*tlDist - focus) / innerWidth;
+      const f = clamp(1 - d*1.5, 0, 1), e = f*f*(3-2*f);
+      ev.style.opacity = (0.38 + 0.62*e).toFixed(3);
+      ev.style.transform = `translate3d(0,${((1-e)*18).toFixed(1)}px,0) scale(${(0.93 + 0.07*e).toFixed(4)})`;
+    });
+  }
+
+  // ---------- 06 · o colapso: rolar = o tempo acabar ----------
+  const colSec = $('#colapso'), col = $('#colCanvas'), cctx = col.getContext('2d');
+  let CW = 0, CH = 0, CDPR = 1, colVisible = false, tau = 1, spin = 0, colLast = 0, logTime = 0;
+  const H_VIS = 0.06;   // expoente de anisotropia exagerado para ficar visível (na prova, h < 0,01)
+  const inflow = Array.from({length:70}, (_,i) => ({r: 1+Math.random()*2, a: Math.random()*6.283, z: (Math.random()-.5)*0.5}));
+  function sizeCol(){ CDPR = Math.min(devicePixelRatio || 1, 1.5); CW = col.clientWidth; CH = col.clientHeight; col.width = Math.round(CW*CDPR); col.height = Math.round(CH*CDPR); cctx.setTransform(CDPR,0,0,CDPR,0,0); drawCollapse(0); }
+  const fmt = (v) => v >= 1e4 || v < 1e-2 ? v.toExponential(1).replace('e+','×10^').replace('e-','×10^-').replace('.',',') : v.toLocaleString('pt-BR',{maximumFractionDigits: v<10?2:0});
+  function scrollCollapse(){
+    const r = colSec.getBoundingClientRect();
+    const p = clamp(-r.top / Math.max(1, colSec.offsetHeight - innerHeight), 0, 1);
+    logTime = 4.4*p; tau = Math.pow(10, -logTime);
+    const h = H_VIS, uR = Math.pow(tau, -(0.5+h)), eR = Math.pow(tau, 0.5-3*h), rR = Math.pow(tau, 0.5), zR = Math.pow(tau, 0.5-h);
+    $('#tauBig').textContent = 'τ = ' + fmt(tau);
+    $('#vU').textContent = '×' + fmt(uR); $('#vE').textContent = '×' + fmt(eR);
+    $('#vR').textContent = '×' + fmt(rR); $('#vZ').textContent = '×' + fmt(zR);
+    // barras em escala logarítmica: cada década = 1/5 da barra
+    const lb = (v) => clamp(50 + Math.log10(v)*10, 2, 100) + '%';
+    $('#bU').style.width = lb(uR); $('#bE').style.width = lb(eR); $('#bR').style.width = lb(rR); $('#bZ').style.width = lb(zR);
+    const z = 1/Math.sqrt(tau);
+    $('#zoomTxt').textContent = 'zoom ×' + (z < 10 ? z.toFixed(1).replace('.',',') : Math.round(z).toLocaleString('pt-BR'));
+    $('#zoomBar').style.width = clamp(60*Math.pow(z, 0.25), 60, 200) + 'px';
+    $('#colTrack').style.width = (p*100) + '%';
+    $('#flash').classList.toggle('on', p > 0.965);
+    if(!colVisible) drawCollapse(0);
+  }
+  function drawCollapse(dt){
+    if(!CW) return;
+    const g = cctx, cx = CW*0.5, cy = CH*0.52, m = Math.min(CW, CH);
+    const h = H_VIS, uR = Math.pow(tau, -(0.5+h));
+    const R = m*0.13;                                        // raio do núcleo na tela (a câmera acompanha √τ)
+    const L = clamp(m*0.26*Math.pow(tau, -h), 0, CH*0.42);  // comprimento: em unidades do raio, cresce como τ^(−h)
+    const omega = clamp(1.3*Math.pow(uR, 0.45), 0, 16);      // velocidade angular mostrada (limitada para não piscar)
+    spin += omega*dt;
+    const heat = clamp(logTime/4.4, 0, 1);
+    // fundo com brilho que esquenta conforme τ → 0
+    g.fillStyle = '#04060d'; g.fillRect(0,0,CW,CH);
+    const bg = g.createRadialGradient(cx, cy, 0, cx, cy, m*0.6);
+    bg.addColorStop(0, `rgba(${Math.round(60+195*heat)},${Math.round(120-40*heat)},${Math.round(255-150*heat)},0.22)`); bg.addColorStop(1, 'rgba(4,6,13,0)');
+    g.fillStyle = bg; g.fillRect(0,0,CW,CH);
+    // jatos pelo eixo: o fluido sai para cima e para baixo
+    const jet = g.createLinearGradient(0, cy-L*1.6, 0, cy+L*1.6);
+    jet.addColorStop(0,'rgba(255,122,168,0)'); jet.addColorStop(.5,`rgba(255,122,168,${0.25+0.45*heat})`); jet.addColorStop(1,'rgba(255,122,168,0)');
+    g.fillStyle = jet; g.fillRect(cx-2, cy-L*1.6, 4, L*3.2);
+    g.save(); g.setLineDash([6,10]); g.lineDashOffset = -spin*18; g.strokeStyle = `rgba(255,170,200,${0.3+0.4*heat})`; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(cx, cy-6); g.lineTo(cx, cy-L*1.55); g.moveTo(cx, cy+6); g.lineTo(cx, cy+L*1.55); g.stroke(); g.restore();
+    // anel da força externa (dourado, pulsando em tempo logarítmico)
+    const pulse = 0.4+0.6*Math.pow(0.5+0.5*Math.sin(logTime*2*Math.PI/0.75), 2);
+    g.save(); g.setLineDash([3,7]); g.lineDashOffset = spin*6;
+    for(let k=0;k<3;k++){ const rr = R*(1.7+0.35*k); g.strokeStyle = `rgba(255,200,87,${(0.18+0.5*pulse)*(1-k*0.25)})`; g.lineWidth = 1.6; g.beginPath(); g.ellipse(cx, cy, rr, rr*0.3, 0, 0, Math.PI*2); g.stroke(); }
+    g.restore();
+    // entrada em espiral no plano do meio
+    for(const q of inflow){
+      q.a += omega*dt*(1.6/(q.r*q.r)+0.4); q.r -= dt*0.45*(1+heat);
+      if(q.r < 0.55){ q.r = 2.4+Math.random()*0.8; q.a = Math.random()*6.283; }
+      const x = cx + Math.cos(q.a)*q.r*R, y = cy + Math.sin(q.a)*q.r*R*0.3 + q.z*R*0.3;
+      g.fillStyle = `rgba(160,220,255,${clamp(0.2+0.6*(1-q.r/3),0,0.85)})`; g.beginPath(); g.arc(x, y, 1.6, 0, Math.PI*2); g.fill();
+    }
+    // tubo de vórtice: anéis empilhados ao longo do eixo, girando
+    const K = 15, M = 26;
+    for(let k=0;k<K;k++){
+      const s = k/(K-1)*2-1;                                   // −1…1 ao longo do eixo
+      const env = Math.exp(-1.2*s*s);
+      const y = cy + s*L;
+      const rx = R*(0.75+0.35*env), ry = rx*0.3;
+      g.strokeStyle = `rgba(90,170,255,${0.08+0.25*env})`; g.lineWidth = 1;
+      g.beginPath(); g.ellipse(cx, y, rx, ry, 0, 0, Math.PI*2); g.stroke();
+      for(let j=0;j<M;j++){
+        const a = j/M*Math.PI*2 + spin*(0.6+0.4*env) + s*1.8;
+        const front = Math.sin(a);                              // frente do anel mais brilhante
+        const x = cx + Math.cos(a)*rx, yy = y + front*ry;
+        const w = env*(0.55+0.45*(front*0.5+0.5));
+        const r0 = Math.round(90+165*heat*w), g0 = Math.round(170+60*w-60*heat), b0 = Math.round(255-170*heat*w);
+        g.fillStyle = `rgba(${r0},${g0},${b0},${0.25+0.7*w})`;
+        g.beginPath(); g.arc(x, yy, 1.2+1.8*w, 0, Math.PI*2); g.fill();
+      }
+    }
+  }
+  let colRunning = false;
+  function colFrame(now){
+    if(!colVisible){ colLast = 0; colRunning = false; return; }
+    requestAnimationFrame(colFrame);
+    const dt = colLast ? Math.min(0.05, (now-colLast)/1000) : 0.016; colLast = now;
+    drawCollapse(dt);
+  }
+  sizeCol();
+  new IntersectionObserver(es => { colVisible = es[0].isIntersecting; if(colVisible && !colRunning){ colRunning = true; requestAnimationFrame(colFrame); } }, {threshold:0}).observe(colSec);
+
+  // ---------- animações de entrada, contadores, brilho e parallax ----------
+  const anim = document.documentElement.classList.contains('anim');
+  const finePointer = matchMedia('(pointer: fine)').matches;
+
+  // ----- Títulos: palavras que caem do céu e letras que saem de um vórtice -----
+  // Cada palavra vira <span class="w">; no título da abertura, cada letra vira <span class="c">.
+  function splitWords(el){
+    const frag = document.createDocumentFragment();
+    const wrap = node => { const w = document.createElement('span'); w.className = 'w'; w.appendChild(node); return w; };
+    [...el.childNodes].forEach(n => {
+      if(n.nodeType === 3){
+        n.textContent.split(/(\s+)/).forEach(part => {
+          if(!part) return;
+          frag.appendChild(/^\s+$/.test(part) ? document.createTextNode(' ') : wrap(document.createTextNode(part)));
+        });
+      } else frag.appendChild(wrap(n));
+    });
+    el.textContent = ''; el.appendChild(frag);
+    el.classList.add('words');
+  }
+  function splitChars(node){
+    [...node.childNodes].forEach(n => {
+      if(n.nodeType === 3){
+        const f = document.createDocumentFragment();
+        [...n.textContent].forEach(ch => { const c = document.createElement('span'); c.className = 'c'; c.textContent = ch; f.appendChild(c); });
+        n.replaceWith(f);
+      } else splitChars(n);
+    });
+  }
+  const heroH1 = $('.hero h1');
+  const heads = [heroH1, ...$$('.ch h2')];
+  heads.forEach(h => splitWords(h));
+  heroH1.querySelectorAll('.w').forEach(splitChars);   // só dentro das palavras: os espaços continuam espaços
+  // capítulos ímpares: palavras caem do céu · pares: saem girando de um vórtice
+  $$('.ch h2').forEach(h => {
+    const n = chapters.indexOf(h.closest('[data-chapter]'));
+    h.dataset.fx = n % 2 ? 'fall' : 'vortex';
+  });
+  if(anim){ heroH1.classList.add('fx-c'); $$('.ch h2').forEach(h => h.classList.add('fx-w')); }
+
+  // A palavra colorida "redemoinho" tem degradê: com as letras separadas, cada letra
+  // recebe o seu pedaço do degradê para a palavra continuar com a mesma cor de ponta a ponta.
+  const swirl = $('.hero h1 .swirl');
+  function paintSwirl(){
+    if(!swirl) return;
+    const cs = [...swirl.querySelectorAll('.c')];
+    if(!cs.length) return;
+    const x0 = cs[0].offsetLeft, W = cs[cs.length-1].offsetLeft + cs[cs.length-1].offsetWidth - x0;
+    swirl.style.animation = 'none'; swirl.style.background = 'none';
+    cs.forEach(c => {
+      c.style.backgroundImage = 'linear-gradient(100deg,var(--cool) 5%,var(--mint) 45%,var(--warm) 95%)';
+      c.style.backgroundSize = W + 'px 100%';
+      c.style.backgroundPosition = (x0 - c.offsetLeft) + 'px 0';
+      c.style.webkitBackgroundClip = 'text'; c.style.backgroundClip = 'text'; c.style.color = 'transparent';
+    });
+  }
+  paintSwirl();
+  addEventListener('resize', paintSwirl);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(paintSwirl);
+
+  // Posição de cada peça (letra ou palavra) em relação ao centro do título.
+  // offsetLeft/Top não são afetados por transform, então a medida é sempre a posição final.
+  function pieces(el, sel){
+    const ps = [...el.querySelectorAll(sel)].map(p => ({el:p, x:p.offsetLeft + p.offsetWidth/2, y:p.offsetTop + p.offsetHeight/2}));
+    const xs = ps.map(p => p.x), ys = ps.map(p => p.y);
+    const cx = (Math.min(...xs) + Math.max(...xs))/2, cy = (Math.min(...ys) + Math.max(...ys))/2;
+    ps.forEach(p => { p.ox = p.x - cx; p.oy = p.y - cy; p.d = Math.hypot(p.ox, p.oy); });
+    return ps;
+  }
+  const done = (el, a) => { a.onfinish = () => { el.style.opacity = '1'; a.cancel(); }; };
+
+  // Vórtice: cada peça nasce no centro, pequena, e sai em espiral até o seu lugar.
+  // A espiral é achatada na vertical, como um redemoinho visto de lado.
+  function playVortex(el, sel, o){
+    const ps = pieces(el, sel), maxD = Math.max(1, ...ps.map(p => p.d));
+    ps.forEach((p, i) => {
+      const turns = o.turns * (0.75 + 0.5*(p.d/maxD)) * (i % 2 ? 1 : 1.08);
+      const frames = [], N = 18;
+      for(let k = 0; k <= N; k++){
+        const s = k/N, a = -turns*2*Math.PI*(1 - s), cos = Math.cos(a), sin = Math.sin(a);
+        const flat = 0.35 + 0.65*s;                       // achatado no começo, normal no fim
+        const px = (p.ox*cos - p.oy*sin)*s, py = (p.ox*sin + p.oy*cos)*s*flat;
+        frames.push({
+          offset: s,
+          transform: k === N ? 'none' : `translate(${(px - p.ox).toFixed(1)}px,${(py - p.oy).toFixed(1)}px) rotate(${(a*57.3*o.spin).toFixed(1)}deg) scale(${(0.15 + 0.85*s).toFixed(3)})`,
+          opacity: Math.min(1, s*2.4),
+          filter: `blur(${((1 - s)*o.blur).toFixed(2)}px)`
+        });
+      }
+      const a = p.el.animate(frames, {duration: o.dur, delay: o.delay + (p.d/maxD)*o.spread + i*o.step, easing: 'cubic-bezier(.22,.8,.26,1)', fill: 'both'});
+      done(p.el, a);
+    });
+  }
+
+  // Queda: cada palavra cai do alto girando, aterrissa com um pequeno quique e assenta.
+  function playFall(el){
+    [...el.querySelectorAll('.w')].forEach((w, i) => {
+      const r = (Math.random()*2 - 1)*26, h = 160 + Math.random()*140, dx = (Math.random()*2 - 1)*40;
+      const a = w.animate([
+        {offset:0,   transform:`translate(${dx}px,${-h}px) rotate(${r}deg)`, opacity:0, filter:'blur(8px)', easing:'cubic-bezier(.55,0,.85,.35)'},
+        {offset:.55, transform:`translate(0,10px) rotate(${(-r*.12).toFixed(1)}deg) scale(1.02,.94)`, opacity:1, filter:'blur(0px)', easing:'cubic-bezier(.2,.7,.3,1)'},
+        {offset:.75, transform:'translate(0,-5px) rotate(0deg) scale(.99,1.02)', opacity:1, filter:'blur(0px)', easing:'ease-in-out'},
+        {offset:.9,  transform:'translate(0,1.5px)', opacity:1, filter:'blur(0px)', easing:'ease-out'},
+        {offset:1,   transform:'none', opacity:1, filter:'blur(0px)'}
+      ], {duration: 1250, delay: i*95 + Math.random()*60, fill: 'both'});
+      done(w, a);
+    });
+  }
+
+  function playHead(h){
+    if(!anim || h.dataset.played) return; h.dataset.played = '1';
+    if(h === heroH1){
+      playVortex(h, '.c', {turns: 0.9, spin: 0.6, blur: 6, dur: 1900, delay: 80, spread: 450, step: 12});
+      setTimeout(() => heroFollow.forEach(el => { el.classList.add('in'); settle(el); }), 1500);
+    }
+    else if(h.dataset.fx === 'vortex') playVortex(h, '.w', {turns: 0.6, spin: 0.35, blur: 8, dur: 1500, delay: 0, spread: 300, step: 40});
+    else playFall(h);
+  }
+
+  // Elementos que entram ao rolar. --i dá a cascata entre irmãos.
+  // Nas grades com linhas de 1px (o fundo da grade é a cor da linha), as células ficam
+  // no lugar e só o conteúdo delas entra; senão o fundo aparece como um bloco.
+  const CELLS = '.ew, .learn > div, .sp-panel';
+  const RV = [
+    '.hero .kicker', '.hero .lead', '.hero-actions > *', '.hero-meta', '.hint-mouse',
+    '.ch:not(.hero) .eyebrow', '.ch:not(.hero) .lead', '.ew > *', '.question', '.eqbox', '.step > *',
+    '.hcard', '.sp-panel > *', '.bigmoney', '.clay-row', '.tl-head', '.stat', '.claim-box', '.debate > div', '.say',
+    '.readout', '.col-scroll-hint', '.pst', '.numbers > div', '.feat', '.cta', '.learn > div > *', '.limits',
+    '.refs h3', '.refs p', 'footer > span'
+  ].join(',');
+  const rvEls = $$(RV);
+  rvEls.forEach(el => {
+    const par = el.parentElement;
+    const sibs = [...par.children].filter(c => c.matches(RV));
+    let i = sibs.indexOf(el);
+    if(par.matches(CELLS)) i += [...par.parentElement.children].indexOf(par);   // cascata de célula em célula
+    el.style.setProperty('--i', Math.min(i, 10));
+    el.setAttribute('data-rv', '');
+  });
+  // A abertura tem uma ordem própria: o sobretítulo entra junto com o vórtice do título,
+  // e o texto e os botões só depois que as letras chegaram (ver playHead).
+  const heroFollow = ['.hero .lead', '.hero-actions > *', '.hero-meta', '.hint-mouse'].flatMap(s => $$(s));
+  heroFollow.forEach((e,k) => e.style.setProperty('--i', k));
+  const pipe = $('.pipe'); if(pipe) pipe.setAttribute('data-draw', '');
+
+  // Depois de entrar, o elemento volta ao normal (para os efeitos de hover funcionarem).
+  function settle(el){
+    const ms = 1100 + (parseFloat(getComputedStyle(el).getPropertyValue('--i')) || 0)*75;
+    setTimeout(() => { el.removeAttribute('data-rv'); el.classList.remove('in'); }, ms);
+  }
+  const revealIO = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if(!e.isIntersecting) return;
+      const el = e.target; revealIO.unobserve(el);
+      el.classList.add('in');
+      if(el.hasAttribute('data-rv')) settle(el);
+      if(el.classList.contains('words')) playHead(el);
+      el.querySelectorAll('[data-count]').forEach(countUp);
+      if(el.matches('[data-count]')) countUp(el);
+    });
+  }, {rootMargin:'0px 0px -8% 0px', threshold:0});
+
+  // Contadores: sobem de 0 até o valor, desacelerando no fim.
+  const fmtCount = (n, sep) => { const s = String(Math.round(n)); return sep ? s.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : s; };
+  function countUp(el){
+    if(el.dataset.done) return; el.dataset.done = '1';
+    const to = +el.dataset.count, sep = el.hasAttribute('data-sep');
+    if(!el.hasAttribute('data-free')){
+      // trava a largura final para o texto em volta não "dançar" durante a contagem
+      el.style.display = 'inline-block'; el.style.textAlign = 'right';
+      el.textContent = fmtCount(to, sep);
+      el.style.minWidth = Math.ceil(el.getBoundingClientRect().width) + 'px';
+    }
+    const t0 = performance.now(), dur = 1800;
+    (function tick(now){
+      const t = clamp((now - t0)/dur, 0, 1), e = t === 1 ? 1 : 1 - Math.pow(2, -10*t);
+      el.textContent = fmtCount(to*e, sep);
+      if(t < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+  if(anim) $$('[data-count]').forEach(el => { el.textContent = '0'; });
+
+  function startReveals(){
+    if(!anim){ return; }
+    // dois quadros de espera: o estado "escondido" precisa ser desenhado antes, para a transição acontecer
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+    [...rvEls, ...heads, pipe, ...$$('.stats'), ...$$('.numbers')].filter(el => el && !heroFollow.includes(el)).forEach(el => revealIO.observe(el))));
+  }
+
+  // Abertura: o logo se desenha e a cortina sobe. Só na primeira vez nesta aba.
+  const intro = $('#intro');
+  let introSeen = false;
+  try { introSeen = sessionStorage.getItem('redemoinho-intro') === '1'; sessionStorage.setItem('redemoinho-intro', '1'); } catch(err) {}
+  if(!anim || introSeen || location.hash){
+    intro.remove(); startReveals();
+  } else {
+    setTimeout(() => { intro.classList.add('out'); startReveals(); setTimeout(() => intro.remove(), 800); }, 1150);
+  }
+
+  // Números gigantes de fundo em cada capítulo.
+  const chnums = [];
+  chapters.forEach((c,i) => {
+    if(i === 0 || c.classList.contains('collapse')) return;
+    const n = document.createElement('span');
+    n.className = 'chnum'; n.setAttribute('aria-hidden', 'true');
+    n.textContent = n.dataset.n = String(i).padStart(2, '0');
+    c.prepend(n); chnums.push([c, n]);
+  });
+  const heroWrap = $('.hero .wrap');
+  function scrollParallax(){
+    if(reduce) return;
+    const y = scrollY;
+    if(y < innerHeight*1.2){
+      heroWrap.style.transform = `translate3d(0,${(y*0.28).toFixed(1)}px,0)`;
+      heroWrap.style.opacity = clamp(1 - y/(innerHeight*0.8), 0, 1).toFixed(3);
+    }
+    for(const [c, n] of chnums){
+      const r = c.getBoundingClientRect();
+      if(r.bottom < -200 || r.top > innerHeight + 200) continue;
+      n.style.transform = `translate3d(0,${(-r.top*0.18).toFixed(1)}px,0)`;
+    }
+  }
+
+  // Brilho que segue o mouse nos cartões.
+  if(finePointer){
+    $$('.ew, .hcard, .feat, .claim-box, .ev, .learn > div, .stat, .sp-panel').forEach(el => {
+      el.classList.add('spot');
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+        el.style.setProperty('--my', (e.clientY - r.top) + 'px');
+      });
+    });
+  }
+
+  // Botões magnéticos: seguem um pouco o mouse.
+  if(finePointer && !reduce){
+    $$('.btn').forEach(b => {
+      b.classList.add('mag');
+      b.addEventListener('pointermove', e => {
+        const r = b.getBoundingClientRect();
+        const dx = e.clientX - (r.left + r.width/2), dy = e.clientY - (r.top + r.height/2);
+        b.style.transform = `translate3d(${(dx*0.18).toFixed(1)}px,${(dy*0.3).toFixed(1)}px,0)`;
+      });
+      b.addEventListener('pointerleave', () => { b.style.transform = ''; });
+    });
+  }
+  document.documentElement.dataset.animReady = '1';
+
+  // ---------- simulador sem internet ----------
+  // Aberta direto do computador (file://), a apresentação usa a cópia local do simulador,
+  // que fica na pasta vizinha "2 - Simulador". Assim os botões funcionam na feira mesmo sem Wi-Fi.
+  if(location.protocol === 'file:'){
+    const local = new URL('../2 - Simulador/Simulador.html', location.href).href;
+    $$('[data-sim]').forEach(a => { a.href = local; });
+    $$('.offline-note').forEach(n => { n.hidden = false; });
+  }
+
+  // ---------- início ----------
+  layoutTimeline(); onScroll();
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layoutTimeline(); onScroll(); });
+})();
+</script>
+</body>
+</html>

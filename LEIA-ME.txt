@@ -1,18 +1,17 @@
-SIMULADOR DE REDEMOINHO - Equações de Navier-Stokes
-====================================================
+PODE UM REDEMOINHO EXPLODIR? - Simulador e apresentação
+=======================================================
 
-COMO ABRIR
-  Dê dois cliques em  SimuladorRedemoinho.exe
-  -> Abre uma janela própria (usa o Microsoft Edge que já vem no Windows).
-  -> NÃO precisa de internet nem de instalação. Pode levar num pendrive.
+ONLINE
+  Simulador:     https://thurpopa.github.io/simulador-redemoinho/
+  Apresentação:  https://thurpopa.github.io/simulador-redemoinho/apresentacao/
 
-  Alternativa: abra o arquivo index.html no Google Chrome ou no Edge.
+SEM INTERNET
+  Baixe os arquivos e abra no Google Chrome ou no Microsoft Edge:
+    index.html                o simulador
+    apresentacao/index.html   a apresentação
+  Não precisa instalar nada.
 
-  Se o Windows mostrar "O Windows protegeu o computador" (SmartScreen),
-  clique em "Mais informações" -> "Executar assim mesmo". Isso acontece com
-  qualquer programa novo que não tem assinatura digital paga.
-
-MODOS
+MODOS DO SIMULADOR
   2D (plano)   - 7 cenários: ralo da pia, furacão, fumaça subindo, fusão de
                  vórtices, dipolo, esteira de von Kármán, laboratório livre.
   3D (volume)  - 1. COLAPSO DA OPENAI: o vórtice que encolhe e "explode",
@@ -24,24 +23,23 @@ MODOS
                  SOLTE OBJETOS no redemoinho: isopor, patinho, cubo de
                  madeira, folha, bolinha de aço e bolha.
 
-CONTROLES
+CONTROLES DO SIMULADOR
   2D: arrastar = mexer o fluido | Shift+arrastar = mover o vórtice
   3D: arrastar = girar a câmera | roda do mouse = zoom | clique = soltar objeto
   Espaço = pausar | R = reiniciar | F = tela cheia | P = salvar foto
   D = alternar 2D/3D | O = soltar objeto (3D) | V = trocar visualização (2D)
+  1 a 7 = cenários | N = avançar um passo
   Clique nos termos da equação (embaixo do simulador) para ligar/desligar
   cada parte da física.
 
-A página tem, abaixo do simulador, a explicação completa das equações, do
-Problema do Milênio (incluindo o anúncio da OpenAI de setembro de 2026) e um
-ROTEIRO PARA A APRESENTAÇÃO com perguntas prováveis dos jurados.
+CONTROLES DA APRESENTAÇÃO
+  <- -> = capítulo anterior / próximo | F = tela cheia | T = cronômetro
+
+ANIMAÇÕES
+  As páginas animam mesmo com os "efeitos de animação" do Windows
+  desligados. Para uma versão sem movimento, abra com ?calmo no final.
 
 DICA PARA A FEIRA
   Teste antes no computador que vai usar. Se ficar lento, no modo 3D escolha
   "Qualidade da imagem: Rápida" ou a grade 48³; no 2D, diminua a
   "Resolução da grade" no painel "Numérico".
-
-ARQUIVOS
-  SimuladorRedemoinho.exe   programa (o simulador vai embutido nele)
-  index.html                o simulador em si (HTML + WebGL 2)
-  codigo-fonte\             código do lançador .exe (C#) e o ícone
