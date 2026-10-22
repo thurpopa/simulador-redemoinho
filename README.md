@@ -6,6 +6,7 @@ Projeto de feira de ciências (2026) sobre as equações de Navier–Stokes, o P
 |---|---|
 | **Simulador** | https://thurpopa.github.io/simulador-redemoinho/ |
 | **Apresentação** | https://thurpopa.github.io/simulador-redemoinho/apresentacao/ |
+| **Material de estudo da equipe** | https://thurpopa.github.io/simulador-redemoinho/estudo/ |
 
 ## Simulador
 
