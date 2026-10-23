@@ -6,7 +6,7 @@
 <title>Como uma IA chegou a Navier–Stokes</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%233c9dff'/%3E%3Cstop offset='1' stop-color='%23ff6b3d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 32m-4 0a4 4 0 1 1 8 0a10 10 0 1 1-20 0a16 16 0 1 1 32 0a22 22 0 1 1-44 0a28 28 0 0 1 28-28' fill='none' stroke='url(%23g)' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
-/* Estande da feira: 6 telas, uma ideia por tela. Quem explica são os apresentadores; a tela só ilustra.
+/* Estande da feira: 5 telas, uma ideia por tela. Quem explica são os apresentadores; a tela só ilustra.
    Fontes do sistema e nada de internet: funciona abrindo o arquivo direto. */
 :root{
   color-scheme:dark;
@@ -64,24 +64,15 @@ button{font:inherit;color:inherit}
 .demo{position:relative;min-height:0;width:100%;max-width:min(1500px,100%);margin:0 auto}
 .missing{display:grid;place-items:center;height:100%;border:1px dashed var(--line2);border-radius:2vh;color:var(--muted);font-size:2.2vh;text-align:center;padding:2vh}
 
-/* tela 6: o simulador */
-.s6{padding:0;pointer-events:none}
-.s6 .sim-tools{pointer-events:auto}
-.s6 .band{position:absolute;left:0;right:0;top:0;margin:0;max-width:none;padding:calc(3.2vh + env(safe-area-inset-top,0px)) 4vw 8vh;background:linear-gradient(180deg,rgba(4,6,13,.92) 0%,rgba(4,6,13,.6) 60%,transparent);pointer-events:none}
-.sim-tools{position:absolute;left:50%;bottom:calc(7.5vh + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:5;display:flex;gap:1vh;background:rgba(6,9,17,.82);border:1px solid var(--line2);border-radius:999px;padding:.8vh}
-.sim-tools button{border:0;background:transparent;color:var(--muted);border-radius:999px;padding:1.1vh 2vh;font-size:max(13px,1.9vh);font-weight:600;cursor:pointer}
-.sim-tools button.on{background:var(--mint);color:#06201b}
-.push-state{position:absolute;right:4vw;top:calc(3.2vh + env(safe-area-inset-top,0px));z-index:5;font-family:var(--f-mono);font-size:max(12px,1.7vh);color:var(--muted);background:rgba(6,9,17,.8);border:1px solid var(--line2);border-radius:999px;padding:.6vh 1.4vh}
-.push-state.off{color:var(--warm);border-color:var(--warm)}
-.hand{position:absolute;left:50%;top:58%;z-index:4;transform:translate(-50%,-50%);pointer-events:none;font-family:var(--f-mono);font-size:max(13px,2vh);color:var(--text);background:rgba(6,9,17,.7);border:1px solid var(--line2);border-radius:999px;padding:1vh 2vh;transition:opacity .6s}
-.hand::before{content:"";display:inline-block;width:1.6vh;height:1.6vh;border-radius:50%;background:var(--mint);margin-right:1vh;vertical-align:-.2vh;box-shadow:0 0 0 0 rgba(111,242,214,.6);animation:ping 1.6s ease-out infinite}
-@keyframes ping{to{box-shadow:0 0 0 2.4vh rgba(111,242,214,0)}}
-.hand.gone{opacity:0}
-#sim{position:fixed;inset:0;width:100%;height:100%;border:0;display:block;background:#04060d;z-index:0;opacity:0;visibility:hidden;transition:opacity .45s,visibility .45s}
-#sim.on{opacity:1;visibility:visible}
-.planb{position:fixed;inset:0;z-index:1;background:#04060d;display:grid;place-items:center}
-.planb video{width:100%;height:100%;object-fit:cover}
-.planb p{position:absolute;bottom:14vh;left:50%;transform:translateX(-50%);color:var(--muted);font-size:2vh;text-align:center;max-width:60ch}
+/* tela 5: QR code do simulador */
+.s5 .final{display:flex;align-items:center;justify-content:center;gap:6vw;min-height:0;width:100%;max-width:min(1500px,100%);margin:0 auto}
+.qrbox{background:#fff;border-radius:2.4vh;padding:2.4vh;box-shadow:0 0 0 1px var(--line2),0 0 80px rgba(111,242,214,.18)}
+.qr{display:block;width:min(46vh,70vw);height:auto}
+.final-side{display:flex;flex-direction:column;gap:2.4vh;max-width:36ch}
+.final-side .url{font-family:var(--f-mono);font-size:max(13px,2vh);color:var(--muted);word-break:break-all}
+.open-sim{white-space:nowrap;display:inline-flex;align-items:center;gap:1vh;align-self:flex-start;text-decoration:none;background:var(--mint);color:#06201b;font-weight:700;font-size:max(15px,2.4vh);border-radius:999px;padding:1.4vh 3vh}
+.open-sim:hover{filter:brightness(1.08)}
+.scan{font-family:var(--f-display);font-weight:700;font-size:clamp(20px,3.6vh,48px);line-height:1.2;margin:0}
 
 /* navegação */
 .nav{position:fixed;left:0;right:0;bottom:calc(1.8vh + env(safe-area-inset-bottom,0px));z-index:20;display:flex;align-items:center;justify-content:center;gap:1.4vh;pointer-events:none}
@@ -100,7 +91,7 @@ button{font:inherit;color:inherit}
   body{overflow:auto}
   .screen{position:fixed;overflow-y:auto;padding:16px 16px 72px;grid-template-rows:auto minmax(320px,1fr)}
   .big{font-size:28px} .support{font-size:17px}
-  .s6 .band{padding:16px 16px 40px}
+  .s5 .final{flex-direction:column;gap:20px}
 }
 </style>
 <script>
@@ -109,9 +100,6 @@ button{font:inherit;color:inherit}
 </script>
 </head>
 <body>
-
-<iframe id="sim" title="Simulador de redemoinho: equações de Navier–Stokes ao vivo" allow="fullscreen"></iframe>
-<div class="planb" id="planb" hidden></div>
 
 <!-- 1 · O que é Navier–Stokes -->
 <section class="screen s1" data-n="1" aria-label="Tela 1">
@@ -154,38 +142,29 @@ button{font:inherit;color:inherit}
   </div>
 </section>
 
-<!-- 4 · Como funciona uma IA -->
+<!-- 4 · Como a IA resolveu -->
 <section class="screen s4" data-n="4" aria-label="Tela 4">
   <div class="band">
-    <p class="step-n">4 · Como funciona uma IA</p>
-    <h1 class="big">Números que aprendem a <span class="hl-mint">prever a próxima palavra</span>.</h1>
-    <p class="support">Ela chuta, compara com exemplos e ajusta seus números. De novo e de novo.</p>
-  </div>
-  <div class="demo" id="demo-ia"></div>
-</section>
-
-<!-- 5 · Como a IA resolveu -->
-<section class="screen s5" data-n="5" aria-label="Tela 5">
-  <div class="band">
-    <p class="step-n">5 · Como a IA resolveu</p>
+    <p class="step-n">4 · Como a IA resolveu</p>
     <h1 class="big">Umas IAs propõem, outras criticam e corrigem. O <span class="hl-mint">Lean</span> confere.</h1>
     <p class="support">O Lean é um programa juiz: passo fora da regra não passa.</p>
   </div>
   <div class="demo" id="demo-lean"></div>
 </section>
 
-<!-- 6 · O simulador -->
-<section class="screen s6" data-n="6" aria-label="Tela 6">
+<!-- 5 · O simulador: QR code -->
+<section class="screen s5" data-n="5" aria-label="Tela 5">
   <div class="band">
-    <p class="step-n">6 · Agora é com você</p>
-    <h1 class="big">Mexa no redemoinho: é <span class="hl-cool">Navier–Stokes</span> ao vivo.</h1>
-    <p class="support">Sua mão é um <span class="hl-warm">empurrão de fora</span>. A prova da IA também precisou de um.</p>
+    <p class="step-n">5 · Agora é com você</p>
+    <h1 class="big">Mexa no nosso redemoinho: é <span class="hl-cool">Navier–Stokes</span> ao vivo.</h1>
   </div>
-  <div class="push-state" id="pushState">empurrão de fora: ligado</div>
-  <div class="hand" id="hand">arraste o mouse no redemoinho</div>
-  <div class="sim-tools" role="group" aria-label="Cena do simulador">
-    <button type="button" data-cmd="2d" class="on">Ralo da pia (2D)</button>
-    <button type="button" data-cmd="3d">Colapso (3D)</button>
+  <div class="final">
+    <div class="qrbox"><svg class="qr" viewBox="0 0 33 33" role="img" aria-label="QR code do simulador" shape-rendering="crispEdges"><rect width="33" height="33" fill="#fff"/><path d="M2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM5 2h1v1h-1zM6 2h1v1h-1zM7 2h1v1h-1zM8 2h1v1h-1zM11 2h1v1h-1zM14 2h1v1h-1zM15 2h1v1h-1zM16 2h1v1h-1zM17 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM24 2h1v1h-1zM25 2h1v1h-1zM26 2h1v1h-1zM27 2h1v1h-1zM28 2h1v1h-1zM29 2h1v1h-1zM30 2h1v1h-1zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM10 4h1v1h-1zM11 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM26 4h1v1h-1zM27 4h1v1h-1zM28 4h1v1h-1zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM11 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM21 5h1v1h-1zM22 5h1v1h-1zM24 5h1v1h-1zM26 5h1v1h-1zM27 5h1v1h-1zM28 5h1v1h-1zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM15 6h1v1h-1zM17 6h1v1h-1zM18 6h1v1h-1zM19 6h1v1h-1zM20 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM27 6h1v1h-1zM28 6h1v1h-1zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM27 8h1v1h-1zM28 8h1v1h-1zM29 8h1v1h-1zM30 8h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM14 9h1v1h-1zM19 9h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM5 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM12 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM21 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM29 10h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM7 11h1v1h-1zM9 11h1v1h-1zM10 11h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM15 11h1v1h-1zM18 11h1v1h-1zM22 11h1v1h-1zM24 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM15 12h1v1h-1zM20 12h1v1h-1zM21 12h1v1h-1zM22 12h1v1h-1zM27 12h1v1h-1zM28 12h1v1h-1zM29 12h1v1h-1zM2 13h1v1h-1zM3 13h1v1h-1zM4 13h1v1h-1zM6 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM15 13h1v1h-1zM17 13h1v1h-1zM18 13h1v1h-1zM20 13h1v1h-1zM21 13h1v1h-1zM23 13h1v1h-1zM28 13h1v1h-1zM29 13h1v1h-1zM2 14h1v1h-1zM7 14h1v1h-1zM8 14h1v1h-1zM9 14h1v1h-1zM13 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM18 14h1v1h-1zM19 14h1v1h-1zM23 14h1v1h-1zM24 14h1v1h-1zM25 14h1v1h-1zM27 14h1v1h-1zM29 14h1v1h-1zM30 14h1v1h-1zM4 15h1v1h-1zM6 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM21 15h1v1h-1zM22 15h1v1h-1zM23 15h1v1h-1zM2 16h1v1h-1zM3 16h1v1h-1zM5 16h1v1h-1zM8 16h1v1h-1zM10 16h1v1h-1zM12 16h1v1h-1zM13 16h1v1h-1zM16 16h1v1h-1zM22 16h1v1h-1zM23 16h1v1h-1zM26 16h1v1h-1zM27 16h1v1h-1zM28 16h1v1h-1zM29 16h1v1h-1zM30 16h1v1h-1zM5 17h1v1h-1zM7 17h1v1h-1zM9 17h1v1h-1zM14 17h1v1h-1zM15 17h1v1h-1zM17 17h1v1h-1zM19 17h1v1h-1zM20 17h1v1h-1zM21 17h1v1h-1zM24 17h1v1h-1zM27 17h1v1h-1zM29 17h1v1h-1zM2 18h1v1h-1zM3 18h1v1h-1zM4 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h1v1h-1zM12 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM19 18h1v1h-1zM20 18h1v1h-1zM22 18h1v1h-1zM23 18h1v1h-1zM25 18h1v1h-1zM29 18h1v1h-1zM3 19h1v1h-1zM4 19h1v1h-1zM6 19h1v1h-1zM11 19h1v1h-1zM12 19h1v1h-1zM13 19h1v1h-1zM14 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM18 19h1v1h-1zM19 19h1v1h-1zM24 19h1v1h-1zM25 19h1v1h-1zM27 19h1v1h-1zM30 19h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM5 20h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM10 20h1v1h-1zM14 20h1v1h-1zM18 20h1v1h-1zM19 20h1v1h-1zM24 20h1v1h-1zM26 20h1v1h-1zM29 20h1v1h-1zM30 20h1v1h-1zM13 21h1v1h-1zM16 21h1v1h-1zM17 21h1v1h-1zM19 21h1v1h-1zM20 21h1v1h-1zM21 21h1v1h-1zM22 21h1v1h-1zM23 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM26 21h1v1h-1zM29 21h1v1h-1zM30 21h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM7 22h1v1h-1zM8 22h1v1h-1zM10 22h1v1h-1zM11 22h1v1h-1zM12 22h1v1h-1zM14 22h1v1h-1zM15 22h1v1h-1zM16 22h1v1h-1zM17 22h1v1h-1zM18 22h1v1h-1zM22 22h1v1h-1zM23 22h1v1h-1zM24 22h1v1h-1zM25 22h1v1h-1zM26 22h1v1h-1zM28 22h1v1h-1zM10 23h1v1h-1zM14 23h1v1h-1zM18 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM21 23h1v1h-1zM22 23h1v1h-1zM26 23h1v1h-1zM28 23h1v1h-1zM29 23h1v1h-1zM30 23h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM5 24h1v1h-1zM6 24h1v1h-1zM7 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM14 24h1v1h-1zM15 24h1v1h-1zM18 24h1v1h-1zM19 24h1v1h-1zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM29 24h1v1h-1zM2 25h1v1h-1zM8 25h1v1h-1zM11 25h1v1h-1zM12 25h1v1h-1zM13 25h1v1h-1zM14 25h1v1h-1zM15 25h1v1h-1zM17 25h1v1h-1zM18 25h1v1h-1zM20 25h1v1h-1zM22 25h1v1h-1zM26 25h1v1h-1zM27 25h1v1h-1zM28 25h1v1h-1zM29 25h1v1h-1zM2 26h1v1h-1zM4 26h1v1h-1zM5 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM11 26h1v1h-1zM12 26h1v1h-1zM13 26h1v1h-1zM14 26h1v1h-1zM15 26h1v1h-1zM19 26h1v1h-1zM22 26h1v1h-1zM23 26h1v1h-1zM24 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM30 26h1v1h-1zM2 27h1v1h-1zM4 27h1v1h-1zM5 27h1v1h-1zM6 27h1v1h-1zM8 27h1v1h-1zM10 27h1v1h-1zM11 27h1v1h-1zM14 27h1v1h-1zM15 27h1v1h-1zM22 27h1v1h-1zM24 27h1v1h-1zM25 27h1v1h-1zM26 27h1v1h-1zM27 27h1v1h-1zM28 27h1v1h-1zM2 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM13 28h1v1h-1zM15 28h1v1h-1zM16 28h1v1h-1zM19 28h1v1h-1zM20 28h1v1h-1zM21 28h1v1h-1zM22 28h1v1h-1zM26 28h1v1h-1zM27 28h1v1h-1zM28 28h1v1h-1zM30 28h1v1h-1zM2 29h1v1h-1zM8 29h1v1h-1zM10 29h1v1h-1zM11 29h1v1h-1zM13 29h1v1h-1zM15 29h1v1h-1zM16 29h1v1h-1zM17 29h1v1h-1zM18 29h1v1h-1zM19 29h1v1h-1zM20 29h1v1h-1zM21 29h1v1h-1zM22 29h1v1h-1zM23 29h1v1h-1zM25 29h1v1h-1zM29 29h1v1h-1zM2 30h1v1h-1zM3 30h1v1h-1zM4 30h1v1h-1zM5 30h1v1h-1zM6 30h1v1h-1zM7 30h1v1h-1zM8 30h1v1h-1zM10 30h1v1h-1zM11 30h1v1h-1zM13 30h1v1h-1zM14 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM21 30h1v1h-1zM22 30h1v1h-1zM23 30h1v1h-1zM25 30h1v1h-1zM26 30h1v1h-1zM29 30h1v1h-1z" fill="#060911"/></svg></div>
+    <div class="final-side">
+      <p class="scan">Aponte a câmera do celular para o QR code.</p>
+      <span class="url">thurpopa.github.io/simulador-redemoinho</span>
+      <a class="open-sim" id="openSim" href="https://thurpopa.github.io/simulador-redemoinho/" target="_blank" rel="noopener">Abrir o simulador aqui ↗</a>
+    </div>
   </div>
 </section>
 
@@ -194,7 +173,6 @@ button{font:inherit;color:inherit}
 <button class="arrow next" id="next" type="button" aria-label="Próxima tela">→</button>
 <div class="mode" id="mode" hidden>modo vitrine · V para sair</div>
 
-<script src="estande/demo-ia.js"></script>
 <script src="estande/demo-lean.js"></script>
 <script>
 (() => {
@@ -205,42 +183,14 @@ button{font:inherit;color:inherit}
   const screens = $$('.screen'), N = screens.length;
   let cur = 0;
 
-  // ---------- simulador (tela 6) ----------
-  // No computador, o simulador está na pasta vizinha; publicado no site, está na raiz.
-  const sim = $('#sim');
-  const simUrl = location.protocol === 'file:' ? '../2 - Simulador/Simulador.html?estande' : '../?estande';
-  let simLoaded = false, simScene = '2d', pushOn = true;
-  function simCmd(cmd){ if(simLoaded && sim.contentWindow) sim.contentWindow.postMessage({estandeCmd: cmd}, '*'); }
-  function simReady(){ simLoaded = true; if(cur === 5){ pushOn = true; setPushLabel(); simCmd(simScene); } else simCmd('pausa'); }
-  sim.addEventListener('load', simReady);
-  function ensureSim(){ if(!sim.src) sim.src = simUrl; }
-  function setPushLabel(){ const el = $('#pushState'); el.textContent = 'empurrão de fora: ' + (pushOn ? 'ligado' : 'DESLIGADO'); el.classList.toggle('off', !pushOn); }
-  function setScene(scene){
-    // '2d' e '3d' recomeçam a cena no simulador e religam o empurrão e o mouse
-    simScene = scene; pushOn = true; setPushLabel(); simCmd(scene);
-    $$('.sim-tools button').forEach(b => b.classList.toggle('on', b.dataset.cmd === scene));
-    if(planB) showPlanB();
-  }
-  $$('.sim-tools button').forEach(b => b.addEventListener('click', () => { stopVitrine(); setScene(b.dataset.cmd); }));
-  function togglePush(){
-    pushOn = !pushOn; simCmd(pushOn ? 'comf' : 'semf'); setPushLabel();
-  }
-
-  // Plano B (tecla P): vídeos gravados no lugar do simulador
-  let planB = false;
-  function showPlanB(){
-    const box = $('#planb');
-    const file = simScene === '3d' ? 'video-3d.mp4' : 'video-2d.mp4';
-    box.innerHTML = '<video autoplay muted loop playsinline src="' + file + '"></video><p hidden>Plano B: grave <b>' + file + '</b> nesta pasta (veja as dicas no roteiro).</p>';
-    const v = box.querySelector('video'); v.addEventListener('error', () => { v.remove(); box.querySelector('p').hidden = false; });
-    box.hidden = cur !== 5;
-  }
-  function togglePlanB(){ planB = !planB; if(planB) showPlanB(); else { $('#planb').hidden = true; $('#planb').innerHTML = ''; } }
+  // ---------- tela final: link do simulador ----------
+  // No computador abre o arquivo da pasta vizinha (funciona sem internet); online, o site.
+  if(location.protocol === 'file:') $('#openSim').href = new URL('../2 - Simulador/Simulador.html', location.href).href;
 
   // ---------- telas ----------
   const dots = $('#dots');
   screens.forEach((s, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'dot'; b.setAttribute('aria-label', 'Tela ' + (i + 1)); b.addEventListener('click', () => { stopVitrine(); go(i); }); dots.appendChild(b); });
-  const demos = { 3: () => window.DemoIA, 4: () => window.DemoLean };
+  const demos = { 3: () => window.DemoLean };
   const mounted = {};
   function demoOf(i){ const d = demos[i] && demos[i](); return d && typeof d.mount === 'function' ? d : null; }
   function mountDemo(i){
@@ -257,31 +207,23 @@ button{font:inherit;color:inherit}
     cur = i;
     screens.forEach((s, k) => s.classList.toggle('on', k === i));
     $$('.dot').forEach((d, k) => d.classList.toggle('on', k === i));
-    // simulador só na última tela
-    if(i === 5){ ensureSim(); sim.classList.add('on'); pushOn = true; setPushLabel(); simCmd(simScene); handHint(); if(planB) showPlanB(); }
-    else { if(prev === 5){ simCmd('pausa'); try { window.focus(); } catch(e){} } sim.classList.remove('on'); $('#planb').hidden = true; }
     if(demos[i]){ mountDemo(i); const d = demoOf(i); if(d) try { d.enter(); } catch(e){} }
     if(visuals[i]) visuals[i].start();
-    if(i === 4) ensureSim();   // começa a carregar o simulador uma tela antes
     try { history.replaceState(null, '', '#' + (i + 1) + (calm ? '' : '')); } catch(e){}
   }
   const next = () => go(cur + 1), prev = () => go(cur - 1);
   $('#next').addEventListener('click', () => { stopVitrine(); next(); });
   $('#prev').addEventListener('click', () => { stopVitrine(); prev(); });
-  let handTimer = 0;
-  function handHint(){ const h = $('#hand'); h.classList.remove('gone'); clearTimeout(handTimer); handTimer = setTimeout(() => h.classList.add('gone'), 6000); }
 
-  // ---------- teclado (também as teclas repassadas pelo simulador) ----------
+  // ---------- teclado ----------
   function key(k){
     if(k === 'v' || k === 'V'){ vitrine ? stopVitrine() : startVitrine(); return; }
     if(vitrine) stopVitrine();
     if(k === 'ArrowRight' || k === ' ' || k === 'PageDown') next();
     else if(k === 'ArrowLeft' || k === 'PageUp') prev();
     else if(k === 'Home') go(0);
-    else if(/^[1-6]$/.test(k)) go(+k - 1);
+    else if(/^[1-5]$/.test(k)) go(+k - 1);
     else if(k === 'Enter'){ const d = demoOf(cur); if(d && mounted[cur]) d.step(); else if(visuals[cur] && visuals[cur].replay) visuals[cur].replay(); }
-    else if((k === 'e' || k === 'E') && cur === 5) togglePush();
-    else if(k === 'p' || k === 'P') togglePlanB();
     else if(k === 'f' || k === 'F'){ try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch(e){} }
     else return false;
     return true;
@@ -291,20 +233,14 @@ button{font:inherit;color:inherit}
     if(e.ctrlKey || e.metaKey || e.altKey) return;
     if(key(e.key)) e.preventDefault();
   });
-  addEventListener('message', e => {
-    if(e.source !== sim.contentWindow || !e.data) return;
-    if(typeof e.data.estandeTecla === 'string') key(e.data.estandeTecla);
-    else if(e.data.estandePronto) simReady();
-  });
 
   // ---------- modo vitrine (tecla V): as telas passam sozinhas ----------
-  const DUR = [10, 10, 8, 15, 15, 12];
+  const DUR = [10, 10, 8, 15, 12];
   let vitrine = false, vTimer = 0;
   function vitrineStep(){
     if(!vitrine) return;
     const d = demoOf(cur);
     if(d && mounted[cur]) try { d.auto(() => {}); } catch(e){}
-    if(cur === 5){ setScene(simScene === '2d' ? '3d' : '2d'); }
     vTimer = setTimeout(() => { if(!vitrine) return; go((cur + 1) % N); vitrineStep(); }, DUR[cur] * 1000);
   }
   function startVitrine(){ vitrine = true; $('#mode').hidden = false; go(0); vitrineStep(); }
@@ -430,8 +366,8 @@ button{font:inherit;color:inherit}
   })();
 
   // ---------- início ----------
-  // As demos são montadas logo ao carregar (a de IA aproveita para conferir o treino em segundo plano).
-  setTimeout(() => { mountDemo(3); mountDemo(4); }, 300);
+  // A demo do Lean é montada logo ao carregar.
+  setTimeout(() => mountDemo(3), 300);
   const fromHash = parseInt((location.hash.match(/^#(\d)/) || [])[1], 10);
   go(fromHash >= 1 && fromHash <= N ? fromHash - 1 : 0);
 })();

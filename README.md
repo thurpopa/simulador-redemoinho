@@ -4,7 +4,7 @@ Projeto de feira de ciências (2026): o problema de US$ 1 milhão das equações
 
 | | |
 |---|---|
-| **Estande (6 telas)** | https://thurpopa.github.io/simulador-redemoinho/estande/ |
+| **Estande (5 telas)** | https://thurpopa.github.io/simulador-redemoinho/estande/ |
 | **Falas da equipe** | https://thurpopa.github.io/simulador-redemoinho/falas/ |
 | **Material de estudo** | https://thurpopa.github.io/simulador-redemoinho/estudo/ |
 | **Simulador completo** | https://thurpopa.github.io/simulador-redemoinho/ |
@@ -12,16 +12,15 @@ Projeto de feira de ciências (2026): o problema de US$ 1 milhão das equações
 
 ## O estande
 
-Seis telas, uma ideia por tela; quem explica são os apresentadores.
+Cinco telas, uma ideia por tela; quem explica são os apresentadores. O centro é Navier–Stokes e como a IA chegou lá.
 
 1. **O que é Navier–Stokes:** a equação que diz como a água, o ar e a fumaça se mexem.
 2. **O problema:** um redemoinho pode girar infinitamente rápido? Um Problema do Milênio, de US$ 1 milhão.
 3. **A IA chega:** mais de 10 mil agentes de IA, 88 horas. Uma solução anunciada, ainda em conferência.
-4. **Como funciona uma IA:** uma rede neural de verdade, em miniatura (cerca de 21 mil números), treina na frente do visitante para prever a próxima palavra, e cai numa pegadinha ("a lua gira no ralo"): provável não é verdadeiro.
-5. **Como a IA resolveu:** um agente propõe, o visitante critica, outro corrige e um conferente faz as contas de cada passo, como o assistente de provas Lean.
-6. **O simulador:** o visitante mexe no redemoinho; a mão dele é um "empurrão de fora", e a prova da IA também precisou de um.
+4. **Como a IA resolveu:** um agente propõe, o visitante critica, outro corrige e um conferente faz as contas de cada passo, como o assistente de provas Lean.
+5. **Agora é com você:** um QR code leva ao simulador, e o visitante mexe no redemoinho no próprio celular.
 
-Teclas: `→` ou `Espaço` avança · `←` volta · `1`–`6` vão direto · `Enter` faz a demo andar · `E` desliga o empurrão de fora (tela 6) · `V` modo vitrine · `F` tela cheia.
+Teclas: `→` ou `Espaço` avança · `←` volta · `1`–`5` vão direto · `Enter` faz a demo andar · `V` modo vitrine · `F` tela cheia.
 
 ## Simulador
 
@@ -32,7 +31,7 @@ Resolve as equações de Navier–Stokes ao vivo, na placa de vídeo (WebGL 2), 
 Não precisa instalar nada nem de internet: são páginas HTML que funcionam no Chrome ou no Edge.
 
 - `index.html` — o simulador
-- `estande/index.html` — as 6 telas (as demos ficam em `estande/estande/`)
+- `estande/index.html` — as 5 telas (a demo fica em `estande/estande/`)
 - `falas/index.html` — o roteiro para 3 e para 2 apresentadores
 - `estudo/index.html` — o material de estudo
 - `apresentacao/index.html` — a apresentação antiga
