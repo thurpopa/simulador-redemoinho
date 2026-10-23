@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Como uma IA chegou a Navier–Stokes</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%233c9dff'/%3E%3Cstop offset='1' stop-color='%23ff6b3d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 32m-4 0a4 4 0 1 1 8 0a10 10 0 1 1-20 0a16 16 0 1 1 32 0a22 22 0 1 1-44 0a28 28 0 0 1 28-28' fill='none' stroke='url(%23g)' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* Estande da feira: 6 telas, uma ideia por tela. Quem explica são os apresentadores; a tela só ilustra.
+   Fontes do sistema e nada de internet: funciona abrindo o arquivo direto. */
+:root{
+  color-scheme:dark;
+  --bg:#060911; --bg2:#0a1020; --bg3:#101a2e; --line:#1c2742; --line2:#28365a;
+  --text:#eaf0fa; --muted:#93a0ba; --dim:#5f6c88;
+  --mint:#6ff2d6; --cool:#3c9dff; --warm:#ff6b3d; --gold:#ffc857; --red:#ff5a6e; --green:#4ade80;
+  --f-display:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --f-body:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --f-mono:"Cascadia Mono",Consolas,ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.7,.1,1);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-body);overflow:hidden;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:8px}
+
+/* telas */
+.screen{position:fixed;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr);padding:calc(3.2vh + env(safe-area-inset-top,0px)) 4vw calc(7vh + env(safe-area-inset-bottom,0px));opacity:0;visibility:hidden;transition:opacity .45s var(--ease),visibility .45s}
+.screen.on{opacity:1;visibility:visible}
+.band{position:relative;z-index:2;max-width:min(1500px,100%);margin:0 auto 2.4vh;width:100%}
+.step-n{font-family:var(--f-mono);font-size:max(13px,1.7vh);letter-spacing:.18em;text-transform:uppercase;color:var(--mint);margin:0 0 1.4vh;display:flex;align-items:center;gap:1.2vh}
+.step-n::after{content:"";height:1px;width:8vh;background:linear-gradient(90deg,var(--line2),transparent)}
+.big{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,6.6vh,92px);line-height:1.04;letter-spacing:-.025em;margin:0;max-width:30ch;text-wrap:balance}
+.support{font-size:clamp(16px,3vh,40px);line-height:1.3;color:#c9d3e6;margin:1.6vh 0 0;max-width:46ch;text-wrap:balance}
+.hl-mint{color:var(--mint)} .hl-gold{color:var(--gold)} .hl-warm{color:var(--warm)} .hl-cool{color:var(--cool)}
+.visual{position:relative;min-height:0;width:100%;max-width:min(1500px,100%);margin:0 auto;border-radius:2.4vh;overflow:hidden}
+.visual canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.tag{position:absolute;right:1.6vh;bottom:1.4vh;z-index:3;font-family:var(--f-mono);font-size:max(11px,1.5vh);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:rgba(6,9,17,.75);border:1px solid var(--line2);border-radius:999px;padding:.5vh 1.3vh}
+
+/* tela 1: o que é Navier–Stokes */
+.s1 .visual{background:radial-gradient(80% 90% at 70% 40%,rgba(60,157,255,.10),transparent 70%),#04070e}
+.fma{position:absolute;left:3vh;bottom:2.6vh;z-index:3;font-family:"Cambria Math",Cambria,serif;font-style:italic;font-size:clamp(22px,5vh,64px);color:var(--text);text-shadow:0 2px 20px rgba(0,0,0,.8)}
+.fma small{display:block;font-family:var(--f-body);font-style:normal;font-size:max(13px,1.8vh);color:var(--muted);margin-top:.4vh}
+
+/* tela 2: o problema de 1 milhão */
+.s2 .visual{background:#04060d;border:1px solid var(--line)}
+.money{position:absolute;left:3vh;top:2.4vh;z-index:3;font-family:var(--f-display);font-weight:800;font-size:clamp(30px,8vh,110px);line-height:1;letter-spacing:-.03em;background:linear-gradient(180deg,#fff,#b8c4dc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.money small{display:block;font-family:var(--f-mono);font-weight:500;font-size:max(12px,1.6vh);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);-webkit-text-fill-color:var(--gold);margin-top:1vh}
+.speed{position:absolute;right:3vh;top:2.4vh;z-index:3;text-align:right;font-family:var(--f-mono);font-size:max(13px,1.9vh);color:var(--muted)}
+.speed b{display:block;font-family:var(--f-display);font-size:clamp(26px,6vh,80px);color:var(--warm);font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.05}
+.boom{position:absolute;inset:0;z-index:4;display:grid;place-items:center;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(circle at 50% 52%,rgba(255,240,220,.9),rgba(255,120,160,.4) 30%,transparent 62%)}
+.boom.on{opacity:1}
+.boom span{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,7vh,96px);color:#14081a}
+
+/* tela 3: a IA chega */
+.s3 .visual{background:#04070e;border:1px solid var(--line)}
+.clock{position:absolute;left:3vh;top:2.4vh;z-index:3;font-family:var(--f-display);font-weight:800;font-size:clamp(34px,11vh,150px);line-height:.95;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--text);text-shadow:0 4px 30px rgba(0,0,0,.9)}
+.clock small{display:block;font-family:var(--f-mono);font-weight:500;font-size:max(12px,1.7vh);letter-spacing:.14em;text-transform:uppercase;color:var(--mint);margin-top:1.2vh}
+.agents{position:absolute;right:3vh;top:2.4vh;z-index:3;text-align:right;font-family:var(--f-mono);font-size:max(12px,1.7vh);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.agents b{display:block;font-family:var(--f-display);font-size:clamp(26px,6vh,80px);letter-spacing:-.02em;color:var(--mint);font-variant-numeric:tabular-nums;line-height:1}
+
+/* telas 4 e 5: demos */
+.demo{position:relative;min-height:0;width:100%;max-width:min(1500px,100%);margin:0 auto}
+.missing{display:grid;place-items:center;height:100%;border:1px dashed var(--line2);border-radius:2vh;color:var(--muted);font-size:2.2vh;text-align:center;padding:2vh}
+
+/* tela 6: o simulador */
+.s6{padding:0;pointer-events:none}
+.s6 .sim-tools{pointer-events:auto}
+.s6 .band{position:absolute;left:0;right:0;top:0;margin:0;max-width:none;padding:calc(3.2vh + env(safe-area-inset-top,0px)) 4vw 8vh;background:linear-gradient(180deg,rgba(4,6,13,.92) 0%,rgba(4,6,13,.6) 60%,transparent);pointer-events:none}
+.sim-tools{position:absolute;left:50%;bottom:calc(7.5vh + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:5;display:flex;gap:1vh;background:rgba(6,9,17,.82);border:1px solid var(--line2);border-radius:999px;padding:.8vh}
+.sim-tools button{border:0;background:transparent;color:var(--muted);border-radius:999px;padding:1.1vh 2vh;font-size:max(13px,1.9vh);font-weight:600;cursor:pointer}
+.sim-tools button.on{background:var(--mint);color:#06201b}
+.push-state{position:absolute;right:4vw;top:calc(3.2vh + env(safe-area-inset-top,0px));z-index:5;font-family:var(--f-mono);font-size:max(12px,1.7vh);color:var(--muted);background:rgba(6,9,17,.8);border:1px solid var(--line2);border-radius:999px;padding:.6vh 1.4vh}
+.push-state.off{color:var(--warm);border-color:var(--warm)}
+.hand{position:absolute;left:50%;top:58%;z-index:4;transform:translate(-50%,-50%);pointer-events:none;font-family:var(--f-mono);font-size:max(13px,2vh);color:var(--text);background:rgba(6,9,17,.7);border:1px solid var(--line2);border-radius:999px;padding:1vh 2vh;transition:opacity .6s}
+.hand::before{content:"";display:inline-block;width:1.6vh;height:1.6vh;border-radius:50%;background:var(--mint);margin-right:1vh;vertical-align:-.2vh;box-shadow:0 0 0 0 rgba(111,242,214,.6);animation:ping 1.6s ease-out infinite}
+@keyframes ping{to{box-shadow:0 0 0 2.4vh rgba(111,242,214,0)}}
+.hand.gone{opacity:0}
+#sim{position:fixed;inset:0;width:100%;height:100%;border:0;display:block;background:#04060d;z-index:0;opacity:0;visibility:hidden;transition:opacity .45s,visibility .45s}
+#sim.on{opacity:1;visibility:visible}
+.planb{position:fixed;inset:0;z-index:1;background:#04060d;display:grid;place-items:center}
+.planb video{width:100%;height:100%;object-fit:cover}
+.planb p{position:absolute;bottom:14vh;left:50%;transform:translateX(-50%);color:var(--muted);font-size:2vh;text-align:center;max-width:60ch}
+
+/* navegação */
+.nav{position:fixed;left:0;right:0;bottom:calc(1.8vh + env(safe-area-inset-bottom,0px));z-index:20;display:flex;align-items:center;justify-content:center;gap:1.4vh;pointer-events:none}
+.nav > *{pointer-events:auto}
+.dot{width:1.3vh;height:1.3vh;min-width:9px;min-height:9px;border-radius:50%;border:0;padding:0;background:var(--line2);cursor:pointer;transition:background .3s,transform .3s}
+.dot.on{background:var(--mint);transform:scale(1.35)}
+.arrow{position:fixed;bottom:calc(1vh + env(safe-area-inset-bottom,0px));z-index:20;width:5.2vh;height:5.2vh;min-width:36px;min-height:36px;border-radius:50%;border:1px solid var(--line2);background:rgba(6,9,17,.8);color:var(--muted);font-size:2.4vh;cursor:pointer;display:grid;place-items:center}
+.arrow:hover{color:var(--text);border-color:var(--mint)}
+.arrow.prev{left:2vw} .arrow.next{right:2vw}
+.mode{position:fixed;left:50%;top:1.2vh;transform:translateX(-50%);z-index:30;font-family:var(--f-mono);font-size:max(11px,1.5vh);letter-spacing:.12em;text-transform:uppercase;color:#06201b;background:var(--mint);border-radius:999px;padding:.4vh 1.4vh}
+
+/* modo calmo (?calmo ou #calmo): sem animação */
+.calm *,.calm *::before,.calm *::after{transition:none!important;animation:none!important}
+
+@media (max-width:700px){
+  body{overflow:auto}
+  .screen{position:fixed;overflow-y:auto;padding:16px 16px 72px;grid-template-rows:auto minmax(320px,1fr)}
+  .big{font-size:28px} .support{font-size:17px}
+  .s6 .band{padding:16px 16px 40px}
+}
+</style>
+<script>
+  // Modo calmo só quando pedido no endereço; as animações fazem parte da apresentação.
+  if (/[?&]calmo\b/.test(location.search) || location.hash === '#calmo') document.documentElement.classList.add('calm');
+</script>
+</head>
+<body>
+
+<iframe id="sim" title="Simulador de redemoinho: equações de Navier–Stokes ao vivo" allow="fullscreen"></iframe>
+<div class="planb" id="planb" hidden></div>
+
+<!-- 1 · O que é Navier–Stokes -->
+<section class="screen s1" data-n="1" aria-label="Tela 1">
+  <div class="band">
+    <p class="step-n">1 · A equação</p>
+    <h1 class="big"><span class="hl-cool">Navier–Stokes:</span> a equação que diz como a água, o ar e a fumaça se mexem.</h1>
+    <p class="support">É o F = m·a de Newton para cada gotinha. Escrita em 1822 e 1845.</p>
+  </div>
+  <div class="visual"><canvas id="c1" aria-hidden="true"></canvas>
+    <div class="fma">F = m·a<small>para cada gotinha do fluido, ao mesmo tempo</small></div>
+  </div>
+</section>
+
+<!-- 2 · O problema de US$ 1 milhão -->
+<section class="screen s2" data-n="2" aria-label="Tela 2">
+  <div class="band">
+    <p class="step-n">2 · O problema</p>
+    <h1 class="big">Um redemoinho pode girar <span class="hl-warm">infinitamente</span> rápido?</h1>
+    <p class="support">Ninguém sabia provar. Desde 2000, vale <span class="hl-gold">US$ 1 milhão</span>: é um Problema do Milênio.</p>
+  </div>
+  <div class="visual"><canvas id="c2" aria-hidden="true"></canvas>
+    <div class="money">US$ 1 milhão<small>Problema do Milênio · Clay</small></div>
+    <div class="speed">velocidade<b id="spd">×1</b></div>
+    <div class="boom" id="boom"><span>velocidade → ∞</span></div>
+    <span class="tag">ilustração</span>
+  </div>
+</section>
+
+<!-- 3 · Uma IA chegou a uma solução -->
+<section class="screen s3" data-n="3" aria-label="Tela 3">
+  <div class="band">
+    <p class="step-n">3 · Setembro de 2026</p>
+    <h1 class="big">Uma <span class="hl-mint">IA</span> chegou a uma solução.</h1>
+    <p class="support">Mais de 10 mil agentes de IA, 88 horas. É uma solução anunciada: ainda está sendo conferida.</p>
+  </div>
+  <div class="visual"><canvas id="c3" aria-hidden="true"></canvas>
+    <div class="clock"><span id="hours">0 h</span><small>de trabalho sem parar</small></div>
+    <div class="agents">agentes de IA<b id="nagents">0</b></div>
+    <span class="tag">ilustração: cada ponto é um agente</span>
+  </div>
+</section>
+
+<!-- 4 · Como funciona uma IA -->
+<section class="screen s4" data-n="4" aria-label="Tela 4">
+  <div class="band">
+    <p class="step-n">4 · Como funciona uma IA</p>
+    <h1 class="big">Números que aprendem a <span class="hl-mint">prever a próxima palavra</span>.</h1>
+    <p class="support">Ela chuta, compara com exemplos e ajusta seus números. De novo e de novo.</p>
+  </div>
+  <div class="demo" id="demo-ia"></div>
+</section>
+
+<!-- 5 · Como a IA resolveu -->
+<section class="screen s5" data-n="5" aria-label="Tela 5">
+  <div class="band">
+    <p class="step-n">5 · Como a IA resolveu</p>
+    <h1 class="big">Umas IAs propõem, outras criticam e corrigem. O <span class="hl-mint">Lean</span> confere.</h1>
+    <p class="support">O Lean é um programa juiz: passo fora da regra não passa.</p>
+  </div>
+  <div class="demo" id="demo-lean"></div>
+</section>
+
+<!-- 6 · O simulador -->
+<section class="screen s6" data-n="6" aria-label="Tela 6">
+  <div class="band">
+    <p class="step-n">6 · Agora é com você</p>
+    <h1 class="big">Mexa no redemoinho: é <span class="hl-cool">Navier–Stokes</span> ao vivo.</h1>
+    <p class="support">Sua mão é um <span class="hl-warm">empurrão de fora</span>. A prova da IA também precisou de um.</p>
+  </div>
+  <div class="push-state" id="pushState">empurrão de fora: ligado</div>
+  <div class="hand" id="hand">arraste o mouse no redemoinho</div>
+  <div class="sim-tools" role="group" aria-label="Cena do simulador">
+    <button type="button" data-cmd="2d" class="on">Ralo da pia (2D)</button>
+    <button type="button" data-cmd="3d">Colapso (3D)</button>
+  </div>
+</section>
+
+<nav class="nav" id="dots" aria-label="Telas"></nav>
+<button class="arrow prev" id="prev" type="button" aria-label="Tela anterior">←</button>
+<button class="arrow next" id="next" type="button" aria-label="Próxima tela">→</button>
+<div class="mode" id="mode" hidden>modo vitrine · V para sair</div>
+
+<script src="estande/demo-ia.js"></script>
+<script src="estande/demo-lean.js"></script>
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const calm = document.documentElement.classList.contains('calm');
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const screens = $$('.screen'), N = screens.length;
+  let cur = 0;
+
+  // ---------- simulador (tela 6) ----------
+  // No computador, o simulador está na pasta vizinha; publicado no site, está na raiz.
+  const sim = $('#sim');
+  const simUrl = location.protocol === 'file:' ? '../2 - Simulador/Simulador.html?estande' : '../?estande';
+  let simLoaded = false, simScene = '2d', pushOn = true;
+  function simCmd(cmd){ if(simLoaded && sim.contentWindow) sim.contentWindow.postMessage({estandeCmd: cmd}, '*'); }
+  function simReady(){ simLoaded = true; if(cur === 5){ pushOn = true; setPushLabel(); simCmd(simScene); } else simCmd('pausa'); }
+  sim.addEventListener('load', simReady);
+  function ensureSim(){ if(!sim.src) sim.src = simUrl; }
+  function setPushLabel(){ const el = $('#pushState'); el.textContent = 'empurrão de fora: ' + (pushOn ? 'ligado' : 'DESLIGADO'); el.classList.toggle('off', !pushOn); }
+  function setScene(scene){
+    // '2d' e '3d' recomeçam a cena no simulador e religam o empurrão e o mouse
+    simScene = scene; pushOn = true; setPushLabel(); simCmd(scene);
+    $$('.sim-tools button').forEach(b => b.classList.toggle('on', b.dataset.cmd === scene));
+    if(planB) showPlanB();
+  }
+  $$('.sim-tools button').forEach(b => b.addEventListener('click', () => { stopVitrine(); setScene(b.dataset.cmd); }));
+  function togglePush(){
+    pushOn = !pushOn; simCmd(pushOn ? 'comf' : 'semf'); setPushLabel();
+  }
+
+  // Plano B (tecla P): vídeos gravados no lugar do simulador
+  let planB = false;
+  function showPlanB(){
+    const box = $('#planb');
+    const file = simScene === '3d' ? 'video-3d.mp4' : 'video-2d.mp4';
+    box.innerHTML = '<video autoplay muted loop playsinline src="' + file + '"></video><p hidden>Plano B: grave <b>' + file + '</b> nesta pasta (veja as dicas no roteiro).</p>';
+    const v = box.querySelector('video'); v.addEventListener('error', () => { v.remove(); box.querySelector('p').hidden = false; });
+    box.hidden = cur !== 5;
+  }
+  function togglePlanB(){ planB = !planB; if(planB) showPlanB(); else { $('#planb').hidden = true; $('#planb').innerHTML = ''; } }
+
+  // ---------- telas ----------
+  const dots = $('#dots');
+  screens.forEach((s, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'dot'; b.setAttribute('aria-label', 'Tela ' + (i + 1)); b.addEventListener('click', () => { stopVitrine(); go(i); }); dots.appendChild(b); });
+  const demos = { 3: () => window.DemoIA, 4: () => window.DemoLean };
+  const mounted = {};
+  function demoOf(i){ const d = demos[i] && demos[i](); return d && typeof d.mount === 'function' ? d : null; }
+  function mountDemo(i){
+    if(mounted[i] || !demos[i]) return;
+    const box = screens[i].querySelector('.demo'), d = demoOf(i);
+    if(!d){ box.innerHTML = '<div class="missing">A demonstração não carregou. Confira se a pasta "estande" está ao lado deste arquivo.</div>'; mounted[i] = true; return; }
+    try { d.mount(box); mounted[i] = true; } catch(err){ box.innerHTML = '<div class="missing">Erro na demonstração: ' + String(err.message || err) + '</div>'; mounted[i] = true; }
+  }
+  const visuals = {};
+  function go(i){
+    i = clamp(i, 0, N - 1);
+    const prev = cur;
+    if(prev !== i){ const d = demoOf(prev); if(d && mounted[prev]) try { d.leave(); } catch(e){} if(visuals[prev]) visuals[prev].stop(); }
+    cur = i;
+    screens.forEach((s, k) => s.classList.toggle('on', k === i));
+    $$('.dot').forEach((d, k) => d.classList.toggle('on', k === i));
+    // simulador só na última tela
+    if(i === 5){ ensureSim(); sim.classList.add('on'); pushOn = true; setPushLabel(); simCmd(simScene); handHint(); if(planB) showPlanB(); }
+    else { if(prev === 5){ simCmd('pausa'); try { window.focus(); } catch(e){} } sim.classList.remove('on'); $('#planb').hidden = true; }
+    if(demos[i]){ mountDemo(i); const d = demoOf(i); if(d) try { d.enter(); } catch(e){} }
+    if(visuals[i]) visuals[i].start();
+    if(i === 4) ensureSim();   // começa a carregar o simulador uma tela antes
+    try { history.replaceState(null, '', '#' + (i + 1) + (calm ? '' : '')); } catch(e){}
+  }
+  const next = () => go(cur + 1), prev = () => go(cur - 1);
+  $('#next').addEventListener('click', () => { stopVitrine(); next(); });
+  $('#prev').addEventListener('click', () => { stopVitrine(); prev(); });
+  let handTimer = 0;
+  function handHint(){ const h = $('#hand'); h.classList.remove('gone'); clearTimeout(handTimer); handTimer = setTimeout(() => h.classList.add('gone'), 6000); }
+
+  // ---------- teclado (também as teclas repassadas pelo simulador) ----------
+  function key(k){
+    if(k === 'v' || k === 'V'){ vitrine ? stopVitrine() : startVitrine(); return; }
+    if(vitrine) stopVitrine();
+    if(k === 'ArrowRight' || k === ' ' || k === 'PageDown') next();
+    else if(k === 'ArrowLeft' || k === 'PageUp') prev();
+    else if(k === 'Home') go(0);
+    else if(/^[1-6]$/.test(k)) go(+k - 1);
+    else if(k === 'Enter'){ const d = demoOf(cur); if(d && mounted[cur]) d.step(); else if(visuals[cur] && visuals[cur].replay) visuals[cur].replay(); }
+    else if((k === 'e' || k === 'E') && cur === 5) togglePush();
+    else if(k === 'p' || k === 'P') togglePlanB();
+    else if(k === 'f' || k === 'F'){ try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch(e){} }
+    else return false;
+    return true;
+  }
+  addEventListener('keydown', e => {
+    if(e.target.closest && e.target.closest('input,textarea,select')) return;
+    if(e.ctrlKey || e.metaKey || e.altKey) return;
+    if(key(e.key)) e.preventDefault();
+  });
+  addEventListener('message', e => {
+    if(e.source !== sim.contentWindow || !e.data) return;
+    if(typeof e.data.estandeTecla === 'string') key(e.data.estandeTecla);
+    else if(e.data.estandePronto) simReady();
+  });
+
+  // ---------- modo vitrine (tecla V): as telas passam sozinhas ----------
+  const DUR = [10, 10, 8, 15, 15, 12];
+  let vitrine = false, vTimer = 0;
+  function vitrineStep(){
+    if(!vitrine) return;
+    const d = demoOf(cur);
+    if(d && mounted[cur]) try { d.auto(() => {}); } catch(e){}
+    if(cur === 5){ setScene(simScene === '2d' ? '3d' : '2d'); }
+    vTimer = setTimeout(() => { if(!vitrine) return; go((cur + 1) % N); vitrineStep(); }, DUR[cur] * 1000);
+  }
+  function startVitrine(){ vitrine = true; $('#mode').hidden = false; go(0); vitrineStep(); }
+  function stopVitrine(){ if(!vitrine) return; vitrine = false; clearTimeout(vTimer); $('#mode').hidden = true; }
+
+  // ---------- visuais das telas 1, 2 e 3 ----------
+  function canvasLoop(canvas, draw, setup){
+    const g = canvas.getContext('2d');
+    let W = 0, H = 0, raf = 0, last = 0, running = false;
+    function size(){ const dpr = Math.min(devicePixelRatio || 1, 1.5); W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); if(setup) setup(g, W, H); }
+    function frame(now){ if(!running) return; raf = requestAnimationFrame(frame); const dt = last ? Math.min(.05, (now - last) / 1000) : .016; last = now; draw(g, W, H, dt); }
+    addEventListener('resize', () => { if(running) size(); });
+    return {
+      start(){ if(running) return; running = true; last = 0; size(); if(calm){ draw(g, W, H, 0, true); running = false; return; } raf = requestAnimationFrame(frame); },
+      stop(){ running = false; cancelAnimationFrame(raf); },
+      size
+    };
+  }
+
+  // Tela 1: partículas levadas por redemoinhos (cada traço é um pedacinho de fluido)
+  (function(){
+    let parts = [], t = 0;
+    const COLORS = ['rgba(60,157,255,0.55)', 'rgba(111,242,214,0.6)', 'rgba(234,240,250,0.7)', 'rgba(255,107,61,0.75)'];
+    const spawn = (p, W, H) => { p.x = Math.random() * W; p.y = Math.random() * H; p.age = 0; p.life = 90 + Math.random() * 220; return p; };
+    function vel(x, y, W, H){
+      const m = Math.min(W, H), V = [
+        {x: W * .66 + Math.cos(t * .13) * m * .06, y: H * .45 + Math.sin(t * .11) * m * .05, g: 26000, rc: m * .13},
+        {x: W * .3 + Math.sin(t * .09) * m * .06, y: H * .35, g: -12000, rc: m * .1},
+        {x: W * .48, y: H * .8 + Math.sin(t * .07) * m * .04, g: 9000, rc: m * .1}];
+      let vx = 16, vy = 0;
+      for(const v of V){ const dx = x - v.x, dy = y - v.y, r2 = dx * dx + dy * dy + 1; const f = v.g * (1 - Math.exp(-r2 / (v.rc * v.rc))) / (6.2832 * r2); vx += -dy * f; vy += dx * f; }
+      return [vx, vy];
+    }
+    const loop = canvasLoop($('#c1'), (g, W, H, dt, still) => {
+      const steps = still ? 120 : 1;
+      for(let s = 0; s < steps; s++){
+        const d = still ? .016 : dt; t += d;
+        g.fillStyle = 'rgba(4,7,14,0.085)'; g.fillRect(0, 0, W, H);
+        const paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+        for(const p of parts){
+          const [vx, vy] = vel(p.x, p.y, W, H), nx = p.x + vx * d, ny = p.y + vy * d;
+          const sp = Math.hypot(vx, vy), k = sp < 60 ? 0 : sp < 140 ? 1 : sp < 260 ? 2 : 3;
+          paths[k].moveTo(p.x, p.y); paths[k].lineTo(nx, ny); p.x = nx; p.y = ny; p.age++;
+          if(p.age > p.life || p.x < -20 || p.x > W + 20 || p.y < -20 || p.y > H + 20) spawn(p, W, H);
+        }
+        g.lineWidth = 1.3; g.lineCap = 'round';
+        paths.forEach((pa, k) => { g.strokeStyle = COLORS[k]; g.stroke(pa); });
+      }
+    }, (g, W, H) => { g.fillStyle = '#04070e'; g.fillRect(0, 0, W, H); parts = Array.from({length: W < 700 ? 700 : 1600}, () => spawn({}, W, H)); });
+    visuals[0] = loop;
+  })();
+
+  // Tela 2: o vórtice que afina e gira cada vez mais rápido até "explodir" (ilustração, em loop)
+  (function(){
+    let p = 0, spin = 0, hold = 0;
+    const inflow = Array.from({length: 80}, () => ({r: 1 + Math.random() * 2, a: Math.random() * 6.283, z: (Math.random() - .5) * .5}));
+    const fmt = v => v < 10 ? v.toFixed(1).replace('.', ',') : Math.round(v).toLocaleString('pt-BR');
+    function draw(g, W, H, dt, still){
+      if(still){ p = .75; dt = .016; }
+      if(hold > 0){ hold -= dt; if(hold <= 0){ p = 0; $('#boom').classList.remove('on'); } }
+      else { p += dt / 9; if(p >= 1){ p = 1; hold = 1.6; $('#boom').classList.add('on'); } }
+      const logT = 4.4 * p, tau = Math.pow(10, -logT), h = .06, uR = Math.pow(tau, -(.5 + h));
+      $('#spd').textContent = '×' + fmt(uR);
+      const cx = W * .5, cy = H * .56, m = Math.min(W, H), R = m * .12;
+      const L = clamp(m * .24 * Math.pow(tau, -h), 0, H * .4);
+      const omega = clamp(1.3 * Math.pow(uR, .45), 0, 16); spin += omega * dt;
+      const heat = clamp(logT / 4.4, 0, 1);
+      g.fillStyle = '#04060d'; g.fillRect(0, 0, W, H);
+      const bg = g.createRadialGradient(cx, cy, 0, cx, cy, m * .6);
+      bg.addColorStop(0, `rgba(${Math.round(60 + 195 * heat)},${Math.round(120 - 40 * heat)},${Math.round(255 - 150 * heat)},0.24)`); bg.addColorStop(1, 'rgba(4,6,13,0)');
+      g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      for(const q of inflow){
+        q.a += omega * dt * (1.6 / (q.r * q.r) + .4); q.r -= dt * .45 * (1 + heat);
+        if(q.r < .55){ q.r = 2.4 + Math.random() * .8; q.a = Math.random() * 6.283; }
+        const x = cx + Math.cos(q.a) * q.r * R, y = cy + Math.sin(q.a) * q.r * R * .3 + q.z * R * .3;
+        g.fillStyle = `rgba(160,220,255,${clamp(.2 + .6 * (1 - q.r / 3), 0, .85)})`; g.beginPath(); g.arc(x, y, 1.8, 0, 6.283); g.fill();
+      }
+      const K = 15, M = 26;
+      for(let k = 0; k < K; k++){
+        const s = k / (K - 1) * 2 - 1, env = Math.exp(-1.2 * s * s), y = cy + s * L, rx = R * (.75 + .35 * env) * Math.pow(tau, .08), ry = rx * .3;
+        g.strokeStyle = `rgba(90,170,255,${.08 + .25 * env})`; g.lineWidth = 1; g.beginPath(); g.ellipse(cx, y, rx, ry, 0, 0, 6.283); g.stroke();
+        for(let j = 0; j < M; j++){
+          const a = j / M * 6.283 + spin * (.6 + .4 * env) + s * 1.8, front = Math.sin(a), x = cx + Math.cos(a) * rx, yy = y + front * ry, w = env * (.55 + .45 * (front * .5 + .5));
+          g.fillStyle = `rgba(${Math.round(90 + 165 * heat * w)},${Math.round(170 + 60 * w - 60 * heat)},${Math.round(255 - 170 * heat * w)},${.25 + .7 * w})`;
+          g.beginPath(); g.arc(x, yy, 1.4 + 2 * w, 0, 6.283); g.fill();
+        }
+      }
+    }
+    const loop = canvasLoop($('#c2'), draw);
+    const start = loop.start;
+    loop.start = () => { p = 0; hold = 0; $('#boom').classList.remove('on'); start(); };
+    loop.replay = () => { p = 0; hold = 0; $('#boom').classList.remove('on'); };
+    visuals[1] = loop;
+  })();
+
+  // Tela 3: 10 mil pontinhos (agentes) acendendo enquanto o relógio vai de 0 h a 88 h
+  (function(){
+    const COLS = 125, ROWS = 80, TOTAL = COLS * ROWS;
+    let order = null, t = 0, phase = [];
+    function shuffle(){ order = new Uint16Array(TOTAL); for(let i = 0; i < TOTAL; i++) order[i] = i; let s = 2026; const rnd = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; for(let i = TOTAL - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); const x = order[i]; order[i] = order[j]; order[j] = x; } phase = Array.from({length: TOTAL}, () => rnd() * 6.283); }
+    function draw(g, W, H, dt, still){
+      if(!order) shuffle();
+      t += still ? 4 : dt;
+      const lit = Math.min(TOTAL, Math.floor(TOTAL * clamp(t / 3, 0, 1)));
+      $('#hours').textContent = Math.round(88 * clamp(t / 3, 0, 1)) + ' h';
+      $('#nagents').textContent = lit.toLocaleString('pt-BR') + (lit === TOTAL ? '+' : '');
+      g.fillStyle = '#04070e'; g.fillRect(0, 0, W, H);
+      const padX = W * .04, padTop = H * .30, padBot = H * .07;
+      const cw = (W - 2 * padX) / COLS, ch = (H - padTop - padBot) / ROWS, r = Math.max(.8, Math.min(cw, ch) * .32);
+      g.fillStyle = 'rgba(40,54,90,.55)';
+      for(let i = 0; i < TOTAL; i++){ const x = padX + (i % COLS + .5) * cw, y = padTop + (Math.floor(i / COLS) + .5) * ch; g.fillRect(x - r * .5, y - r * .5, r, r); }
+      for(let k = 0; k < lit; k++){
+        const i = order[k], x = padX + (i % COLS + .5) * cw, y = padTop + (Math.floor(i / COLS) + .5) * ch;
+        const tw = t > 3 ? .55 + .45 * Math.sin(t * 2.2 + phase[i]) : 1;
+        g.fillStyle = `rgba(111,242,214,${.35 + .6 * tw})`; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill();
+      }
+    }
+    const loop = canvasLoop($('#c3'), draw);
+    const start = loop.start;
+    loop.start = () => { t = 0; start(); };
+    loop.replay = () => { t = 0; };
+    visuals[2] = loop;
+  })();
+
+  // ---------- início ----------
+  // As demos são montadas logo ao carregar (a de IA aproveita para conferir o treino em segundo plano).
+  setTimeout(() => { mountDemo(3); mountDemo(4); }, 300);
+  const fromHash = parseInt((location.hash.match(/^#(\d)/) || [])[1], 10);
+  go(fromHash >= 1 && fromHash <= N ? fromHash - 1 : 0);
+})();
+</script>
+</body>
+</html>

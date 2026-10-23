@@ -327,14 +327,28 @@ nav a.navpres:hover{background:rgba(182,156,255,.12);border-color:var(--press)}
 /* logo do topo gira ao passar o mouse */
 .brand svg{transition:transform 1.2s var(--ease)}
 .brand:hover svg{transform:rotate(-360deg)}
+
+/* ===== Modo estande (?estande): só o canvas, ocupando a janela inteira (dentro do iframe do Estande.html) ===== */
+html.estande,html.estande body{height:100%;overflow:hidden;background:#000}
+html.estande .intro,html.estande header.top,html.estande .eqbar,html.estande .cards2,html.estande .panel,
+html.estande .doc,html.estande footer,html.estande .hud,html.estande .stage-tools,html.estande .paused-badge,
+html.estande .toast,html.estande .gpuwarn{display:none!important}
+html.estande .sim{display:block;max-width:none;margin:0;padding:0}
+html.estande .stage{position:fixed;inset:0;width:auto;height:auto;min-height:0;border:0;border-radius:0;box-shadow:none}
+html.estande.sem-mouse #gl{cursor:default}
 </style>
 <script>
   // Liga as animações antes de a página aparecer (para não piscar). Elas rodam mesmo com os
   // "efeitos de animação" do Windows desligados; para uma versão sem movimento, abra com ?calmo (ou #calmo).
   // Segurança: se o script das animações falhar, em 4 s tudo volta a aparecer.
+  // Modo estande (?estande no endereço): só o canvas, sem abertura nem animações de página;
+  // quem controla é o "Estande.html" (ver o script MODO ESTANDE no fim). Sem ?estande, ESTANDE = null.
   (function(){
     var d = document.documentElement;
+    window.ESTANDE = /[?&]estande\b/.test(location.search) ? {parado:false, semMouse:false} : null;
+    if (window.ESTANDE) d.classList.add('estande');
     if (/[?&]calmo\b/.test(location.search) || location.hash === '#calmo') { d.classList.add('calm'); return; }
+    if (window.ESTANDE) return;
     d.classList.add('anim');
     setTimeout(function(){ if (!d.dataset.animReady) d.classList.remove('anim'); }, 4000);
   })();
@@ -1898,6 +1912,7 @@ function governor(dtReal){
 
 function loop(now){
   requestAnimationFrame(loop);
+  if(ESTANDE && ESTANDE.parado){ last = rafLast = now; return; }   // modo estande, comando 'pausa': não calcula nem desenha
   const rawDt = now - rafLast; rafLast = now;
   rafInterval = rafInterval*0.95 + Math.min(rawDt,50)*0.05;
   if(!stageVisible && !document.fullscreenElement){ last = now; return; }
@@ -1926,6 +1941,7 @@ function loop(now){
 function resize(force){
   // a simulação é suave por natureza: calcular em resolução de tela 1× basta (telas com escala 150% calculariam 2,25× mais pixels)
   const dpr = perfLevel>=2 ? Math.min(window.devicePixelRatio||1, 1.5) : 1;
+  if(ESTANDE && (ESTANDE.parado || stage.clientWidth<16 || stage.clientHeight<16)) return;   // iframe escondido: guarda o tamanho de antes
   const w = Math.max(2, Math.round(stage.clientWidth*dpr)), h = Math.max(2, Math.round(stage.clientHeight*dpr));
   if(!force && canvas.width===w && canvas.height===h) return;
   const oldAspect = aspect;
@@ -2899,6 +2915,7 @@ void main(){
     const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
     let dist = cam.dist;
     if(Q.scene==='colapso' && Q.simZoom) dist *= Math.sqrt(Math.exp(-blow.s));     // câmera acompanha a escala √τ
+    if(ESTANDE){ const a = canvas.width/canvas.height; if(a < 0.75) dist *= 0.75/a; }  // estande em tela de pé (celular): afasta para caber
     const pos = [cam.target[0]+dist*cp*Math.sin(cam.yaw), cam.target[1]+dist*sp, cam.target[2]+dist*cp*Math.cos(cam.yaw)];
     const nrm = v=>{ const l=Math.hypot(...v); return v.map(x=>x/l); };
     const F = nrm([cam.target[0]-pos[0], cam.target[1]-pos[1], cam.target[2]-pos[2]]);
@@ -2971,6 +2988,7 @@ void main(){
     const g = octx.createRadialGradient(w/2,h/2,0,w/2,h/2,Math.max(w,h)*0.6);
     g.addColorStop(0,`rgba(255,240,220,${0.85*k})`); g.addColorStop(0.35,`rgba(255,120,160,${0.35*k})`); g.addColorStop(1,'rgba(0,0,0,0)');
     octx.fillStyle = g; octx.fillRect(0,0,w,h);
+    if(ESTANDE) return;                      // no estande, só o clarão (a frase fica por conta da página)
     const dpr = w/overlay.clientWidth;
     octx.textAlign = 'center'; octx.fillStyle = `rgba(20,10,30,${Math.min(1,k*1.5)})`;
     octx.font = `700 ${28*dpr}px system-ui`; octx.fillText('💥 τ → 0 : |u| → ∞', w/2, h/2);
@@ -3038,7 +3056,7 @@ void main(){
       const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
       if(!drag.moved && Math.abs(dx)+Math.abs(dy)>4) drag.moved = true;
       if(drag.moved){ cam.yaw -= dx*0.008; cam.pitch = Math.max(0.02, Math.min(1.35, cam.pitch+dy*0.006)); drag.x = e.clientX; drag.y = e.clientY; }
-    } else if(type==='up'){ if(drag.active && !drag.moved) dropAtScreen(e); drag.active = false; }
+    } else if(type==='up'){ if(drag.active && !drag.moved && !ESTANDE) dropAtScreen(e); drag.active = false; }
   }
   function wheel(e){ const lo = Q.scene==='colapso' ? 0.6 : 2.2; cam.dist = Math.max(lo, Math.min(9, cam.dist*Math.exp(e.deltaY*0.001))); }
 
@@ -3114,7 +3132,12 @@ void main(){
     alloc(); initParts3(); inited = true; applyScene(Q.scene);
   }
   buildUI(); sync3();
-  return { frame, pointer, wheel, reset:()=>{ if(inited) reset(); }, applyScene, sync:sync3, drop:()=>randomDrop(Q.objType), sceneOrder:SCENE_ORDER, setPerf,
+  // modo estande: qualidade Rápida, Colapso recomeçando sozinho; colapso() volta ao começo (com a câmera inicial)
+  const estande = {
+    setup(){ Q.quality = 0.5; Q.loopBlow = true; Q.scene = 'colapso'; },
+    colapso(){ Q.quality = 0.5; Q.loopBlow = true; drag.active = false; if(inited) applyScene('colapso'); else Q.scene = 'colapso'; },
+  };
+  return { frame, pointer, wheel, reset:()=>{ if(inited) reset(); }, applyScene, sync:sync3, drop:()=>randomDrop(Q.objType), sceneOrder:SCENE_ORDER, setPerf, estande,
     debug:()=>({Q, cam, objs, time3, swallowed, lifted, sampBuf, n, blow, blowParams}) };
 })();
 
@@ -3138,7 +3161,7 @@ function setMode(m){
   if(m==='3d') Sim3D.sync(); else syncUI();
 }
 document.getElementById('modeSeg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(b) setMode(b.dataset.v); });
-canvas.addEventListener('wheel', e=>{ if(MODE==='3d'){ e.preventDefault(); Sim3D.wheel(e); } }, {passive:false});
+canvas.addEventListener('wheel', e=>{ if(MODE==='3d'){ e.preventDefault(); if(!ESTANDE) Sim3D.wheel(e); } }, {passive:false});
 
 // =====================================================================
 //  INÍCIO
@@ -3159,6 +3182,98 @@ requestAnimationFrame(loop);
 </script>
 <script>
 // =====================================================================
+//  MODO ESTANDE (?estande) — o simulador dentro do <iframe> do "1 - Apresentacao/Estande.html"
+//  (telas 1, 2 e 6). Só o canvas, na janela inteira. Começa no 2D, Ralo da pia, desempenho Leve;
+//  no 3D, Colapso com qualidade Rápida e grade 48³, recomeçando sozinho depois de cada explosão.
+//  Comandos do pai:  postMessage({estandeCmd: '2d' | '3d' | 'pausa' | 'semf' | 'comf'}, '*')
+//                    ou o endereço  #cmd=<comando>&n=<contador>
+//    2d    → Ralo da pia do começo, rodando (f e mouse ligados)
+//    3d    → Colapso do começo, rodando (f e mouse ligados)
+//    pausa → para o laço de animação (não calcula nem desenha) até o próximo 2d ou 3d
+//    semf  → desliga o termo f (o motor do ralo) e o mouse para de empurrar o fluido
+//    comf  → religa os dois
+//  Teclas do apresentador (← → espaço Home 1–6 Enter E V P, e PageUp/PageDown de passadores de slide)
+//  vão para o pai com parent.postMessage({estandeTecla: e.key}, '*'); os atalhos do simulador ficam desligados.
+//  No 2D, passar o mouse já mexe o fluido (não precisa segurar o botão).
+//  Quando fica pronto, avisa o pai com {estandePronto: true}. Sem ?estande, nada disto roda.
+// =====================================================================
+(() => {
+  "use strict";
+  const ES = window.ESTANDE;
+  if(!ES) return;
+  const root = document.documentElement;
+  const intro = document.getElementById('intro'); if(intro) intro.remove();
+  const aoPai = msg => { if(window.parent !== window) window.parent.postMessage(msg, '*'); };
+
+  // ---- teclado: primeiro de tudo, para as teclas chegarem ao pai mesmo se a simulação falhar ----
+  const REPASSA = new Set(['ArrowLeft','ArrowRight',' ','Home','1','2','3','4','5','6','Enter','e','E','v','V','p','P','PageUp','PageDown']);
+  addEventListener('keydown', e => {
+    e.stopImmediatePropagation();                                            // nenhum atalho do simulador (D, R, F, espaço, 1–7…)
+    if(e.ctrlKey || e.altKey || e.metaKey || !REPASSA.has(e.key)) return;    // F5, F11, Ctrl+… seguem com o navegador
+    e.preventDefault();
+    if(!e.repeat) aoPai({estandeTecla: e.key});
+  }, true);
+
+  // ---- comandos ----
+  function rodar(){
+    ES.parado = false; paused = false; stepOnce = false;
+    last = rafLast = performance.now();
+    resize(false);
+  }
+  function mao(ligada){
+    ES.semMouse = !ligada; root.classList.toggle('sem-mouse', !ligada);
+    endPtr(); ptr.hover = false;
+  }
+  const CMD = {
+    '2d'(){ rodar(); mao(true); if(MODE!=='2d') setMode('2d'); applyPreset('ralo'); octx.clearRect(0,0,overlay.width,overlay.height); },
+    '3d'(){ rodar(); mao(true); if(MODE!=='3d') setMode('3d'); Sim3D.estande.colapso(); },
+    pausa(){ ES.parado = true; endPtr(); ptr.hover = false; },
+    semf(){ P.terms.force = false; mao(false); syncUI(); },
+    comf(){ P.terms.force = true; mao(true); syncUI(); },
+  };
+  function run(c){
+    c = String(c == null ? '' : c).trim().toLowerCase();
+    if(!CMD[c]){ console.warn('Modo estande: comando desconhecido:', c); return false; }
+    try { CMD[c](); return true; } catch(err){ console.error('Modo estande:', c, err); return false; }
+  }
+  window.estandeCmd = run;                                                   // também pode ser chamado direto (mesma origem)
+  addEventListener('message', e => {
+    if(e.source !== window.parent && e.source !== window) return;
+    const d = e.data;
+    if(d && typeof d === 'object' && typeof d.estandeCmd === 'string') run(d.estandeCmd);
+  });
+  function doHash(){ const m = /[#&]cmd=([^&]*)/.exec(location.hash); if(m) run(decodeURIComponent(m[1])); }
+  addEventListener('hashchange', doHash);
+
+  try {
+    // ---- começo: desempenho Leve, sem marcadores (só o fluido), 3D em qualidade Rápida ----
+    perfMode = 'leve'; applyPerfLevel(0, true);
+    P.markers = false;
+    Sim3D.estande.setup();
+    if(/[#&]cmd=/.test(location.hash)){ CMD[MODE==='3d' ? '3d' : '2d'](); doHash(); }
+    else CMD[MODE==='3d' ? '3d' : '2d']();
+
+    // ---- mouse: em 'semf' não empurra; no 2D, passar o mouse já mexe. Mover o vórtice (Shift ou botão
+    //      direito), soltar objetos e zoom no 3D ficam desligados para a cena não sair do lugar. ----
+    addEventListener('pointerdown', e => {
+      if(e.target !== canvas) return;
+      if(ES.semMouse || (MODE==='2d' && (e.shiftKey || e.button!==0))) e.stopImmediatePropagation();
+    }, true);
+    addEventListener('pointermove', e => {
+      if(e.target !== canvas) return;
+      if(ES.semMouse){ e.stopImmediatePropagation(); return; }
+      if(MODE==='2d' && e.pointerType==='mouse' && !ptr.down){
+        const [x, y] = evUv(e);
+        Object.assign(ptr, {down:true, hover:true, x, y, t:performance.now(), drag:null, colorIdx:(ptr.colorIdx+1)%3});
+      }
+    }, true);
+    canvas.addEventListener('pointerleave', () => { if(ptr.hover){ endPtr(); ptr.hover = false; } });
+  } catch(err){ console.error('Modo estande: a simulação não iniciou', err); }
+  aoPai({estandePronto: true});
+})();
+</script>
+<script>
+// =====================================================================
 //  ANIMAÇÕES DA PÁGINA
 //  Abertura com o logo, títulos que caem do céu ou saem de um vórtice, a equação caindo
 //  termo a termo e o resto entrando em cascata. Fica num <script> separado: se algo
@@ -3169,6 +3284,7 @@ requestAnimationFrame(loop);
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const root = document.documentElement;
   const anim = root.classList.contains('anim');
+  if(window.ESTANDE){ root.dataset.animReady = '1'; return; }   // modo estande: só o canvas (sem link no menu, abertura nem animações)
 
   // ---------- link para a apresentação no menu ----------
   // online: pasta apresentacao/ do site · no computador: pasta vizinha "1 - Apresentacao"

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Falas do estande</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%236ff2d6'/%3E%3Cstop offset='1' stop-color='%23ffc857'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M32 32m-4 0a4 4 0 1 1 8 0a10 10 0 1 1-20 0a16 16 0 1 1 32 0a22 22 0 1 1-44 0a28 28 0 0 1 28-28' fill='none' stroke='url(%23g)' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* Roteiro da equipe: para ler no celular e ensaiar. Cada pessoa tem uma cor; ações aparecem em destaque. */
+:root{
+  color-scheme:dark;
+  --bg:#070b14; --bg2:#0c1322; --bg3:#121c30; --line:#1d2943; --line2:#2a3858;
+  --text:#e9eff9; --soft:#c5cfe2; --muted:#93a0ba; --dim:#64708c;
+  --mint:#6ff2d6; --cool:#5aa8ff; --gold:#ffc857; --salmon:#ffb19c; --pink:#ff8fb8;
+  --f-display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --f-body:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --f-mono:"Cascadia Mono",Consolas,ui-monospace,monospace;
+  --gutter:clamp(16px,4vw,40px);
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:64px;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:17px;line-height:1.7;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+a{color:var(--mint);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:6px}
+.top{position:sticky;top:0;z-index:5;background:rgba(7,11,20,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top,0px)) var(--gutter) 10px}
+.top-in{max-width:880px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.brand{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.brand b{color:var(--text);font-weight:600}
+.top details{margin-left:auto;position:relative}
+.top summary{cursor:pointer;list-style:none;font-size:14px;font-weight:600;color:var(--soft);border:1px solid var(--line2);border-radius:999px;padding:6px 14px}
+.top summary::-webkit-details-marker{display:none}
+.top details ol{position:absolute;right:0;top:calc(100% + 8px);width:min(320px,86vw);max-height:70vh;overflow:auto;margin:0;padding:10px 14px 10px 34px;background:var(--bg2);border:1px solid var(--line2);border-radius:14px;font-size:15px;box-shadow:0 20px 50px -20px #000}
+.top details li{margin:5px 0}
+.top details a{color:var(--soft);text-decoration:none}
+main{max-width:880px;margin:0 auto;padding:26px var(--gutter) calc(80px + env(safe-area-inset-bottom,0px))}
+.kicker{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint);margin:0}
+h1{font-family:var(--f-display);font-size:clamp(30px,6vw,48px);line-height:1.06;letter-spacing:-.02em;margin:8px 0 16px;text-wrap:balance}
+.quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0 8px}
+.q{display:flex;flex-direction:column;gap:2px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-decoration:none;color:var(--text)}
+.q:hover{border-color:var(--mint)}
+.q b{font-size:18px}
+.q span{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:16px 0 0;font-size:14px;color:var(--muted)}
+.sec{border-top:1px solid var(--line);padding:28px 0 12px}
+.sec h2{font-family:var(--f-display);font-size:clamp(22px,3.2vw,28px);line-height:1.2;letter-spacing:-.01em;margin:0 0 14px;text-wrap:balance}
+.sec h3,.sec h4{font-size:18px;margin:24px 0 8px;color:var(--text)}
+.sec h4{font-family:var(--f-mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--mint);font-weight:600}
+.sec p{margin:0 0 12px;color:var(--soft)}
+.sec ul,.sec ol{color:var(--soft);padding-left:24px;margin:0 0 14px}
+.sec li{margin:6px 0}
+.sec li::marker{color:var(--mint)}
+.sec strong{color:var(--text)}
+.roteiro p,.roteiro li{font-size:18px;line-height:1.65;color:var(--text)}
+.who{display:inline-block;font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 10px;margin-right:6px;vertical-align:2px}
+.who.p1{background:rgba(90,168,255,.16);color:var(--cool);border:1px solid rgba(90,168,255,.45)}
+.who.p2{background:rgba(111,242,214,.13);color:var(--mint);border:1px solid rgba(111,242,214,.45)}
+.who.p3{background:rgba(255,200,87,.13);color:var(--gold);border:1px solid rgba(255,200,87,.45)}
+.act{font-family:var(--f-mono);font-size:.78em;color:var(--salmon);background:rgba(255,177,156,.08);border:1px dashed rgba(255,177,156,.4);border-radius:6px;padding:0 6px;white-space:normal}
+blockquote,.box{border-left:3px solid var(--mint);background:var(--bg2);border-radius:10px;margin:4px 0 16px;padding:10px 14px 2px}
+.box.warn{border-left-color:var(--salmon)}
+code{font-family:var(--f-mono);font-size:.88em;background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+pre{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto}
+.table{overflow-x:auto;margin:6px 0 18px;border:1px solid var(--line);border-radius:12px;background:var(--bg2)}
+.table table{border-collapse:collapse;width:100%;font-size:15px;min-width:460px}
+.table th,.table td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+.table th{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--bg3)}
+.table td{color:var(--soft)}
+.table tr:last-child td{border-bottom:0}
+.quiz{background:var(--bg2);border:1px solid var(--line);border-radius:12px;margin:0 0 10px}
+.quiz summary{cursor:pointer;list-style:none;padding:13px 16px;font-weight:600;color:var(--text);display:flex;gap:12px;align-items:flex-start;line-height:1.5}
+.quiz summary::-webkit-details-marker{display:none}
+.quiz summary::after{content:"Ver resposta";margin-left:auto;flex:none;font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--mint);border:1px solid rgba(111,242,214,.35);border-radius:999px;padding:3px 9px;margin-top:2px}
+.quiz[open] summary::after{content:"Esconder";color:var(--muted);border-color:var(--line2)}
+.quiz .ans{padding:2px 16px 4px;border-top:1px dashed var(--line2)}
+.quiz .ans p:first-child{margin-top:10px}
+.totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--bg2);border:1px solid var(--line2);color:var(--muted);text-decoration:none;font-size:18px}
+@media (max-width:560px){.quick{grid-template-columns:1fr}}
+@media print{
+  :root{color-scheme:light;--bg:#fff;--bg2:#fff;--bg3:#f1f3f7;--line:#d5dae3;--line2:#c3cad6;--text:#111;--soft:#222;--muted:#555;--dim:#777;--mint:#0a7d68;--cool:#1d5fb8;--gold:#8a6100;--salmon:#a5402a}
+  .top,.totop,.quick{display:none}
+  .quiz .ans{display:block!important}
+  .quiz summary::after{display:none}
+  .sec{break-inside:auto}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in"><span class="brand"><b>Redemoinho</b> · falas</span>
+  <details><summary>Ir para…</summary><ol><li><a href="#1-como-usar-este-roteiro">Como usar este roteiro</a></li><li><a href="#2-papeis">Papéis</a></li><li><a href="#3-frases-de-chamada">Frases de chamada</a></li><li><a href="#4-roteiro-3-pessoas-curto-1-min-30-s-214-palavras">Roteiro 3 pessoas — curto</a></li><li><a href="#5-roteiro-3-pessoas-longo-4-min-600-palavras">Roteiro 3 pessoas — longo</a></li><li><a href="#6-roteiro-2-pessoas-curto-1-min-30-s-214-palavras">Roteiro 2 pessoas — curto</a></li><li><a href="#7-roteiro-2-pessoas-longo-4-min-600-palavras">Roteiro 2 pessoas — longo</a></li><li><a href="#8-versao-para-crianca-pequena-55-s-127-palavras">Versão para criança pequena</a></li><li><a href="#9-perguntas-dificeis">Perguntas difíceis</a></li><li><a href="#10-plano-b">Plano B</a></li><li><a href="#11-dicas-rapidas">Dicas rápidas</a></li></ol></details></div></header>
+<main>
+  <p class="kicker">Para a equipe do estande</p>
+  <h1>Falas do estande</h1>
+  <div class="quick"><a class="q" href="#1-como-usar-este-roteiro"><b>Como usar este roteiro</b><span>Como usar este roteiro</span></a><a class="q" href="#4-roteiro-3-pessoas-curto-1-min-30-s-214-palavras"><b>3 pessoas</b><span>versão curto · ~1 min 30 s · 214 palavras</span></a><a class="q" href="#5-roteiro-3-pessoas-longo-4-min-600-palavras"><b>3 pessoas</b><span>versão longo · ~4 min · ~600 palavras</span></a><a class="q" href="#6-roteiro-2-pessoas-curto-1-min-30-s-214-palavras"><b>2 pessoas</b><span>versão curto · ~1 min 30 s · 214 palavras</span></a><a class="q" href="#7-roteiro-2-pessoas-longo-4-min-600-palavras"><b>2 pessoas</b><span>versão longo · ~4 min · ~600 palavras</span></a></div>
+  <div class="legend"><span class="who p1">Pessoa 1</span><span class="who p2">Pessoa 2</span><span class="who p3">Pessoa 3</span><span class="act">[ação na tela]</span></div>
+  
+  <section class="sec roteiro" id="1-como-usar-este-roteiro"><h2>1. Como usar este roteiro</h2><p>A tela mostra uma frase grande por vez, e quem explica são vocês. Troquem "Pessoa 1, 2 e 3" pelos nomes reais. O que está em <strong>negrito</strong> é fala. O que está entre colchetes é ação. A ordem é: a equação → o problema → a IA chega → como funciona uma IA → como a IA chegou lá → o simulador. Na tela 5, logo depois do ACEITO, vem uma ressalva curta: é uma solução anunciada, ainda em conferência. Pronúncia: Navier–Stokes = "naviê-stôuks". Lean = "lín".</p>
+<p><strong>Teclas do apresentador</strong></p>
+<div class="table"><table><thead><tr><th>Tecla</th><th>O que faz</th></tr></thead><tbody><tr><td><strong>→</strong> ou <strong>espaço</strong></td><td>avança uma tela</td></tr><tr><td><strong>←</strong></td><td>volta uma tela</td></tr><tr><td><strong>1</strong> a <strong>6</strong></td><td>vai direto para a tela</td></tr><tr><td><strong>Home</strong></td><td>volta para a tela 1 (use depois de cada visitante)</td></tr><tr><td><strong>Enter</strong></td><td>faz a demo andar. Tela 3: reinicia o relógio. Tela 4: treina; de novo, pegadinha; de novo, recomeça. Tela 5: roda sozinha (~9 s)</td></tr><tr><td><strong>E</strong></td><td>só na tela 6, no Ralo da pia: desliga e religa todo empurrão de fora</td></tr><tr><td><strong>V</strong></td><td>modo vitrine: as telas passam sozinhas. Qualquer tecla sai</td></tr><tr><td><strong>P</strong></td><td>troca o simulador pelos vídeos (plano B). P de novo volta</td></tr><tr><td><strong>F</strong></td><td>tela cheia</td></tr><tr><td><strong>F5</strong></td><td>recarrega a página na mesma tela</td></tr></tbody></table></div></section>
+<section class="sec " id="2-papeis"><h2>2. Papéis</h2><p><strong>Com 3 pessoas (começo da feira)</strong></p>
+<ul><li><strong>Pessoa 1 · Água.</strong> Faz as telas 1, 2 e 6: a equação, o problema e o simulador. Na tela 6, fica ao lado do visitante e cuida da tecla E.</li><li><strong>Pessoa 2 · IA.</strong> Faz as telas 3 e 4. Na versão curta, faz também a tela 5 e a ressalva.</li><li><strong>Pessoa 3 · Chamada e conferência.</strong> Fica na beira do corredor e chama as pessoas. Na versão longa, volta para a tela 5 ("Ache o erro") e puxa a ressalva. Responde aos jurados. É quem sai para o casamento.</li></ul>
+<p><strong>Com 2 pessoas (depois que a Pessoa 3 sai)</strong></p>
+<ul><li><strong>Pessoa 1 · Chamada + Água.</strong> Chama as pessoas e faz as telas 1, 2 e 6.</li><li><strong>Pessoa 2 · IA + conferência.</strong> Faz as telas 3, 4 e 5 e a ressalva. Responde aos jurados junto com a Pessoa 1.</li><li>Entre um visitante e outro, quem estiver livre vai para a beira do corredor.</li></ul>
+<p><strong>Regras para todos</strong></p>
+<ul><li>Quem vai falar aperta <strong>→</strong> (e Enter, quando o roteiro pedir).</li><li>Nas telas 1 a 3, o mouse fica com vocês. Na tela 4, ele passa para o visitante e fica com ele até o fim.</li><li><strong>Antes de entregar o mouse na tela 4, olhem o selo.</strong> Ele tem que dizer IA SEM TREINO. A demo não volta sozinha ao começo: se o selo disser outra coisa, cliquem em <strong>Recomeçar</strong>.</li><li>Quando o visitante for embora, aperte <strong>Home</strong>. Se ninguém estiver olhando, aperte <strong>V</strong>.</li><li>Quando a Pessoa 3 sai, a chamada passa para a Pessoa 1. As falas dela na tela 5 passam para a Pessoa 2, e a Pessoa 1 assume a fala do VAR na ressalva. O site não muda nada.</li><li>As versões de 3 e de 2 pessoas têm as mesmas falas. Só muda quem fala.</li><li>Todo mundo sabe a versão curta inteira de cor.</li><li>Se a Pessoa 3 estiver presa no corredor, usem o roteiro de 2 pessoas.</li></ul></section>
+<section class="sec " id="3-frases-de-chamada"><h2>3. Frases de chamada</h2><p>Escolham uma que soe natural e repitam.</p>
+<ul><li><strong>Todo mundo:</strong> "Ei! Tem um problema de 1 milhão de dólares aqui. E no final você mexe na água!"</li><li><strong>Todo mundo:</strong> "Mais de 10 mil agentes de IA atacaram um problema de 1 milhão. Quer ver o que saiu?"</li><li><strong>Quem para olhando o simulador:</strong> "Pode mexer! Essa água segue a equação do problema de 1 milhão."</li><li><strong>Criança:</strong> "Duvido você fazer um redemoinho aqui!"</li><li><strong>Criança:</strong> "Quer treinar uma inteligência artificial? É rapidinho."</li><li><strong>Adulto:</strong> "Quer ver uma IA por dentro? Uma pequenininha, de verdade."</li><li><strong>Adulto:</strong> "Uma equação de 1822, um prêmio de 1 milhão e 10 mil agentes de IA. Quer ver?"</li><li><strong>Professor e jurado:</strong> "Navier–Stokes, Problema do Milênio, IA e o que ainda falta conferir. Tem 4 minutos?"</li></ul></section>
+<section class="sec roteiro" id="4-roteiro-3-pessoas-curto-1-min-30-s-214-palavras"><h2>4. Roteiro 3 pessoas — curto (~1 min 30 s · 214 palavras)</h2><p>A fala é a mesma da versão de 2 pessoas. A única diferença: a Pessoa 3 diz a primeira frase e volta para o corredor.</p>
+<h4>Tela 1 · A equação (0:00–0:18)</h4>
+<p><em><span class="act">Pessoa 3, na beira do corredor, chama quem passa</span></em></p>
+<p><span class="who p3">Pessoa 3</span> Ei! Tem um problema de 1 milhão de dólares aqui. E no final você mexe na água!</p>
+<p><em><span class="act">o visitante chega; Pessoa 3 volta para o corredor</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Essa é a Navier–Stokes. A equação que diz como a água, o ar e a fumaça se mexem. É o F = m·a de Newton, para cada gotinha.</p>
+<h4>Tela 2 · O problema (0:18–0:30)</h4>
+<p><em><span class="act">Pessoa 1 aperta →; o redemoinho afina e o contador sobe</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Agora a pergunta. Um redemoinho pode girar infinitamente rápido? Isso se chama explodir. Em 3D, ninguém sabia provar. Desde 2000, essa resposta vale 1 milhão.</p>
+<h4>Tela 3 · Uma IA chega (0:30–0:41)</h4>
+<p><em><span class="act">Pessoa 2 aperta →; os pontinhos acendem e o relógio corre</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Em setembro, a OpenAI pôs mais de 10 mil agentes de IA nisso. Depois de 88 horas, anunciou uma prova: pode explodir, sim. Mas com uma condição.</p>
+<h4>Tela 4 · Como funciona uma IA (0:41–0:55)</h4>
+<p><em><span class="act">Pessoa 2 aperta →, confere o selo IA SEM TREINO, entrega o mouse e aperta Enter; a IA treina e as barras se mexem</span></em></p>
+<p><span class="who p2">Pessoa 2</span> E como funciona uma IA dessas? Por dentro, são números. No treino, ela chuta, compara com exemplos e ajusta os números. Olha: "o redemoinho gira cada vez mais…" <em><span class="act">aponta a barra de cima</span></em> Ela prevê "rápido".</p>
+<h4>Tela 5 · Como a IA chegou lá (0:55–1:05)</h4>
+<p><em><span class="act">Pessoa 2 aperta → e Enter; a demo roda sozinha até o ACEITO</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Só que provável não é certo: IA erra. Umas IAs propunham, outras criticavam e corrigiam. E um programa juiz, o Lean, conferiu a prova.</p>
+<h4>A ressalva · ainda na tela 5 (1:05–1:12)</h4>
+<p><span class="who p2">Pessoa 2</span> Só uma ressalva: é uma solução anunciada. Especialistas ainda estão conferindo. E a tal condição? Ela aparece no final.</p>
+<h4>Tela 6 · Agora é com você (1:12–1:30)</h4>
+<p><em><span class="act">Pessoa 1 aperta →; o visitante passa o mouse na água</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Mexe aí: é Navier–Stokes ao vivo. Sua mão é um empurrão de fora, como o da prova. <em><span class="act">aperta E e espera o giro enfraquecer</span></em> Sem empurrão, ele vai morrendo. <em><span class="act">aperta E de novo</span></em> Resumindo: com empurrão, solução anunciada. Sozinho, em 3D? Ninguém sabe.</p>
+<p><span class="who p2">Pessoa 2</span> Quer treinar a IA com calma? Leva 2 minutinhos.</p>
+<p><em>[se a pessoa topar: Pessoa 2 aperta 4, pede para o visitante clicar em Recomeçar e segue a versão longa nas telas 4 e 5 e na ressalva. Na tela 6, comecem em "Agora o colapso em 3D"]</em></p></section>
+<section class="sec roteiro" id="5-roteiro-3-pessoas-longo-4-min-600-palavras"><h2>5. Roteiro 3 pessoas — longo (~4 min · ~600 palavras)</h2><h4>Tela 1 · A equação (0:00–0:25)</h4>
+<p><em><span class="act">Pessoa 3, na beira do corredor, chama quem passa</span></em></p>
+<p><span class="who p3">Pessoa 3</span> Ei! Tem um problema de 1 milhão de dólares aqui. E no final você mexe na água!</p>
+<p><em><span class="act">o visitante chega; Pessoa 3 apresenta a Pessoa 1 e volta para o corredor</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Essa é a Navier–Stokes. Ela diz como a água, o ar e a fumaça se mexem. Navier escreveu em 1822. Stokes, em 1845. <em><span class="act">aponta o F = m·a</span></em> É o F = m·a de Newton, para cada gotinha, ao mesmo tempo. Serve para prever o tempo e projetar avião.</p>
+<h4>Tela 2 · O problema (0:25–0:55)</h4>
+<p><em><span class="act">Pessoa 1 aperta →; o redemoinho afina e o contador sobe até ∞</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Agora a pergunta de 1 milhão. O redemoinho afina e gira cada vez mais rápido. Igual à patinadora que fecha os braços. Será que a velocidade pode virar infinito, num tempo finito? Isso se chama explodir.</p>
+<p><span class="who p1">Pessoa 1</span> No plano, em 2D, já está provado: não explode. Em 3D, ninguém sabia provar. Em 2000, virou um Problema do Milênio do Instituto Clay. Quem provar a resposta, sim ou não, ganha 1 milhão. <em><span class="act">aponta a etiqueta "ilustração"</span></em> Isso aqui é só um desenho.</p>
+<p><span class="who p1">Pessoa 1</span> Em setembro, tentaram de outro jeito.</p>
+<h4>Tela 3 · Uma IA chega (0:55–1:15)</h4>
+<p><em><span class="act">Pessoa 2 aperta →; os pontinhos acendem e o relógio vai até 88 h</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Com IA. Cada pontinho é um agente: uma IA com uma tarefa. Foram mais de 10 mil. Em 88 horas, quase 4 dias, saiu um artigo de 166 páginas. E não foi simulação: foi uma prova de matemática. A OpenAI anunciou: pode explodir, sim. Mas com uma condição. Guarda isso.</p>
+<h4>Tela 4 · Como funciona uma IA (1:15–2:05)</h4>
+<p><em><span class="act">Pessoa 2 aperta →, confere o selo IA SEM TREINO e entrega o mouse ao visitante</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Mas como funciona uma IA? Vamos abrir uma pequenininha. Qual palavra vem agora? Escolhe aí.</p>
+<p><em><span class="act">o visitante toca num palpite</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Essa IA ainda não treinou. Ela está chutando.</p>
+<p><em><span class="act">Pessoa 2 aperta Enter: TREINAR</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Agora ela treina. Chuta e compara com os exemplos que a gente escreveu. Aí ajusta os números para errar menos. Esses quadradinhos são alguns dos números dela mudando. Ninguém escreveu a regra: ela tirou dos exemplos. As IAs grandes seguem a mesma ideia, só que gigantes.</p>
+<p><em><span class="act">o visitante clica na barra de cima</span></em></p>
+<p><span class="who p2">Pessoa 2</span> A palavra escolhida entra na frase, e ela aposta na próxima. É assim que ela escreve: palavra por palavra. Imagina 166 páginas.</p>
+<p><em><span class="act">Pessoa 2 aperta Enter: Pegadinha</span></em></p>
+<p><span class="who p2">Pessoa 2</span> E a pegadinha: "a lua gira no…" ralo! Soa certo. Está errado. Ela não procura na internet: escolhe o provável, não o verdadeiro.</p>
+<h4>Tela 5 · Como a IA chegou lá (2:05–2:45)</h4>
+<p><em><span class="act">Pessoa 3 volta do corredor e aperta →; as cartas aparecem uma por uma</span></em></p>
+<p><span class="who p3">Pessoa 3</span> Se IA erra, como confiar em 166 páginas? Assim: umas IAs propõem, outras criticam e corrigem. Esse agente propôs um caminho até o alvo. Você é o crítico: qual passo está errado?</p>
+<p><em><span class="act">o visitante toca numa carta. Se for uma certa, ela balança e diz "Esse está certo". Se ele travar, aperte Enter</span></em></p>
+<p><span class="who p3">Pessoa 3</span> Achou! <em><span class="act">lê logo o motivo que aparece na carta, porque ela vira em 2 segundos; no desafio do 20, é este:</span></em> 4 vezes 2 dá 8, não 9. Aí outro agente corrige.</p>
+<p><em><span class="act">as cartas viram e o juiz confere passo a passo</span></em></p>
+<p><span class="who p3">Pessoa 3</span> Agora o juiz confere cada passo. Na prova real, o juiz foi o Lean. Ele não é uma IA: só confere, com regras fixas. <em><span class="act">aparece ACEITO</span></em> Aceito!</p>
+<p><em><span class="act">bônus, se der tempo: o visitante clica em "Tente enganar o Lean"</span></em></p>
+<p><span class="who p3">Pessoa 3</span> Tenta trapacear: muda um número com as setinhas e aperta CONFERIR. <em><span class="act">aparece RECUSADO</span></em> Recusado! Um passo errado derruba a corrente inteira.</p>
+<h4>A ressalva honesta · ainda na tela 5 (2:45–3:20)</h4>
+<p><span class="who p3">Pessoa 3</span> Uma ressalva honesta. Lembra da condição? A prova precisou de um empurrão de fora, artificial. O regulamento do prêmio aceita. Mas outros pesquisadores mostraram que o método não funciona sem esse empurrão.</p>
+<p><span class="who p2">Pessoa 2</span> E é tipo gol no VAR. Especialistas ainda estão conferindo. E tem disputa de autoria: um matemático diz que ideias dele e de outro matemático inspiraram os comandos das IAs.</p>
+<p><span class="who p3">Pessoa 3</span> E sobre o nosso estande: a nossa IA é minúscula. Os agentes, a gente encenou. O juiz é uma imitação do Lean. E o simulador mostra, não prova.</p>
+<h4>Tela 6 · Agora é com você (3:20–4:05)</h4>
+<p><em><span class="act">Pessoa 1 aperta →; o visitante passa o mouse na água</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Agora é com você. Passa o mouse na água: é Navier–Stokes, calculada ao vivo. Sua mão é um empurrão de fora.</p>
+<p><em><span class="act">Pessoa 1 aperta E e espera alguns segundos</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Desliguei todo empurrão: o motor do ralo e a sua mão. Viu? O atrito vai freando o redemoinho.</p>
+<p><em><span class="act">Pessoa 1 aperta E de novo e mostra o botão "Colapso (3D)"; o visitante clica</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Agora o colapso em 3D: um desenho da prova, não uma conta. Os anéis laranja são o empurrão de fora. Com ele, o redemoinho afina até explodir.</p>
+<p><em><span class="act">o clarão é a explosão; depois, o colapso recomeça sozinho</span></em></p>
+<p><span class="who p2">Pessoa 2</span> A OpenAI disse que nem vai pedir o prêmio. E, enquanto conferem, a gente diz: solução anunciada.</p>
+<p><span class="who p3">Pessoa 3</span> A IA não pensa como a gente. Mas virou uma ferramenta poderosa para a matemática. Desde que alguém confira.</p>
+<p><span class="who p1">Pessoa 1</span> E fica a pergunta: em 3D, sozinho, sem empurrão, um redemoinho pode explodir?</p></section>
+<section class="sec roteiro" id="6-roteiro-2-pessoas-curto-1-min-30-s-214-palavras"><h2>6. Roteiro 2 pessoas — curto (~1 min 30 s · 214 palavras)</h2><h4>Tela 1 · A equação (0:00–0:18)</h4>
+<p><em><span class="act">Pessoa 1, na beira do corredor, chama quem passa</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Ei! Tem um problema de 1 milhão de dólares aqui. E no final você mexe na água!</p>
+<p><em><span class="act">o visitante chega</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Essa é a Navier–Stokes. A equação que diz como a água, o ar e a fumaça se mexem. É o F = m·a de Newton, para cada gotinha.</p>
+<h4>Tela 2 · O problema (0:18–0:30)</h4>
+<p><em><span class="act">Pessoa 1 aperta →; o redemoinho afina e o contador sobe</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Agora a pergunta. Um redemoinho pode girar infinitamente rápido? Isso se chama explodir. Em 3D, ninguém sabia provar. Desde 2000, essa resposta vale 1 milhão.</p>
+<h4>Tela 3 · Uma IA chega (0:30–0:41)</h4>
+<p><em><span class="act">Pessoa 2 aperta →; os pontinhos acendem e o relógio corre</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Em setembro, a OpenAI pôs mais de 10 mil agentes de IA nisso. Depois de 88 horas, anunciou uma prova: pode explodir, sim. Mas com uma condição.</p>
+<h4>Tela 4 · Como funciona uma IA (0:41–0:55)</h4>
+<p><em><span class="act">Pessoa 2 aperta →, confere o selo IA SEM TREINO, entrega o mouse e aperta Enter; a IA treina e as barras se mexem</span></em></p>
+<p><span class="who p2">Pessoa 2</span> E como funciona uma IA dessas? Por dentro, são números. No treino, ela chuta, compara com exemplos e ajusta os números. Olha: "o redemoinho gira cada vez mais…" <em><span class="act">aponta a barra de cima</span></em> Ela prevê "rápido".</p>
+<h4>Tela 5 · Como a IA chegou lá (0:55–1:05)</h4>
+<p><em><span class="act">Pessoa 2 aperta → e Enter; a demo roda sozinha até o ACEITO</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Só que provável não é certo: IA erra. Umas IAs propunham, outras criticavam e corrigiam. E um programa juiz, o Lean, conferiu a prova.</p>
+<h4>A ressalva · ainda na tela 5 (1:05–1:12)</h4>
+<p><span class="who p2">Pessoa 2</span> Só uma ressalva: é uma solução anunciada. Especialistas ainda estão conferindo. E a tal condição? Ela aparece no final.</p>
+<h4>Tela 6 · Agora é com você (1:12–1:30)</h4>
+<p><em><span class="act">Pessoa 1 aperta →; o visitante passa o mouse na água</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Mexe aí: é Navier–Stokes ao vivo. Sua mão é um empurrão de fora, como o da prova. <em><span class="act">aperta E e espera o giro enfraquecer</span></em> Sem empurrão, ele vai morrendo. <em><span class="act">aperta E de novo</span></em> Resumindo: com empurrão, solução anunciada. Sozinho, em 3D? Ninguém sabe.</p>
+<p><span class="who p2">Pessoa 2</span> Quer treinar a IA com calma? Leva 2 minutinhos.</p>
+<p><em>[se a pessoa topar: Pessoa 2 aperta 4, pede para o visitante clicar em Recomeçar e segue a versão longa nas telas 4 e 5 e na ressalva. Na tela 6, comecem em "Agora o colapso em 3D"]</em></p></section>
+<section class="sec roteiro" id="7-roteiro-2-pessoas-longo-4-min-600-palavras"><h2>7. Roteiro 2 pessoas — longo (~4 min · ~600 palavras)</h2><h4>Tela 1 · A equação (0:00–0:25)</h4>
+<p><em><span class="act">Pessoa 1, na beira do corredor, chama quem passa</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Ei! Tem um problema de 1 milhão de dólares aqui. E no final você mexe na água!</p>
+<p><em><span class="act">o visitante chega</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Essa é a Navier–Stokes. Ela diz como a água, o ar e a fumaça se mexem. Navier escreveu em 1822. Stokes, em 1845. <em><span class="act">aponta o F = m·a</span></em> É o F = m·a de Newton, para cada gotinha, ao mesmo tempo. Serve para prever o tempo e projetar avião.</p>
+<h4>Tela 2 · O problema (0:25–0:55)</h4>
+<p><em><span class="act">Pessoa 1 aperta →; o redemoinho afina e o contador sobe até ∞</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Agora a pergunta de 1 milhão. O redemoinho afina e gira cada vez mais rápido. Igual à patinadora que fecha os braços. Será que a velocidade pode virar infinito, num tempo finito? Isso se chama explodir.</p>
+<p><span class="who p1">Pessoa 1</span> No plano, em 2D, já está provado: não explode. Em 3D, ninguém sabia provar. Em 2000, virou um Problema do Milênio do Instituto Clay. Quem provar a resposta, sim ou não, ganha 1 milhão. <em><span class="act">aponta a etiqueta "ilustração"</span></em> Isso aqui é só um desenho.</p>
+<p><span class="who p1">Pessoa 1</span> Em setembro, tentaram de outro jeito.</p>
+<h4>Tela 3 · Uma IA chega (0:55–1:15)</h4>
+<p><em><span class="act">Pessoa 2 aperta →; os pontinhos acendem e o relógio vai até 88 h</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Com IA. Cada pontinho é um agente: uma IA com uma tarefa. Foram mais de 10 mil. Em 88 horas, quase 4 dias, saiu um artigo de 166 páginas. E não foi simulação: foi uma prova de matemática. A OpenAI anunciou: pode explodir, sim. Mas com uma condição. Guarda isso.</p>
+<h4>Tela 4 · Como funciona uma IA (1:15–2:05)</h4>
+<p><em><span class="act">Pessoa 2 aperta →, confere o selo IA SEM TREINO e entrega o mouse ao visitante</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Mas como funciona uma IA? Vamos abrir uma pequenininha. Qual palavra vem agora? Escolhe aí.</p>
+<p><em><span class="act">o visitante toca num palpite</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Essa IA ainda não treinou. Ela está chutando.</p>
+<p><em><span class="act">Pessoa 2 aperta Enter: TREINAR</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Agora ela treina. Chuta e compara com os exemplos que a gente escreveu. Aí ajusta os números para errar menos. Esses quadradinhos são alguns dos números dela mudando. Ninguém escreveu a regra: ela tirou dos exemplos. As IAs grandes seguem a mesma ideia, só que gigantes.</p>
+<p><em><span class="act">o visitante clica na barra de cima</span></em></p>
+<p><span class="who p2">Pessoa 2</span> A palavra escolhida entra na frase, e ela aposta na próxima. É assim que ela escreve: palavra por palavra. Imagina 166 páginas.</p>
+<p><em><span class="act">Pessoa 2 aperta Enter: Pegadinha</span></em></p>
+<p><span class="who p2">Pessoa 2</span> E a pegadinha: "a lua gira no…" ralo! Soa certo. Está errado. Ela não procura na internet: escolhe o provável, não o verdadeiro.</p>
+<h4>Tela 5 · Como a IA chegou lá (2:05–2:45)</h4>
+<p><em><span class="act">Pessoa 2 aperta →; as cartas aparecem uma por uma</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Se IA erra, como confiar em 166 páginas? Assim: umas IAs propõem, outras criticam e corrigem. Esse agente propôs um caminho até o alvo. Você é o crítico: qual passo está errado?</p>
+<p><em><span class="act">o visitante toca numa carta. Se for uma certa, ela balança e diz "Esse está certo". Se ele travar, aperte Enter</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Achou! <em><span class="act">lê logo o motivo que aparece na carta, porque ela vira em 2 segundos; no desafio do 20, é este:</span></em> 4 vezes 2 dá 8, não 9. Aí outro agente corrige.</p>
+<p><em><span class="act">as cartas viram e o juiz confere passo a passo</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Agora o juiz confere cada passo. Na prova real, o juiz foi o Lean. Ele não é uma IA: só confere, com regras fixas. <em><span class="act">aparece ACEITO</span></em> Aceito!</p>
+<p><em><span class="act">bônus, se der tempo: o visitante clica em "Tente enganar o Lean"</span></em></p>
+<p><span class="who p2">Pessoa 2</span> Tenta trapacear: muda um número com as setinhas e aperta CONFERIR. <em><span class="act">aparece RECUSADO</span></em> Recusado! Um passo errado derruba a corrente inteira.</p>
+<h4>A ressalva honesta · ainda na tela 5 (2:45–3:20)</h4>
+<p><span class="who p2">Pessoa 2</span> Uma ressalva honesta. Lembra da condição? A prova precisou de um empurrão de fora, artificial. O regulamento do prêmio aceita. Mas outros pesquisadores mostraram que o método não funciona sem esse empurrão.</p>
+<p><span class="who p1">Pessoa 1</span> E é tipo gol no VAR. Especialistas ainda estão conferindo. E tem disputa de autoria: um matemático diz que ideias dele e de outro matemático inspiraram os comandos das IAs.</p>
+<p><span class="who p2">Pessoa 2</span> E sobre o nosso estande: a nossa IA é minúscula. Os agentes, a gente encenou. O juiz é uma imitação do Lean. E o simulador mostra, não prova.</p>
+<h4>Tela 6 · Agora é com você (3:20–4:05)</h4>
+<p><em><span class="act">Pessoa 1 aperta →; o visitante passa o mouse na água</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Agora é com você. Passa o mouse na água: é Navier–Stokes, calculada ao vivo. Sua mão é um empurrão de fora.</p>
+<p><em><span class="act">Pessoa 1 aperta E e espera alguns segundos</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Desliguei todo empurrão: o motor do ralo e a sua mão. Viu? O atrito vai freando o redemoinho.</p>
+<p><em><span class="act">Pessoa 1 aperta E de novo e mostra o botão "Colapso (3D)"; o visitante clica</span></em></p>
+<p><span class="who p1">Pessoa 1</span> Agora o colapso em 3D: um desenho da prova, não uma conta. Os anéis laranja são o empurrão de fora. Com ele, o redemoinho afina até explodir.</p>
+<p><em><span class="act">o clarão é a explosão; depois, o colapso recomeça sozinho</span></em></p>
+<p><span class="who p2">Pessoa 2</span> A OpenAI disse que nem vai pedir o prêmio. E, enquanto conferem, a gente diz: solução anunciada. A IA não pensa como a gente. Mas virou uma ferramenta poderosa para a matemática. Desde que alguém confira.</p>
+<p><span class="who p1">Pessoa 1</span> E fica a pergunta: em 3D, sozinho, sem empurrão, um redemoinho pode explodir?</p></section>
+<section class="sec " id="8-versao-para-crianca-pequena-55-s-127-palavras"><h2>8. Versão para criança pequena (~55 s · 127 palavras)</h2><p><em><span class="act">qualquer apresentador; abaixe na altura da criança e comece na tela 1</span></em></p>
+<p><strong>Qualquer um:</strong> Oi! Sabia que tem uma conta famosa que diz como a água se mexe? <em><span class="act">aperta 2</span></em> E ela tem um segredo de 1 milhão de dólares! Ninguém sabia se um redemoinho pode girar rápido, rápido, rápido, até o infinito. Aí um montão de IAs trabalhou nisso quase 4 dias. <em><span class="act">aperta 4, confere o selo IA SEM TREINO e aperta Enter</span></em> IA é um programa que aprende com exemplos. Tipo jogar bolinha de papel no lixo: erra, ajusta a mira, tenta de novo. Olha ela aprendendo! Mas IA também erra. Por isso um programa juiz conferiu passo por passo. <em><span class="act">aperta 6 e entrega o mouse</span></em> Agora é sua vez: faz um redemoinho! Sua mão empurra a água. As IAs acharam um jeito: com um empurrão especial, ele pode girar até o infinito. Os cientistas ainda estão conferindo. E sozinho, sem empurrão? Ninguém sabe. Quem sabe você descobre!</p>
+<p><em><span class="act">quando a criança for embora, aperte Home</span></em></p></section>
+<section class="sec " id="9-perguntas-dificeis"><h2>9. Perguntas difíceis</h2><p>As respostas são curtas. Se a pergunta for além delas: "Isso a OpenAI não detalhou."</p>
+<details class="quiz"><summary>1. "A IA pensa? Tem consciência?"</summary><div class="ans"><p>Não do jeito que a gente pensa. Por dentro, é conta: números que calculam a próxima palavra mais provável. Não há evidência de que ela tenha consciência, e ela só trabalha quando alguém dá uma tarefa.</p></div></details>
+<details class="quiz"><summary>2. "Ela procura a resposta na internet?"</summary><div class="ans"><p>Na base, não: ela prevê palavras com o que ficou guardado nos números durante o treino. Algumas versões conseguem buscar na internet, quando essa ferramenta está ligada. A nossa, da tela 4, nem usa internet.</p></div></details>
+<details class="quiz"><summary>3. "Ela aprende enquanto conversa com a gente?"</summary><div class="ans"><p>Não na hora. O treino vem antes, e depois os números ficam fixos. Na nossa demo, eles só mudam quando a gente aperta TREINAR.</p></div></details>
+<details class="quiz"><summary>4. "Então a IA resolveu o problema do milhão? Ganhou o prêmio?"</summary><div class="ans"><p>Ela chegou a uma solução anunciada, e o lance está no VAR. A prova mostra a explosão com um empurrão de fora, que o regulamento aceita. Explodir sozinho continua em aberto, e a OpenAI disse que não vai pedir o prêmio.</p></div></details>
+<details class="quiz"><summary>5. "O que é o Lean? Se ele conferiu, por que ainda está no VAR?"</summary><div class="ans"><p>É um programa juiz que confere cada passo contra regras fixas. Não é uma IA e não acha a resposta: só aceita ou recusa. Os especialistas conferem o resto, por exemplo se o que foi escrito para o Lean é mesmo a pergunta do prêmio, e essa conferência ainda não terminou.</p></div></details>
+<details class="quiz"><summary>6. "O que é um agente?"</summary><div class="ans"><p>Uma IA com uma tarefa. Lá eram mais de 10 mil: umas propunham, outras criticavam e corrigiam. Como eles se organizavam por dentro, a OpenAI não detalhou.</p></div></details>
+<details class="quiz"><summary>7. "Qual o problema do empurrão de fora?"</summary><div class="ans"><p>O regulamento aceita, mas é uma força artificial. A pergunta da física é se o fluido explode sozinho. E outros pesquisadores mostraram que o método não funciona sem ela.</p></div></details>
+<details class="quiz"><summary>8. "A IA fez tudo sozinha?"</summary><div class="ans"><p>Não. Pessoas montaram e instruíram o sistema. E há uma disputa de autoria: o matemático Tristan Buckmaster afirmou que ideias dele e de Levent Alpöge inspiraram os comandos dados às IAs.</p></div></details>
+<details class="quiz"><summary>9. "Por que a IA erra e inventa coisas?"</summary><div class="ans"><p>Porque escolhe a palavra mais provável, não a verdadeira. Quando não sabe, não fica quieta: completa com algo que soa certo. É o "a lua gira no ralo".</p></div></details>
+<details class="quiz"><summary>10. "Se o computador calcula a equação, por que vale 1 milhão? O simulador provou alguma coisa?"</summary><div class="ans"><p>Calcular não é provar. O Ralo da pia faz uma aproximação numa grade de quadradinhos, e só para um caso; o prêmio pede uma prova que valha para todos. E o Colapso (3D) nem é conta: é um desenho com fórmulas, inspirado na prova. Mostra, não prova.</p></div></details>
+<details class="quiz"><summary>11. "Por que só em 3D?"</summary><div class="ans"><p>No plano já está provado que não explode. Em 3D, o redemoinho pode se esticar e afinar, e aí gira mais rápido, como a patinadora fechando os braços. Ninguém sabe se, sozinho, isso vai até o infinito.</p></div></details>
+<details class="quiz"><summary>12. "Quais são as falhas do projeto de vocês?"</summary><div class="ans"><p>O simulador é uma aproximação, e o 3D é só um desenho. A IA da tela 4 é minúscula. Na tela 5, os agentes são encenados por nós, e o juiz é uma imitação simples do Lean, feita por nós: ele faz as contas de verdade, mas não é o Lean. E a gente não conferiu as 166 páginas: dependemos dos especialistas.</p></div></details>
+<details class="quiz"><summary>13. "Como vocês fizeram as demonstrações?"</summary><div class="ans"><p>O Ralo da pia calcula Navier–Stokes numa grade, com um método chamado Stable Fluids. O Colapso (3D) é um desenho com fórmulas, não uma conta. A IA da tela 4 é uma rede neural de verdade, em miniatura: uns 21 mil números (o número exato está no rodapé), treinada com frases que a gente escreveu. Tudo roda no navegador, sem internet.</p></div></details>
+<details class="quiz"><summary>14. "Vai roubar empregos? É perigoso?"</summary><div class="ans"><p>Vai mudar muitos trabalhos, como o computador e a internet mudaram. O perigo maior é confiar sem conferir: a IA erra com cara de certeza. Por isso a parte mais importante desta história é a conferência.</p></div></details>
+<details class="quiz"><summary>15. "Vocês usaram IA para fazer o projeto?"</summary><div class="ans"><p>Respondam com a verdade, combinada antes entre vocês: em que partes usaram IA e como conferiram. Modelo: "Usamos IA para ajudar em <em>_</em>. A gente testou <em>_</em> e conferiu os fatos em <em>_</em>."</p></div></details></section>
+<section class="sec " id="10-plano-b"><h2>10. Plano B</h2><p><strong>Nível 1 · O simulador travou ou ficou lento (tela 6)</strong> Aperte <strong>P</strong>: entram os vídeos gravados. Os botões "Ralo da pia (2D)" e "Colapso (3D)" trocam o vídeo, e <strong>P</strong> de novo volta ao simulador. Os vídeos precisam estar na pasta "1 - Apresentacao", ao lado do Estande.html, com os nomes <strong>video-2d.mp4</strong> e <strong>video-3d.mp4</strong>. Hoje eles ainda não estão lá: gravem antes da feira. O visitante não consegue mexer no vídeo, então troquem três coisas:</p>
+<ul><li><strong>Chamada:</strong> em vez de "E no final você mexe na água!", digam "E no final tem um redemoinho de 1 milhão!".</li><li><strong>Tela 6:</strong> "Isso é uma gravação do nosso simulador. Ao vivo, o computador calcula a equação na hora." Pulem a tecla E.</li><li><strong>Tela 6:</strong> troquem "Sua mão é um empurrão de fora" por "Sabe a colher que mexe a água? É um empurrão de fora."</li></ul>
+<p><strong>Nível 2 · Uma demo não abre (tela 4 ou 5)</strong> Aperte <strong>F5</strong>: a página recarrega na mesma tela. Se a demo continuar sem abrir, façam de boca:</p>
+<ul><li><strong>Tela 4:</strong> "Completa aí: 'o redemoinho gira cada vez mais…'" <em><span class="act">o visitante responde "rápido"</span></em> "Isso! Você fez o que uma IA faz: previu a próxima palavra."</li><li><strong>Tela 5:</strong> mostrem a folha impressa do nível 4 e peçam: "Ache o erro aqui!"</li></ul>
+<p><strong>Nível 3 · A página inteira travou</strong> Aperte <strong>F5</strong> (a página volta na mesma tela). Se sair da tela cheia, aperte <strong>F</strong>. Enquanto carrega:</p>
+<aside class="box note"><p>"Computador também trava. Por isso a gente confere tudo!"</p></aside>
+<p><strong>Nível 4 · Sem computador nenhum (cerca de 1 min 30 s)</strong> Deixem no estande um copo transparente com água, uma colher e uma folha com esta corrente impressa: 1 (+1) 2 (×2) 4 (×2) 9 (+1) 10 (×2) 20. O erro é o 9, porque 4 vezes 2 dá 8.</p>
+<p><span class="who p1">Pessoa 1</span> <em><span class="act">gira a colher no copo</span></em> Olha esse redemoinho. Quem diz como ele se mexe é a Navier–Stokes: o F = m·a de cada gotinha. A pergunta de 1 milhão: em 3D, um redemoinho pode girar infinitamente rápido? Ninguém sabia provar.</p>
+<p><span class="who p2">Pessoa 2</span> Em setembro, a OpenAI pôs mais de 10 mil agentes de IA nisso, por 88 horas. E anunciou uma prova: pode explodir, sim, com uma condição. E o que é uma IA? Números treinados para prever a próxima palavra. Completa aí: "a lua gira no…" <em><span class="act">o visitante responde</span></em> Você pensou no que faz sentido. Uma IA que só leu frases de pia aposta em "ralo": o provável, não o verdadeiro. Por isso umas IAs propunham, outras criticavam e corrigiam. E um programa juiz, o Lean, conferiu. <em><span class="act">mostra a folha</span></em> Ache o erro aqui!</p>
+<p><span class="who p2">Pessoa 2</span> Uma ressalva: a prova precisou de um empurrão de fora. E ainda está sendo conferida.</p>
+<p><span class="who p1">Pessoa 1</span> <em><span class="act">entrega a colher ao visitante</span></em> Agora é com você: gira. Sua colher é um empurrão de fora, como o da prova. <em><span class="act">o visitante para</span></em> Sem empurrão, o redemoinho morre. Resumindo: com empurrão, solução anunciada. Sozinho, em 3D? Ninguém sabe.</p>
+<p><strong>Regra de ouro:</strong> nunca diga "deu erro" com cara de pânico. Ria, conte a história com as mãos e siga em frente.</p></section>
+<section class="sec " id="11-dicas-rapidas"><h2>11. Dicas rápidas</h2><ol><li><strong>Promessa no começo, mão na água no fim.</strong> A chamada promete o redemoinho. Na versão curta, passem pelas telas 1 a 3 em uns 40 segundos; na longa, em pouco mais de 1 minuto. Na tela 4, o mouse já é do visitante.</li><li><strong>Vitrine entre visitantes.</strong> Ninguém olhando: aperte <strong>V</strong>. Alguém parou: <strong>Home</strong> e comecem. Se a pessoa parou no simulador, aperte <strong>6</strong>, deixe mexer uns segundos e depois <strong>Home</strong>. Antes de entregar o mouse na tela 4, olhem se o selo diz IA SEM TREINO.</li><li><strong>Fale com a pessoa, não com a tela.</strong> Olhe para o visitante e só aponte para a tela quando ela mudar.</li><li><strong>Escolha a versão pela pessoa.</strong> Criança pequena: a versão criança. Quem está com pressa: a curta. Quem tem crachá de jurado ou faz muita pergunta: a longa.</li><li><strong>Frases proibidas:</strong> "a IA resolveu o problema", "a simulação provou", "a IA fez tudo sozinha", "10 mil robôs", "a IA pensa igual a gente", "o Lean é uma IA", "o nosso juiz é o Lean". <strong>No lugar delas:</strong> "solução anunciada", "mostra, não prova", "agentes de IA", "programa juiz", "uma imitação simples do Lean". A tela 5 diz "Como a IA resolveu", mas na fala digam "como a IA chegou lá".</li><li><strong>Não sabe? Não invente.</strong> Diga "Isso a OpenAI não detalhou" ou "Não sei, mas o que foi divulgado é…".</li><li><strong>Cronometre no celular.</strong> A curta tem que ficar abaixo de 1:45, e a longa, abaixo de 4:20. Se passar, o primeiro corte é o "Tente enganar o Lean"; o segundo é a frase da autoria (ela continua nas perguntas). Depois de usar a tecla <strong>E</strong>, confira se a tela 6 voltou a dizer "empurrão de fora: ligado".</li><li><strong>Prepare a troca de turno e a véspera.</strong> A Pessoa 2 ensaia a tela 5 e a ressalva desde o primeiro dia, e vocês fazem um ensaio só em dupla na véspera. Na véspera, olhem as notícias: se a conferência dos especialistas já tiver terminado, troquem a fala do VAR pelo resultado.</li></ol></section>
+</main>
+<a class="totop" href="#" aria-label="Voltar ao topo">↑</a>
+<script>
+  // Fecha o menu "Ir para…" depois de escolher uma seção.
+  document.querySelectorAll('.top details a').forEach(a => a.addEventListener('click', () => a.closest('details').open = false));
+</script>
+</body>
+</html>
