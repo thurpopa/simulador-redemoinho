@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gasto em Dia</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0E6B4E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -63,6 +67,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .top { background: var(--surface); border-bottom: 1px solid var(--line); }
 .top-in { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; padding-block: 20px 16px; }
 .marca-app { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 260px; }
+.eyebrow-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.selo { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 1px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); }
 .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
 .loja {
   font: 700 clamp(26px, 5vw, 36px)/1.15 var(--f-display); letter-spacing: -.01em;
@@ -189,7 +195,27 @@ li.atrasada .dia b, li.atrasada .dia span { color: var(--danger); }
 .rodape-lista .total b { font: 600 15px var(--f-num); color: var(--ink); }
 #copiaTexto { width: 100%; min-height: 120px; font: 13px/1.4 var(--f-num); border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); }
 
-footer { color: var(--muted); font-size: 13px; }
+/* Boas-vindas */
+.boas-vindas .passos { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.boas-vindas .passos li::marker { font-family: var(--f-num); font-weight: 600; color: var(--accent); }
+.boas-vindas .btn { align-self: flex-start; }
+
+/* Seus dados */
+.texto-dados { margin: 0; color: var(--muted); }
+.status-backup { margin: 0; font-weight: 600; font-size: 14px; }
+.status-backup.velho { color: var(--warn); }
+.acoes-dados { display: flex; flex-wrap: wrap; gap: 8px; }
+.restaurar { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 14px; }
+.restaurar label { font-size: 13px; font-weight: 600; }
+.restaurar input[type="file"] { font-size: 13px; max-width: 100%; }
+#backupTexto, #fRestaurar { width: 100%; min-height: 96px; font: 12px/1.4 var(--f-num); border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); resize: vertical; }
+.previa { display: flex; flex-direction: column; gap: 10px; background: var(--warn-bg); border-radius: 12px; padding: 12px 14px; }
+.previa p { margin: 0; }
+
+footer { color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+footer p { margin: 0; }
+footer details summary { cursor: pointer; font-weight: 600; color: var(--ink); width: fit-content; }
+footer details ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 2px; }
 
 /* Aviso rápido */
 #toast {
@@ -224,7 +250,7 @@ footer { color: var(--muted); font-size: 13px; }
 <header class="top">
   <div class="wrap top-in">
     <div class="marca-app">
-      <span class="eyebrow">Gasto em Dia · agenda de gastos</span>
+      <div class="eyebrow-linha"><span class="eyebrow">Gasto em Dia · agenda de gastos</span><span class="selo" title="Versão de teste">Alpha</span></div>
       <label for="loja" class="sr">Nome da loja</label>
       <input id="loja" class="loja" value="Minha Loja" autocomplete="off" title="Toque para mudar o nome da loja">
     </div>
@@ -237,6 +263,21 @@ footer { color: var(--muted); font-size: 13px; }
 </header>
 
 <main class="wrap">
+  <section id="boasVindas" class="card boas-vindas" aria-labelledby="hBoas" hidden>
+    <h2 id="hBoas">Boas-vindas ao Gasto em Dia</h2>
+    <ol class="passos">
+      <li>Apague os exemplos ou explore com eles.</li>
+      <li>Lance suas contas e vendas.</li>
+      <li>Faça backup toda semana.</li>
+    </ol>
+    <button id="entendi" type="button" class="btn prim">Entendi</button>
+  </section>
+
+  <div id="lembrete" class="aviso" hidden>
+    <span>Faça um backup: seus dados ficam só neste aparelho.</span>
+    <button id="irBackup" type="button" class="btn peq">Fazer backup</button>
+  </div>
+
   <div id="aviso" class="aviso" hidden>
     <span>Estes lançamentos são <b>exemplos</b> para você ver como funciona.</span>
     <button id="limpar" type="button" class="btn peq">Apagar exemplos</button>
@@ -358,10 +399,51 @@ footer { color: var(--muted); font-size: 13px; }
         </div>
         <textarea id="copiaTexto" readonly hidden aria-label="Lançamentos do mês em formato de planilha"></textarea>
       </section>
+
+      <section class="card" aria-labelledby="hDados" id="cardDados">
+        <h2 id="hDados">Seus dados</h2>
+        <p class="texto-dados">Tudo fica salvo só neste aparelho. Faça um backup toda semana e guarde no WhatsApp ou no e-mail.</p>
+        <p class="status-backup" id="statusBackup"></p>
+        <div class="acoes-dados">
+          <button id="copiarBackup" type="button" class="btn peq">Copiar backup</button>
+          <button id="baixarBackup" type="button" class="btn peq">Baixar arquivo</button>
+          <button id="abrirRestaurar" type="button" class="btn peq" aria-expanded="false" aria-controls="areaRestaurar">Restaurar backup</button>
+          <button id="instalar" type="button" class="btn peq prim" hidden>Instalar no celular</button>
+        </div>
+        <p class="mais">Se o arquivo não baixar, use Copiar backup.</p>
+        <textarea id="backupTexto" readonly hidden aria-label="Texto do backup"></textarea>
+        <div id="areaRestaurar" class="restaurar" hidden>
+          <label for="fRestaurar">Cole aqui o backup</label>
+          <textarea id="fRestaurar" spellcheck="false" autocomplete="off" placeholder='{"app":"gasto-em-dia", ...}'></textarea>
+          <label for="fArquivo">Ou escolha o arquivo do backup (.json)</label>
+          <input id="fArquivo" type="file" accept=".json,application/json">
+          <p class="erro" id="eRestaurar" hidden></p>
+          <div class="previa" id="previa" hidden>
+            <p id="previaTexto"></p>
+            <div class="acoes-dados">
+              <button id="substituir" type="button" class="btn peq perigo">Substituir meus dados</button>
+              <button id="cancelarRestaurar" type="button" class="btn peq">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 
-  <footer>Os lançamentos ficam salvos neste aparelho, no próprio navegador. Toque no nome de um lançamento para editar.</footer>
+  <footer>
+    <p>Os lançamentos ficam salvos neste aparelho, no próprio navegador. Toque no nome de um lançamento para editar.</p>
+    <p>Gasto em Dia v<span id="versao">0.1.0-alpha</span> · versão de teste</p>
+    <details>
+      <summary>Novidades da versão</summary>
+      <ul>
+        <li>Contas a pagar e entradas de dinheiro</li>
+        <li>Lucro do mês: entradas menos saídas</li>
+        <li>Contas que se repetem e parcelas</li>
+        <li>Leitor de boleto: cole a linha digitável e o valor e o vencimento são preenchidos</li>
+        <li>Backup e restauração dos dados</li>
+      </ul>
+    </details>
+  </footer>
 </main>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -369,6 +451,7 @@ footer { color: var(--muted); font-size: 13px; }
 <script src="boleto.js"></script>
 <script>
 (function () {
+  var VERSAO = '0.1.0-alpha';
   var CHAVE = 'gastoEmDia.v1';
   var OPCOES = {
     saida: {
@@ -464,13 +547,30 @@ footer { color: var(--muted); font-size: 13px; }
     }));
   }
 
+  // itens da versão anterior não tinham tipo: eram todos contas a pagar
+  function migrarItem(i) { if (!i.tipo) i.tipo = 'saida'; return i; }
+  function dataValida(s) { return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && iso(lerData(s)) === s; }
+  function itemValido(i) {
+    return !!i && typeof i.id === 'string' && i.id !== '' && typeof i.valor === 'number' && isFinite(i.valor) && i.valor > 0 &&
+      dataValida(i.venc);
+  }
+  // backup vindo de fora: deixa cada campo no formato que o app espera
+  function normalizarItem(i) {
+    var tipo = i.tipo === 'entrada' ? 'entrada' : 'saida';
+    var o = { id: i.id, tipo: tipo, desc: String(i.desc == null ? '' : i.desc), valor: Math.round(i.valor), venc: i.venc,
+      cat: typeof i.cat === 'string' && i.cat ? i.cat : OPCOES[tipo].cats[OPCOES[tipo].cats.length - 1],
+      forma: typeof i.forma === 'string' && i.forma ? i.forma : OPCOES[tipo].formas[0], pago: i.pago === true };
+    if (i.ex === true) o.ex = true;
+    return o;
+  }
+
   function carregar() {
     try {
       var bruto = localStorage.getItem(CHAVE);
       if (bruto) {
         var d = JSON.parse(bruto);
         if (d && Array.isArray(d.itens)) {
-          d.itens.forEach(function (i) { if (!i.tipo) i.tipo = 'saida'; });
+          d.itens.forEach(migrarItem);
           return d;
         }
       }
@@ -511,6 +611,8 @@ footer { color: var(--muted); font-size: 13px; }
     $('loja').value = dados.loja || '';
     $('mesNome').textContent = nomeMes(mes);
     $('aviso').hidden = !dados.itens.some(function (i) { return i.ex; });
+    $('boasVindas').hidden = !!dados.boasVindas;
+    desenharBackup();
 
     var doMes = dados.itens.filter(function (i) { return i.venc.slice(0, 7) === mes; });
     var entradas = doMes.filter(ehEntrada);
@@ -739,12 +841,21 @@ footer { color: var(--muted); font-size: 13px; }
     var desc = $('fDesc').value.trim();
     var valor = lerValor($('fValor').value);
     var venc = $('fVenc').value;
+    $('eValor').textContent = 'Digite o valor, por exemplo 150,00.';
     marcarErro('fDesc', 'eDesc', !desc);
     marcarErro('fValor', 'eValor', !valor);
     marcarErro('fVenc', 'eVenc', !venc);
     if (!desc) return $('fDesc').focus();
     if (!valor) return $('fValor').focus();
     if (!venc) return $('fVenc').focus();
+
+    var escolhaRep = $('fRepetir').value;
+    var nParcelas = escolhaRep.charAt(0) === 'p' ? Number(escolhaRep.slice(1)) : 0;
+    if (!editandoId && nParcelas && valor < nParcelas) {
+      $('eValor').textContent = 'Valor pequeno demais para parcelar em ' + nParcelas + 'x.';
+      marcarErro('fValor', 'eValor', true);
+      return $('fValor').focus();
+    }
 
     var tipo = tipoForm(), pago = $('fPago').checked, ent = tipo === 'entrada', eraEdicao = !!editandoId;
     var campos = { tipo: tipo, desc: desc, valor: valor, venc: venc, cat: $('fCat').value, forma: $('fForma').value, pago: pago };
@@ -839,7 +950,169 @@ footer { color: var(--muted); font-size: 13px; }
     } catch (e) { mostrar(); }
   });
 
+  // ---- boas-vindas ----
+  $('entendi').addEventListener('click', function () {
+    dados.boasVindas = true;
+    salvar(); desenhar();
+  });
+
+  // ---- backup e restauração ----
+  function dataBr(s) { return lerData(s).toLocaleDateString('pt-BR'); }
+
+  function desenharBackup() {
+    var proprios = dados.itens.some(function (i) { return !i.ex; });
+    var velho = !dados.ultimoBackup || diasAte(dados.ultimoBackup) < -7;
+    $('statusBackup').textContent = dados.ultimoBackup ? 'Último backup: ' + dataBr(dados.ultimoBackup) : 'Você ainda não fez backup';
+    $('statusBackup').classList.toggle('velho', proprios && velho);
+    $('lembrete').hidden = !(proprios && velho);
+  }
+
+  function textoBackup() {
+    dados.ultimoBackup = iso(hoje());
+    salvar();
+    return JSON.stringify({ app: 'gasto-em-dia', versao: VERSAO, criadoEm: new Date().toISOString(), dados: dados });
+  }
+
+  $('irBackup').addEventListener('click', function () {
+    $('cardDados').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    $('copiarBackup').focus({ preventScroll: true });
+  });
+
+  $('copiarBackup').addEventListener('click', function () {
+    var texto = textoBackup();
+    desenharBackup();
+    var mostrar = function () {
+      var t = $('backupTexto');
+      t.value = texto; t.hidden = false; t.focus(); t.select();
+      avisar('Selecione o texto abaixo, copie e guarde');
+    };
+    try {
+      navigator.clipboard.writeText(texto).then(function () {
+        $('backupTexto').hidden = true;
+        avisar('Backup copiado. Cole no WhatsApp ou no e-mail para guardar.');
+      }, mostrar);
+    } catch (e) { mostrar(); }
+  });
+
+  $('baixarBackup').addEventListener('click', function () {
+    var texto = textoBackup();
+    desenharBackup();
+    try {
+      var url = URL.createObjectURL(new Blob([texto], { type: 'application/json' }));
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'gasto-em-dia-backup-' + iso(hoje()) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      avisar('Arquivo de backup gerado');
+    } catch (e) {
+      avisar('O arquivo não baixou. Use Copiar backup.');
+    }
+  });
+
+  var backupPendente = null;
+
+  function fecharRestaurar() {
+    backupPendente = null;
+    $('areaRestaurar').hidden = true;
+    $('abrirRestaurar').setAttribute('aria-expanded', 'false');
+    $('fRestaurar').value = '';
+    $('fArquivo').value = '';
+    $('eRestaurar').hidden = true;
+    $('previa').hidden = true;
+  }
+
+  $('abrirRestaurar').addEventListener('click', function () {
+    if (!$('areaRestaurar').hidden) return fecharRestaurar();
+    $('areaRestaurar').hidden = false;
+    this.setAttribute('aria-expanded', 'true');
+    $('fRestaurar').focus();
+  });
+
+  // confere o texto do backup e mostra a prévia; nada é trocado até "Substituir meus dados"
+  function conferirBackup(texto) {
+    backupPendente = null;
+    $('previa').hidden = true;
+    $('eRestaurar').hidden = true;
+    texto = String(texto || '').trim();
+    if (!texto) return;
+    var erro = function (msg) { $('eRestaurar').textContent = msg; $('eRestaurar').hidden = false; };
+    var b;
+    try { b = JSON.parse(texto); } catch (e) { return erro('Esse texto não é um backup. Copie o backup inteiro, do primeiro { ao último }.'); }
+    if (!b || b.app !== 'gasto-em-dia' || !b.dados || !Array.isArray(b.dados.itens)) {
+      return erro('Esse arquivo não é um backup do Gasto em Dia.');
+    }
+    var itens = b.dados.itens.map(function (i) { return i && typeof i === 'object' ? migrarItem(i) : i; });
+    var ruins = itens.filter(function (i) { return !itemValido(i); }).length;
+    if (ruins) return erro('O backup está incompleto: ' + plural(ruins, 'lançamento sem', 'lançamentos sem') + ' valor ou data. Copie de novo o backup inteiro.');
+    var vistos = {};
+    backupPendente = {
+      loja: typeof b.dados.loja === 'string' && b.dados.loja.trim() ? b.dados.loja : 'Minha Loja',
+      itens: itens.map(normalizarItem).map(function (i) { if (vistos[i.id]) i.id = id(); vistos[i.id] = true; return i; })
+    };
+    if (dataValida(b.dados.ultimoBackup)) backupPendente.ultimoBackup = b.dados.ultimoBackup;
+    var quando = b.criadoEm && !isNaN(new Date(b.criadoEm)) ? new Date(b.criadoEm).toLocaleDateString('pt-BR') : 'data desconhecida';
+    $('previaTexto').textContent = 'Backup de ' + quando + ' com ' + plural(itens.length, 'lançamento', 'lançamentos') + '. Isso substitui os dados atuais.';
+    $('previa').hidden = false;
+  }
+
+  $('fRestaurar').addEventListener('input', function () { conferirBackup(this.value); });
+  $('fArquivo').addEventListener('change', function () {
+    var arq = this.files && this.files[0];
+    if (!arq) return;
+    var leitor = new FileReader();
+    leitor.onload = function () { $('fRestaurar').value = leitor.result; conferirBackup(leitor.result); };
+    leitor.onerror = function () { $('eRestaurar').textContent = 'Não deu para abrir o arquivo. Tente de novo.'; $('eRestaurar').hidden = false; };
+    leitor.readAsText(arq);
+  });
+
+  function erroRestaurar() {
+    $('eRestaurar').textContent = 'Não deu para salvar o backup neste aparelho: a memória do navegador está cheia. Seus dados atuais continuam como estavam.';
+    $('eRestaurar').hidden = false;
+  }
+
+  $('substituir').addEventListener('click', function () {
+    if (!backupPendente) return;
+    backupPendente.boasVindas = true;
+    try { localStorage.setItem(CHAVE, JSON.stringify(backupPendente)); } catch (e) {
+      // armazenamento bloqueado (aba anônima) segue só na memória; memória cheia não pode fingir que salvou
+      if (e && (e.name === 'QuotaExceededError' || e.code === 22)) return erroRestaurar(); }
+    dados = backupPendente;
+    fecharRestaurar();
+    limparForm();
+    $('fVenc').value = iso(hoje());
+    desenhar();
+    avisar('Backup restaurado: ' + plural(dados.itens.length, 'lançamento', 'lançamentos'));
+  });
+  $('cancelarRestaurar').addEventListener('click', fecharRestaurar);
+
+  // ---- instalar como app (quando hospedado em https) ----
+  var eventoInstalar = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    eventoInstalar = e;
+    $('instalar').hidden = false;
+  });
+  window.addEventListener('appinstalled', function () { eventoInstalar = null; $('instalar').hidden = true; });
+  $('instalar').addEventListener('click', function () {
+    if (!eventoInstalar) return;
+    var ev = eventoInstalar;
+    eventoInstalar = null;
+    ev.prompt();
+    if (ev.userChoice) ev.userChoice.then(function () { $('instalar').hidden = true; }, function () {});
+  });
+
+  $('versao').textContent = VERSAO;
   desenhar();
+
+  try {
+    // https de verdade, ou localhost para testar no computador
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    }
+  } catch (e) {}
 })();
 </script>
 </body>
