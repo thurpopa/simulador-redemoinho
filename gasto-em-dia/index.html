@@ -86,12 +86,14 @@ main.wrap { display: flex; flex-direction: column; gap: 20px; padding-block: 20p
 }
 
 /* Resumo */
-.resumo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.resumo { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .tile .rot { font-size: 13px; color: var(--muted); }
-.tile .val { font: 600 clamp(18px, 2.4vw, 24px)/1.25 var(--f-num); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tile .val { font: 600 clamp(17px, 2vw, 23px)/1.25 var(--f-num); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .tile .sub { font-size: 13px; color: var(--muted); }
-.tile.destaque .val span { background: linear-gradient(transparent 58%, var(--mark) 58%, var(--mark) 94%, transparent 94%); padding-inline: 2px; }
+.tile.destaque .val span { background: linear-gradient(transparent 70%, var(--mark) 70%, var(--mark) 96%, transparent 96%); padding-inline: 2px; }
+.tile.destaque .val.pos { color: var(--ok); }
+.tile.destaque .val.neg { color: var(--danger); }
 .tile.alerta .val { color: var(--danger); }
 
 /* Colunas */
@@ -130,9 +132,15 @@ li.atrasada .dia { background: var(--danger-bg); }
 li.atrasada .dia b, li.atrasada .dia span { color: var(--danger); }
 .info { min-width: 0; }
 .info strong { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.info .desc {
+  display: block; border: 0; background: none; padding: 0; text-align: left; cursor: pointer;
+  font-weight: 600; overflow-wrap: anywhere; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px;
+}
+.info .desc:hover { text-decoration-color: var(--muted); }
 .meta { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: 13px; color: var(--muted); }
 .lado { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .valor { font: 600 15px/1.2 var(--f-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.valor.entrada { color: var(--ok); }
 .mais { font-size: 13px; color: var(--muted); margin: 0; }
 
 /* Formulário */
@@ -146,13 +154,18 @@ li.atrasada .dia b, li.atrasada .dia span { color: var(--danger); }
 .campo input:focus, .campo select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .campo input[aria-invalid="true"] { border-color: var(--danger); }
 .erro { color: var(--danger); font-size: 13px; margin: 0; }
+.dica { color: var(--ok); font-size: 13px; font-weight: 600; margin: 0; }
 .seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg); }
 .seg label { flex: 1; position: relative; cursor: pointer; }
 .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .seg span { display: block; text-align: center; padding: 9px 6px; font-weight: 600; font-size: 14px; color: var(--muted); }
 .seg input:checked + span { background: var(--accent); color: var(--accent-ink); }
 .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -4px; }
-.form .btn.prim { grid-column: 1 / -1; padding-block: 11px; font-size: 15px; }
+.linha-boleto { display: flex; gap: 8px; }
+.linha-boleto input { flex: 1 1 auto; min-width: 0; font-family: var(--f-num); font-size: 14px; }
+.acoes-form { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; }
+.acoes-form .btn { padding-block: 11px; font-size: 15px; }
+.acoes-form .btn.prim { flex: 1 1 200px; }
 
 /* Categorias */
 .cats { display: flex; flex-direction: column; gap: 12px; }
@@ -186,8 +199,17 @@ footer { color: var(--muted); font-size: 13px; }
 }
 #toast.on { opacity: 1; transform: translate(-50%, 0); }
 
+@media (max-width: 980px) {
+  .resumo { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .tile { grid-column: span 2; }
+  .tile:nth-child(n+4) { grid-column: span 3; }
+}
 @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 760px) { .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile, .tile:nth-child(n+4) { grid-column: auto; }
+  .tile.destaque { grid-column: 1 / -1; }
+}
 @media (max-width: 440px) {
   .form { grid-template-columns: minmax(0, 1fr); }
   .card { padding: 16px; }
@@ -216,14 +238,15 @@ footer { color: var(--muted); font-size: 13px; }
 
 <main class="wrap">
   <div id="aviso" class="aviso" hidden>
-    <span>Estas contas são <b>exemplos</b> para você ver como funciona.</span>
+    <span>Estes lançamentos são <b>exemplos</b> para você ver como funciona.</span>
     <button id="limpar" type="button" class="btn peq">Apagar exemplos</button>
   </div>
 
   <section class="resumo" aria-label="Resumo do mês">
-    <div class="tile"><span class="rot">Total do mês</span><span class="val" id="tTotal"></span><span class="sub" id="sTotal"></span></div>
-    <div class="tile"><span class="rot">Já pago</span><span class="val" id="tPago"></span><span class="sub" id="sPago"></span></div>
-    <div class="tile destaque"><span class="rot">Falta pagar</span><span class="val"><span id="tFalta"></span></span><span class="sub" id="sFalta"></span></div>
+    <div class="tile"><span class="rot">Entradas</span><span class="val" id="tEntradas"></span><span class="sub" id="sEntradas"></span></div>
+    <div class="tile"><span class="rot">Saídas</span><span class="val" id="tSaidas"></span><span class="sub" id="sSaidas"></span></div>
+    <div class="tile destaque"><span class="rot">Lucro do mês</span><span class="val" id="vLucro"><span id="tLucro"></span></span><span class="sub">Entradas menos saídas</span></div>
+    <div class="tile"><span class="rot">Falta pagar</span><span class="val" id="tFalta"></span><span class="sub" id="sFalta"></span></div>
     <div class="tile" id="tileAtraso"><span class="rot">Em atraso</span><span class="val" id="tAtraso"></span><span class="sub" id="sAtraso"></span></div>
   </section>
 
@@ -235,9 +258,25 @@ footer { color: var(--muted); font-size: 13px; }
         <p class="mais" id="agendaMais" hidden></p>
       </section>
 
-      <section class="card" aria-labelledby="hNova">
+      <section class="card" aria-labelledby="hNova" id="cardForm">
         <h2 id="hNova">Nova conta</h2>
         <form id="form" class="form" novalidate>
+          <div class="campo full">
+            <span class="rotulo sr" id="rTipo">Tipo de lançamento</span>
+            <div class="seg" role="radiogroup" aria-labelledby="rTipo">
+              <label><input type="radio" name="tipo" id="fSaida" value="saida" checked><span>Conta a pagar</span></label>
+              <label><input type="radio" name="tipo" id="fEntrada" value="entrada"><span>Entrada de dinheiro</span></label>
+            </div>
+          </div>
+          <div class="campo full" id="cBoleto" hidden>
+            <label for="fBoleto">Código do boleto (opcional)</label>
+            <div class="linha-boleto">
+              <input id="fBoleto" placeholder="Cole a linha digitável" inputmode="numeric" autocomplete="off">
+              <button type="button" id="lerBoleto" class="btn">Ler</button>
+            </div>
+            <p class="erro" id="eBoleto" hidden></p>
+            <p class="dica" id="okBoleto" hidden></p>
+          </div>
           <div class="campo full">
             <label for="fDesc">O que é</label>
             <input id="fDesc" placeholder="Ex.: Boleto da distribuidora" autocomplete="off">
@@ -249,35 +288,49 @@ footer { color: var(--muted); font-size: 13px; }
             <p class="erro" id="eValor" hidden>Digite o valor, por exemplo 150,00.</p>
           </div>
           <div class="campo">
-            <label for="fVenc">Vencimento</label>
+            <label for="fVenc" id="lVenc">Vencimento</label>
             <input id="fVenc" type="date">
-            <p class="erro" id="eVenc" hidden>Escolha a data de vencimento.</p>
+            <p class="erro" id="eVenc" hidden>Escolha a data.</p>
           </div>
           <div class="campo">
             <label for="fCat">Categoria</label>
             <select id="fCat"></select>
           </div>
           <div class="campo">
-            <label for="fForma">Forma de pagamento</label>
+            <label for="fForma" id="lForma">Forma de pagamento</label>
             <select id="fForma"></select>
           </div>
           <div class="campo">
             <span class="rotulo" id="rStatus">Situação</span>
             <div class="seg" role="radiogroup" aria-labelledby="rStatus">
-              <label><input type="radio" name="status" id="fPendente" value="pendente" checked><span>A pagar</span></label>
-              <label><input type="radio" name="status" id="fPago" value="pago"><span>Já paguei</span></label>
+              <label><input type="radio" name="status" id="fPendente" value="pendente" checked><span id="sPendente">A pagar</span></label>
+              <label><input type="radio" name="status" id="fPago" value="pago"><span id="sPago">Já paguei</span></label>
             </div>
           </div>
-          <div class="campo">
-            <label for="fRepetir">Repetir</label>
+          <div class="campo" id="cRepetir">
+            <label for="fRepetir">Repetir / parcelar</label>
             <select id="fRepetir">
               <option value="1">Só esta vez</option>
-              <option value="3">Por 3 meses</option>
-              <option value="6">Por 6 meses</option>
-              <option value="12">Por 12 meses</option>
+              <optgroup label="Repetir todo mês (valor cheio)">
+                <option value="r3">Por 3 meses</option>
+                <option value="r6">Por 6 meses</option>
+                <option value="r12">Por 12 meses</option>
+              </optgroup>
+              <optgroup label="Parcelar (divide o valor)">
+                <option value="p2">Em 2x</option>
+                <option value="p3">Em 3x</option>
+                <option value="p4">Em 4x</option>
+                <option value="p5">Em 5x</option>
+                <option value="p6">Em 6x</option>
+                <option value="p10">Em 10x</option>
+                <option value="p12">Em 12x</option>
+              </optgroup>
             </select>
           </div>
-          <button type="submit" class="btn prim">Adicionar conta</button>
+          <div class="acoes-form">
+            <button type="submit" class="btn prim" id="enviar">Adicionar conta</button>
+            <button type="button" class="btn" id="cancelar" hidden>Cancelar</button>
+          </div>
         </form>
       </section>
     </div>
@@ -290,11 +343,12 @@ footer { color: var(--muted); font-size: 13px; }
 
       <section class="card" aria-labelledby="hLista">
         <div class="card-head">
-          <h2 id="hLista">Contas do mês</h2>
+          <h2 id="hLista">Lançamentos do mês</h2>
           <div class="filtros" id="filtros">
-            <button type="button" data-filtro="todos" aria-pressed="true">Todas</button>
+            <button type="button" data-filtro="todos" aria-pressed="true">Todos</button>
             <button type="button" data-filtro="pendente" aria-pressed="false">A pagar</button>
             <button type="button" data-filtro="pago" aria-pressed="false">Pagas</button>
+            <button type="button" data-filtro="entrada" aria-pressed="false">Entradas</button>
           </div>
         </div>
         <div class="lista" id="lista"></div>
@@ -302,21 +356,30 @@ footer { color: var(--muted); font-size: 13px; }
           <span class="total" id="totalFiltro"></span>
           <button id="copiar" type="button" class="btn peq">Copiar para planilha</button>
         </div>
-        <textarea id="copiaTexto" readonly hidden aria-label="Contas do mês em formato de planilha"></textarea>
+        <textarea id="copiaTexto" readonly hidden aria-label="Lançamentos do mês em formato de planilha"></textarea>
       </section>
     </div>
   </div>
 
-  <footer>As contas ficam salvas neste aparelho, no próprio navegador.</footer>
+  <footer>Os lançamentos ficam salvos neste aparelho, no próprio navegador. Toque no nome de um lançamento para editar.</footer>
 </main>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
+<script src="boleto.js"></script>
 <script>
 (function () {
   var CHAVE = 'gastoEmDia.v1';
-  var CATS = ['Fornecedores', 'Aluguel', 'Funcionários', 'Energia e água', 'Internet e telefone', 'Impostos', 'Marketing', 'Manutenção', 'Outros'];
-  var FORMAS = ['Boleto', 'Pix', 'Dinheiro', 'Cartão', 'Transferência'];
+  var OPCOES = {
+    saida: {
+      cats: ['Fornecedores', 'Aluguel', 'Funcionários', 'Energia e água', 'Internet e telefone', 'Impostos', 'Marketing', 'Manutenção', 'Outros'],
+      formas: ['Boleto', 'Pix', 'Dinheiro', 'Cartão', 'Transferência']
+    },
+    entrada: {
+      cats: ['Vendas', 'Serviços', 'Outras entradas'],
+      formas: ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédito', 'Transferência']
+    }
+  };
   var MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   var brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -345,8 +408,18 @@ footer { color: var(--muted); font-size: 13px; }
   function lerValor(txt) {
     var s = String(txt).replace(/R\$|\s/g, '');
     if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); // "1.500" = mil e quinhentos
     var n = parseFloat(s);
     return isFinite(n) && n > 0 ? Math.round(n * 100) : 0;
+  }
+  function valorCampo(c) { return (c / 100).toFixed(2).replace('.', ','); }
+
+  // divide o total em n parcelas; a sobra de centavos vai na primeira
+  function parcelas(total, n) {
+    var base = Math.floor(total / n), lista = [];
+    for (var i = 0; i < n; i++) lista.push(base);
+    lista[0] += total - base * n;
+    return lista;
   }
 
   function id() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -356,11 +429,14 @@ footer { color: var(--muted); font-size: 13px; }
     });
   }
   function plural(n, um, varios) { return n + ' ' + (n === 1 ? um : varios); }
+  function ehEntrada(i) { return i.tipo === 'entrada'; }
+  function soma(arr) { return arr.reduce(function (s, i) { return s + i.valor; }, 0); }
+  function porData(a, b) { return a.venc < b.venc ? -1 : a.venc > b.venc ? 1 : 0; }
 
   // ---- dados de exemplo, montados em volta da data de hoje ----
   function exemplos() {
     var m = iso(hoje()).slice(0, 7), prox = somaMes(m, 1);
-    var lista = [
+    var saidas = [
       ['Aluguel do ponto', 280000, diaNoMes(m, 5), 'Aluguel', 'Boleto', true],
       ['Salário do funcionário', 210000, diaNoMes(m, 5), 'Funcionários', 'Pix', true],
       ['Distribuidora de bebidas', 145090, diaNoMes(m, 10), 'Fornecedores', 'Boleto', true],
@@ -373,15 +449,31 @@ footer { color: var(--muted); font-size: 13px; }
       ['Distribuidora de bebidas', 132050, maisDias(4), 'Fornecedores', 'Boleto', false],
       ['Aluguel do ponto', 280000, diaNoMes(prox, 5), 'Aluguel', 'Boleto', false]
     ];
-    return lista.map(function (x) {
-      return { id: id(), desc: x[0], valor: x[1], venc: x[2], cat: x[3], forma: x[4], pago: x[5], ex: true };
-    });
+    var entradas = [
+      ['Vendas da 1ª semana', 312050, diaNoMes(m, 7), 'Vendas', 'Pix'],
+      ['Vendas da 2ª semana', 298740, diaNoMes(m, 14), 'Vendas', 'Cartão de débito'],
+      ['Encomenda para festa', 45000, diaNoMes(m, 18), 'Serviços', 'Pix'],
+      ['Vendas da 3ª semana', 335610, diaNoMes(m, 21), 'Vendas', 'Cartão de crédito'],
+      ['Vendas da 4ª semana', 287530, diaNoMes(m, 28), 'Vendas', 'Dinheiro']
+    ];
+    var hojeTxt = iso(hoje());
+    return saidas.map(function (x) {
+      return { id: id(), tipo: 'saida', desc: x[0], valor: x[1], venc: x[2], cat: x[3], forma: x[4], pago: x[5], ex: true };
+    }).concat(entradas.map(function (x) {
+      return { id: id(), tipo: 'entrada', desc: x[0], valor: x[1], venc: x[2], cat: x[3], forma: x[4], pago: x[2] <= hojeTxt, ex: true };
+    }));
   }
 
   function carregar() {
     try {
       var bruto = localStorage.getItem(CHAVE);
-      if (bruto) { var d = JSON.parse(bruto); if (d && Array.isArray(d.itens)) return d; }
+      if (bruto) {
+        var d = JSON.parse(bruto);
+        if (d && Array.isArray(d.itens)) {
+          d.itens.forEach(function (i) { if (!i.tipo) i.tipo = 'saida'; });
+          return d;
+        }
+      }
     } catch (e) {}
     return { loja: 'Minha Loja', itens: exemplos() };
   }
@@ -390,6 +482,7 @@ footer { color: var(--muted); font-size: 13px; }
   var dados = carregar();
   var mes = iso(hoje()).slice(0, 7);
   var filtro = 'todos';
+  var editandoId = null;
 
   var $ = function (s) { return document.getElementById(s); };
 
@@ -404,6 +497,7 @@ footer { color: var(--muted); font-size: 13px; }
   }
 
   function situacao(item) {
+    if (ehEntrada(item)) return item.pago ? { cls: 'pago', txt: 'Recebida' } : { cls: '', txt: 'A receber' };
     if (item.pago) return { cls: 'pago', txt: 'Paga' };
     var d = diasAte(item.venc);
     if (d < 0) return { cls: 'atrasada', txt: d === -1 ? 'Atrasada há 1 dia' : 'Atrasada há ' + -d + ' dias' };
@@ -419,15 +513,19 @@ footer { color: var(--muted); font-size: 13px; }
     $('aviso').hidden = !dados.itens.some(function (i) { return i.ex; });
 
     var doMes = dados.itens.filter(function (i) { return i.venc.slice(0, 7) === mes; });
-    var soma = function (arr) { return arr.reduce(function (s, i) { return s + i.valor; }, 0); };
-    var pagas = doMes.filter(function (i) { return i.pago; });
-    var abertas = doMes.filter(function (i) { return !i.pago; });
-    var atrasadas = dados.itens.filter(function (i) { return !i.pago && diasAte(i.venc) < 0; });
+    var entradas = doMes.filter(ehEntrada);
+    var saidas = doMes.filter(function (i) { return !ehEntrada(i); });
+    var aReceber = entradas.filter(function (i) { return !i.pago; });
+    var abertas = saidas.filter(function (i) { return !i.pago; });
+    var atrasadas = dados.itens.filter(function (i) { return !ehEntrada(i) && !i.pago && diasAte(i.venc) < 0; });
+    var lucro = soma(entradas) - soma(saidas);
 
-    $('tTotal').textContent = dinheiro(soma(doMes));
-    $('sTotal').textContent = plural(doMes.length, 'conta', 'contas');
-    $('tPago').textContent = dinheiro(soma(pagas));
-    $('sPago').textContent = plural(pagas.length, 'conta', 'contas');
+    $('tEntradas').textContent = dinheiro(soma(entradas));
+    $('sEntradas').textContent = aReceber.length ? dinheiro(soma(aReceber)) + ' a receber' : plural(entradas.length, 'entrada', 'entradas');
+    $('tSaidas').textContent = dinheiro(soma(saidas));
+    $('sSaidas').textContent = plural(saidas.length, 'conta', 'contas');
+    $('tLucro').textContent = (lucro < 0 ? '− ' : '') + dinheiro(Math.abs(lucro));
+    $('vLucro').className = 'val ' + (lucro < 0 ? 'neg' : 'pos');
     $('tFalta').textContent = dinheiro(soma(abertas));
     $('sFalta').textContent = plural(abertas.length, 'conta', 'contas');
     $('tAtraso').textContent = dinheiro(soma(atrasadas));
@@ -435,13 +533,12 @@ footer { color: var(--muted); font-size: 13px; }
     $('tileAtraso').classList.toggle('alerta', atrasadas.length > 0);
 
     desenharAgenda();
-    desenharCategorias(doMes);
+    desenharCategorias(saidas);
     desenharLista(doMes);
   }
 
   function desenharAgenda() {
-    var pend = dados.itens.filter(function (i) { return !i.pago; })
-      .sort(function (a, b) { return a.venc < b.venc ? -1 : a.venc > b.venc ? 1 : 0; });
+    var pend = dados.itens.filter(function (i) { return !ehEntrada(i) && !i.pago; }).sort(porData);
     var max = 6, html = '';
     pend.slice(0, max).forEach(function (i) {
       var s = situacao(i), d = lerData(i.venc);
@@ -459,10 +556,10 @@ footer { color: var(--muted); font-size: 13px; }
     if (resto > 0) $('agendaMais').textContent = 'E mais ' + plural(resto, 'conta', 'contas') + ' depois dessas.';
   }
 
-  function desenharCategorias(doMes) {
+  function desenharCategorias(saidas) {
     var porCat = {};
-    doMes.forEach(function (i) { porCat[i.cat] = (porCat[i.cat] || 0) + i.valor; });
-    var total = doMes.reduce(function (s, i) { return s + i.valor; }, 0);
+    saidas.forEach(function (i) { porCat[i.cat] = (porCat[i.cat] || 0) + i.valor; });
+    var total = soma(saidas);
     var linhas = Object.keys(porCat).map(function (c) { return [c, porCat[c]]; })
       .sort(function (a, b) { return b[1] - a[1]; });
     var maior = linhas.length ? linhas[0][1] : 1;
@@ -476,25 +573,32 @@ footer { color: var(--muted); font-size: 13px; }
 
   function filtrados(doMes) {
     return doMes.filter(function (i) {
-      return filtro === 'todos' || (filtro === 'pago' ? i.pago : !i.pago);
-    }).sort(function (a, b) { return a.venc < b.venc ? -1 : a.venc > b.venc ? 1 : 0; });
+      if (filtro === 'todos') return true;
+      if (filtro === 'entrada') return ehEntrada(i);
+      return !ehEntrada(i) && (filtro === 'pago' ? i.pago : !i.pago);
+    }).sort(porData);
   }
 
   function desenharLista(doMes) {
     var itens = filtrados(doMes);
     $('lista').innerHTML = itens.map(function (i) {
-      var s = situacao(i), d = lerData(i.venc);
+      var s = situacao(i), d = lerData(i.venc), ent = ehEntrada(i);
+      var marcar = ent ? (i.pago ? 'a receber' : 'recebida') : (i.pago ? 'não paga' : 'paga');
       return '<div class="linha">' +
         '<span class="data">' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '</span>' +
-        '<div class="info"><strong>' + esc(i.desc) + '</strong>' +
+        '<div class="info"><button type="button" class="desc" data-acao="editar" data-id="' + i.id + '" title="Toque para editar">' + esc(i.desc) + '</button>' +
         '<div class="meta"><span>' + esc(i.cat) + ' · ' + esc(i.forma) + '</span>' +
         '<button type="button" class="link" data-acao="apagar" data-id="' + i.id + '">Apagar</button></div></div>' +
-        '<div class="lado"><span class="valor">' + dinheiro(i.valor) + '</span>' +
-        '<button type="button" class="chip ' + s.cls + '" data-acao="alternar" data-id="' + i.id + '" title="Toque para marcar como ' + (i.pago ? 'não paga' : 'paga') + '">' + s.txt + '</button></div>' +
+        '<div class="lado"><span class="valor' + (ent ? ' entrada' : '') + '">' + (ent ? '+ ' : '') + dinheiro(i.valor) + '</span>' +
+        '<button type="button" class="chip ' + s.cls + '" data-acao="alternar" data-id="' + i.id + '" title="Toque para marcar como ' + marcar + '">' + s.txt + '</button></div>' +
         '</div>';
-    }).join('') || '<p class="vazio">' + (filtro === 'todos' ? 'Nenhuma conta neste mês. Adicione a primeira no formulário.' : 'Nada por aqui com esse filtro.') + '</p>';
-    var tot = itens.reduce(function (s, i) { return s + i.valor; }, 0);
-    $('totalFiltro').innerHTML = plural(itens.length, 'conta', 'contas') + ' · <b>' + dinheiro(tot) + '</b>';
+    }).join('') || '<p class="vazio">' + (filtro === 'todos' ? 'Nada lançado neste mês. Adicione o primeiro no formulário.' : 'Nada por aqui com esse filtro.') + '</p>';
+    if (filtro === 'todos') {
+      var saldo = soma(itens.filter(ehEntrada)) - soma(itens.filter(function (i) { return !ehEntrada(i); }));
+      $('totalFiltro').innerHTML = plural(itens.length, 'lançamento', 'lançamentos') + ' · saldo <b>' + (saldo < 0 ? '− ' : '') + dinheiro(Math.abs(saldo)) + '</b>';
+    } else {
+      $('totalFiltro').innerHTML = plural(itens.length, 'lançamento', 'lançamentos') + ' · <b>' + dinheiro(soma(itens)) + '</b>';
+    }
     $('copiaTexto').hidden = true;
   }
 
@@ -510,13 +614,18 @@ footer { color: var(--muted); font-size: 13px; }
     var acao = b.dataset.acao;
     if (acao === 'pagar' || acao === 'alternar') {
       item.pago = !item.pago;
+      if (editandoId === item.id) (item.pago ? $('fPago') : $('fPendente')).checked = true;
       salvar(); desenhar();
-      avisar(item.pago ? 'Marcada como paga: ' + item.desc : 'Voltou para a pagar: ' + item.desc);
+      if (ehEntrada(item)) avisar(item.pago ? 'Marcada como recebida: ' + item.desc : 'Voltou para a receber: ' + item.desc);
+      else avisar(item.pago ? 'Marcada como paga: ' + item.desc : 'Voltou para a pagar: ' + item.desc);
+    } else if (acao === 'editar') {
+      editar(item);
     } else if (acao === 'apagar') {
       if (b.dataset.confirmar) {
         dados.itens = dados.itens.filter(function (i) { return i !== item; });
+        if (editandoId === item.id) limparForm();
         salvar(); desenhar();
-        avisar('Conta apagada');
+        avisar('Lançamento apagado');
       } else {
         document.querySelectorAll('[data-confirmar]').forEach(function (x) {
           delete x.dataset.confirmar; x.classList.remove('confirmar'); x.textContent = 'Apagar';
@@ -550,14 +659,74 @@ footer { color: var(--muted); font-size: 13px; }
 
   $('limpar').addEventListener('click', function () {
     dados.itens = dados.itens.filter(function (i) { return !i.ex; });
+    if (editandoId && !achar(editandoId)) limparForm();
     salvar(); desenhar();
-    avisar('Exemplos apagados. Agora é só lançar suas contas.');
+    avisar('Exemplos apagados. Agora é só lançar os seus.');
     $('fDesc').focus();
   });
 
   // ---- formulário ----
-  $('fCat').innerHTML = CATS.map(function (c) { return '<option>' + c + '</option>'; }).join('');
-  $('fForma').innerHTML = FORMAS.map(function (c) { return '<option>' + c + '</option>'; }).join('');
+  function tipoForm() { return $('fEntrada').checked ? 'entrada' : 'saida'; }
+  function opcoes(sel, lista, atual) {
+    if (atual && lista.indexOf(atual) < 0) lista = lista.concat([atual]);
+    sel.innerHTML = lista.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('');
+    if (atual) sel.value = atual;
+  }
+
+  // ajusta textos e opções do formulário ao tipo escolhido (conta ou entrada)
+  function prepararForm(cat, forma) {
+    var ent = tipoForm() === 'entrada';
+    opcoes($('fCat'), OPCOES[tipoForm()].cats, cat);
+    opcoes($('fForma'), OPCOES[tipoForm()].formas, forma);
+    $('hNova').textContent = editandoId ? (ent ? 'Editar entrada' : 'Editar conta') : (ent ? 'Nova entrada' : 'Nova conta');
+    $('enviar').textContent = editandoId ? 'Salvar alterações' : (ent ? 'Adicionar entrada' : 'Adicionar conta');
+    $('cancelar').hidden = !editandoId;
+    $('cRepetir').hidden = !!editandoId;
+    $('lVenc').textContent = ent ? 'Data' : 'Vencimento';
+    $('lForma').textContent = ent ? 'Forma de recebimento' : 'Forma de pagamento';
+    $('sPendente').textContent = ent ? 'A receber' : 'A pagar';
+    $('sPago').textContent = ent ? 'Recebido' : 'Já paguei';
+    $('fDesc').placeholder = ent ? 'Ex.: Vendas do dia' : 'Ex.: Boleto da distribuidora';
+    $('eDesc').textContent = ent ? 'Escreva de onde veio o dinheiro.' : 'Escreva o nome da conta.';
+    $('cBoleto').hidden = ent || !window.GastoBoleto;
+  }
+
+  function limparErros() {
+    [['fDesc', 'eDesc'], ['fValor', 'eValor'], ['fVenc', 'eVenc']].forEach(function (p) { marcarErro(p[0], p[1], false); });
+    $('eBoleto').hidden = true;
+    $('okBoleto').hidden = true;
+  }
+
+  function limparForm() {
+    editandoId = null;
+    $('fDesc').value = '';
+    $('fValor').value = '';
+    $('fBoleto').value = '';
+    $('fRepetir').value = '1';
+    $('fPendente').checked = true;
+    limparErros();
+    prepararForm();
+  }
+
+  function editar(item) {
+    editandoId = item.id;
+    (ehEntrada(item) ? $('fEntrada') : $('fSaida')).checked = true;
+    $('fDesc').value = item.desc;
+    $('fValor').value = valorCampo(item.valor);
+    $('fVenc').value = item.venc;
+    (item.pago ? $('fPago') : $('fPendente')).checked = true;
+    $('fBoleto').value = '';
+    limparErros();
+    prepararForm(item.cat, item.forma);
+    $('cardForm').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    $('fDesc').focus({ preventScroll: true });
+  }
+
+  $('fSaida').addEventListener('change', function () { prepararForm(); });
+  $('fEntrada').addEventListener('change', function () { prepararForm(); });
+  $('cancelar').addEventListener('click', function () { limparForm(); $('fVenc').value = iso(hoje()); });
+
+  prepararForm();
   $('fVenc').value = iso(hoje());
 
   function marcarErro(campo, erro, ruim) {
@@ -577,38 +746,84 @@ footer { color: var(--muted); font-size: 13px; }
     if (!valor) return $('fValor').focus();
     if (!venc) return $('fVenc').focus();
 
-    var vezes = Number($('fRepetir').value) || 1;
-    var pago = $('fPago').checked;
-    var dia = Number(venc.slice(8, 10));
-    for (var n = 0; n < vezes; n++) {
-      dados.itens.push({
-        id: id(), desc: desc, valor: valor,
-        venc: n === 0 ? venc : diaNoMes(somaMes(venc.slice(0, 7), n), dia),
-        cat: $('fCat').value, forma: $('fForma').value,
-        pago: n === 0 ? pago : false
-      });
+    var tipo = tipoForm(), pago = $('fPago').checked, ent = tipo === 'entrada', eraEdicao = !!editandoId;
+    var campos = { tipo: tipo, desc: desc, valor: valor, venc: venc, cat: $('fCat').value, forma: $('fForma').value, pago: pago };
+
+    if (editandoId) {
+      var item = achar(editandoId);
+      if (item) {
+        Object.keys(campos).forEach(function (k) { item[k] = campos[k]; });
+        avisar('Alterações salvas');
+      }
+    } else {
+      var escolha = $('fRepetir').value;
+      var modo = escolha.charAt(0), vezes = Number(escolha.slice(1)) || 1;
+      var valores = modo === 'p' ? parcelas(valor, vezes) : null;
+      var dia = Number(venc.slice(8, 10));
+      for (var n = 0; n < vezes; n++) {
+        dados.itens.push({
+          id: id(), tipo: tipo,
+          desc: valores ? desc + ' (' + (n + 1) + '/' + vezes + ')' : desc,
+          valor: valores ? valores[n] : valor,
+          venc: n === 0 ? venc : diaNoMes(somaMes(venc.slice(0, 7), n), dia),
+          cat: campos.cat, forma: campos.forma,
+          pago: n === 0 ? pago : false
+        });
+      }
+      var nome = ent ? 'entrada' : 'conta';
+      if (modo === 'p') avisar(valores[0] === valores[vezes - 1]
+        ? 'Parcelado em ' + vezes + 'x de ' + dinheiro(valores[0])
+        : 'Parcelado em ' + vezes + 'x: 1ª de ' + dinheiro(valores[0]) + ' e as outras de ' + dinheiro(valores[vezes - 1]));
+      else avisar(vezes > 1 ? vezes + ' ' + nome + 's adicionadas, uma por mês' : (ent ? 'Entrada adicionada' : 'Conta adicionada'));
     }
     salvar();
     mes = venc.slice(0, 7);
+    var tipoAtual = tipo;
+    limparForm();
+    (tipoAtual === 'entrada' ? $('fEntrada') : $('fSaida')).checked = true;
+    prepararForm();
+    if (eraEdicao) $('fVenc').value = iso(hoje());
     desenhar();
-    avisar(vezes > 1 ? vezes + ' contas adicionadas, uma por mês' : 'Conta adicionada');
-
-    $('fDesc').value = '';
-    $('fValor').value = '';
-    $('fRepetir').value = '1';
-    $('fPendente').checked = true;
     $('fDesc').focus();
+  });
+
+  // ---- leitura do código do boleto (boleto.js expõe window.GastoBoleto) ----
+  function lerBoleto() {
+    var texto = $('fBoleto').value.trim();
+    $('eBoleto').hidden = true;
+    $('okBoleto').hidden = true;
+    if (!texto) { $('eBoleto').textContent = 'Cole o código do boleto.'; $('eBoleto').hidden = false; return; }
+    var r;
+    try { r = window.GastoBoleto.ler(texto); } catch (e) { r = { ok: false, erro: 'Não deu para ler esse código. Confira e tente de novo.' }; }
+    if (!r || !r.ok) {
+      $('eBoleto').textContent = (r && r.erro) || 'Não deu para ler esse código.';
+      $('eBoleto').hidden = false;
+      return;
+    }
+    if (r.valor) { $('fValor').value = valorCampo(r.valor); marcarErro('fValor', 'eValor', false); }
+    if (r.venc) { $('fVenc').value = r.venc; marcarErro('fVenc', 'eVenc', false); }
+    opcoes($('fForma'), OPCOES.saida.formas, 'Boleto');
+    var partes = ['Boleto lido: ' + (r.valor ? dinheiro(r.valor) : 'sem valor no código')];
+    if (r.venc) partes.push('vence ' + lerData(r.venc).toLocaleDateString('pt-BR'));
+    $('okBoleto').textContent = partes.join(', ') + (r.banco ? ' · ' + r.banco : '');
+    $('okBoleto').hidden = false;
+    if (!$('fDesc').value.trim()) $('fDesc').focus();
+  }
+  $('lerBoleto').addEventListener('click', lerBoleto);
+  $('fBoleto').addEventListener('paste', function () { setTimeout(lerBoleto, 0); });
+  $('fBoleto').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); lerBoleto(); }
   });
 
   // ---- copiar para Excel / Planilhas Google ----
   $('copiar').addEventListener('click', function () {
     var doMes = dados.itens.filter(function (i) { return i.venc.slice(0, 7) === mes; });
-    var linhas = [['Vencimento', 'Conta', 'Categoria', 'Forma', 'Valor', 'Situação']];
+    var linhas = [['Data', 'Tipo', 'Descrição', 'Categoria', 'Forma', 'Valor', 'Situação']];
     filtrados(doMes).forEach(function (i) {
       var d = lerData(i.venc);
       linhas.push([
-        d.toLocaleDateString('pt-BR'), i.desc, i.cat, i.forma,
-        (i.valor / 100).toFixed(2).replace('.', ','), i.pago ? 'Paga' : 'A pagar'
+        d.toLocaleDateString('pt-BR'), ehEntrada(i) ? 'Entrada' : 'Saída', i.desc, i.cat, i.forma,
+        (ehEntrada(i) ? '' : '-') + (i.valor / 100).toFixed(2).replace('.', ','), situacao(i).txt
       ]);
     });
     var texto = linhas.map(function (l) { return l.map(function (c) { return String(c).replace(/\t|\n/g, ' '); }).join('\t'); }).join('\n');
