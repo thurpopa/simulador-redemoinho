@@ -1,5 +1,5 @@
 // Gasto em Dia: funciona offline quando hospedado em https.
-var VERSAO = 'gasto-em-dia-0.1.0-alpha';
+var VERSAO = 'gasto-em-dia-0.2.0-alpha';
 var FONTES = 'gasto-em-dia-fontes';
 var ARQUIVOS = ['./', './index.html', './boleto.js', './manifest.webmanifest', './icone.svg', './icone-192.png'];
 
