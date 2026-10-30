@@ -2120,7 +2120,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
     var leitor = new FileReader(), segunda = false;
     leitor.onload = function () {
       var t = String(leitor.result || '');
-      var quebrados = (t.match(/�/g) || []).length;
+      var quebrados = (t.match(/\uFFFD/g) || []).length;
       if (!segunda && (/CHARSET:\s*1252/i.test(t) || quebrados > 2)) {
         segunda = true;
         try { return leitor.readAsText(arq, 'windows-1252'); } catch (e) {}
