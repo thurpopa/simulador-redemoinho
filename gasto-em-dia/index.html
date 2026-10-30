@@ -263,6 +263,43 @@ li.atrasada .dia b, li.atrasada .dia span { color: var(--danger); }
 .dp .saldo-d { font: 600 14px/1.2 var(--f-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dp .saldo-d.neg { color: var(--danger); }
 
+/* Resultado do mês (DRE simplificado) */
+.tabela-rol { overflow-x: auto; min-width: 0; }
+.dre { width: 100%; min-width: 300px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.dre th, .dre td { padding: 8px 0 8px 12px; text-align: right; vertical-align: top; border-top: 1px solid var(--line); }
+.dre th:first-child, .dre td:first-child { text-align: left; padding-left: 0; }
+.dre thead th { border-top: 0; padding-top: 0; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.dre td.v { font: 500 14px/1.3 var(--f-num); white-space: nowrap; }
+.dre td.v.ant { color: var(--muted); }
+.dre td.v.neg { color: var(--danger); }
+.dre tr.total td { border-top: 2px solid var(--ink); font-weight: 700; }
+.dre tr.total td.v { font-weight: 600; }
+.dre .margem { display: block; font: 500 12px/1.4 var(--f-body); color: var(--muted); }
+.dre tr.sub td { font-size: 13px; color: var(--muted); border-top-style: dashed; }
+.dre tr.sub td:first-child { padding-left: 16px; }
+.dre tr.sub td.v { font-size: 13px; }
+.dre .abrir { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; display: inline-flex; gap: 6px; align-items: baseline; }
+.dre .abrir::before { content: "▸"; font-size: 11px; color: var(--muted); }
+.dre .abrir[aria-expanded="true"]::before { content: "▾"; }
+.nota { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* Importar extrato */
+#exPrevia { display: flex; flex-direction: column; gap: 14px; }
+.ex-cab { margin: 0; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.ex-grupo { display: flex; flex-direction: column; }
+.ex-grupo h4, .ex-grupo summary { margin: 0 0 4px; font: 600 14px/1.3 var(--f-body); }
+.ex-grupo summary { cursor: pointer; width: fit-content; }
+.ex-linha { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding-block: 8px; border-top: 1px solid var(--line); font-size: 14px; }
+.ex-linha .data { font: 500 13px/1.2 var(--f-num); color: var(--muted); }
+.ex-linha .desc-ex { min-width: 0; overflow-wrap: anywhere; }
+.ex-linha .valor { font-size: 14px; }
+.ex-liga { grid-column: 2 / -1; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 2px 8px; }
+.ex-campos { grid-column: 2 / -1; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 8px; }
+.ex-campos input, .ex-campos select { width: 100%; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.ex-campos input:focus, .ex-campos select:focus { border-color: var(--accent); outline: none; }
+.ex-linha input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.ex-linha.fora { opacity: .55; }
+
 /* Boas-vindas */
 .boas-vindas .passos { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
 .boas-vindas .passos li::marker { font-family: var(--f-num); font-weight: 600; color: var(--accent); }
@@ -279,6 +316,12 @@ li.atrasada .dia b, li.atrasada .dia span { color: var(--danger); }
 #backupTexto, #fRestaurar { width: 100%; min-height: 96px; font: 12px/1.4 var(--f-num); border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); resize: vertical; }
 .previa { display: flex; flex-direction: column; gap: 10px; background: var(--warn-bg); border-radius: 12px; padding: 12px 14px; }
 .previa p { margin: 0; }
+.contador { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
+.contador h3 { margin: 0; font: 600 15px/1.2 var(--f-display); }
+.linha-contador { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.linha-contador label { font-size: 13px; font-weight: 600; }
+.linha-contador select { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); max-width: 100%; }
+#contadorTexto { width: 100%; min-height: 96px; font: 12px/1.4 var(--f-num); border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); resize: vertical; }
 
 footer { color: var(--muted); font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
 footer p { margin: 0; }
@@ -307,9 +350,10 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
   #cardAgenda { order: 2; }
   #cardPrevisto { order: 3; }
   #cardCats { order: 4; }
-  #cardLista { order: 5; }
-  #cardForm { order: 6; }
-  #cardDados { order: 7; }
+  #cardResultado { order: 5; }
+  #cardLista { order: 6; }
+  #cardForm { order: 7; }
+  #cardDados { order: 8; }
 }
 @media (max-width: 560px) {
   .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -321,6 +365,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
   .card { padding: 16px; }
   .agenda li { grid-template-columns: 46px minmax(0, 1fr); }
   .agenda .lado { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; }
+  .ex-campos { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
 </style>
@@ -443,10 +488,31 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
             <button id="cancelarTransf" type="button" class="btn peq">Cancelar</button>
           </div>
         </div>
+        <div class="painel" id="painelExtrato" hidden>
+          <h3>Importar extrato do banco</h3>
+          <p class="mais">No app do seu banco, procure Exportar extrato e escolha OFX ou CSV.</p>
+          <div class="grade-campos">
+            <div class="campo">
+              <label for="exConta">Carteira do extrato</label>
+              <select id="exConta"></select>
+            </div>
+            <div class="campo">
+              <label for="exArquivo">Arquivo (.ofx ou .csv)</label>
+              <input id="exArquivo" type="file" accept=".ofx,.csv,.txt,application/x-ofx,text/csv,text/plain">
+            </div>
+          </div>
+          <p class="erro" id="eExtrato" hidden></p>
+          <div id="exPrevia" hidden></div>
+          <div class="acoes-dados">
+            <button id="exImportar" type="button" class="btn peq prim" hidden>Importar</button>
+            <button id="exCancelar" type="button" class="btn peq">Cancelar</button>
+          </div>
+        </div>
         <p class="erro" id="eCarteiras" hidden></p>
         <div class="acoes-dados" id="acoesCarteiras">
           <button id="novaCarteira" type="button" class="btn peq">Nova carteira</button>
           <button id="abrirTransf" type="button" class="btn peq">Transferir</button>
+          <button id="abrirExtrato" type="button" class="btn peq" hidden>Importar extrato</button>
         </div>
       </section>
 
@@ -563,6 +629,12 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
         <div class="cats" id="cats"></div>
       </section>
 
+      <section class="card" aria-labelledby="hResultado" id="cardResultado">
+        <h2 id="hResultado">Resultado do mês</h2>
+        <div class="tabela-rol" id="dre"></div>
+        <p class="nota">Calculado pela data de vencimento de cada lançamento.</p>
+      </section>
+
       <section class="card" aria-labelledby="hLista" id="cardLista">
         <div class="card-head">
           <h2 id="hLista">Lançamentos do mês</h2>
@@ -648,6 +720,17 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
             </div>
           </div>
         </div>
+        <div class="contador">
+          <h3>Para o contador</h3>
+          <p class="texto-dados">Resultado do mês, saldo de cada carteira e a lista completa de lançamentos, prontos para mandar ao contador.</p>
+          <div class="linha-contador">
+            <label for="ctMes">Mês</label>
+            <select id="ctMes"></select>
+            <button id="copiarContador" type="button" class="btn peq">Copiar relatório</button>
+            <button id="baixarContador" type="button" class="btn peq">Baixar CSV</button>
+          </div>
+          <textarea id="contadorTexto" readonly hidden aria-label="Relatório para o contador"></textarea>
+        </div>
       </section>
     </div>
   </div>
@@ -659,6 +742,10 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
       <summary>Novidades da versão</summary>
       <p class="versao-tit">0.2.0-alpha</p>
       <ul>
+        <li>Importar extrato do banco (OFX ou CSV): o que já estava lançado vira pago e o resto vira lançamento novo</li>
+        <li>Resultado do mês: vendas, impostos, mercadorias, despesas, lucro bruto e lucro líquido, com o mês anterior ao lado</li>
+        <li>Relatório para o contador: resultado, saldos das carteiras e lançamentos do mês, para copiar ou baixar em CSV</li>
+        <li>Busca em todos os meses</li>
         <li>Limite de gasto por categoria, com aviso quando passa</li>
         <li>Comparação com o mês anterior em entradas, saídas, lucro e categorias</li>
         <li>Fornecedores e clientes: escolha um nome já usado e o resto se preenche</li>
@@ -683,6 +770,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="boleto.js"></script>
+<script src="extrato.js"></script>
 <script>
 (function () {
   var VERSAO = '0.2.0-alpha';
@@ -950,6 +1038,9 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
   var horizonte = 30, todosDias = false;
   var editandoLimite = null; // categoria com o limite aberto para editar
   var busca = '', periodo = 'mes', filtroCat = '', filtroConta = '', filtroForma = '';
+  var despesasAbertas = false; // linha "Despesas da loja" do resultado aberta por categoria
+  var mesContador = null; // null = acompanha o mês do topo
+  var extrato = null; // extrato lido e ainda não importado: { nome, banco, linhas, contaId, res }
 
   // ---- núcleo: saldos e previsão (usado pela tela e por outros módulos) ----
   function dataMov(i) { return i.pagoEm || i.venc; }
@@ -1117,7 +1208,9 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
     desenharAgenda();
     desenharPrevisto();
     desenharCategorias(saidas);
+    desenharResultado();
     desenharLista();
+    desenharContador();
   }
 
   function desenharCarteiras() {
@@ -1299,6 +1392,62 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
     $('avisoLimiteTxt').textContent = estouros.join(' ');
   }
 
+  // ---- resultado do mês (DRE simplificado), pela data de vencimento e pelo valor pago ----
+  var CATS_VENDA = ['Vendas', 'Serviços'];
+  function dreMes(am) {
+    var r = { tem: false, vendas: 0, outras: 0, impostos: 0, mercadorias: 0, despesas: 0, porCat: {} };
+    dados.itens.forEach(function (i) {
+      if (ehTransf(i) || i.venc.slice(0, 7) !== am) return;
+      var v = valorEfetivo(i);
+      r.tem = true;
+      if (ehEntrada(i)) { if (CATS_VENDA.indexOf(i.cat) >= 0) r.vendas += v; else r.outras += v; }
+      else if (i.cat === 'Impostos') r.impostos += v;
+      else if (i.cat === 'Fornecedores') r.mercadorias += v;
+      else { r.despesas += v; r.porCat[i.cat] = (r.porCat[i.cat] || 0) + v; }
+    });
+    r.bruto = r.vendas + r.outras - r.impostos - r.mercadorias;
+    r.liquido = r.bruto - r.despesas;
+    return r;
+  }
+  function margem(v, vendas) { return vendas ? 'margem ' + Math.round(v / vendas * 100) + '%' : ''; }
+
+  function desenharResultado() {
+    var a = dreMes(mes), b = dreMes(somaMes(mes, -1));
+    if (!a.tem && !b.tem) {
+      $('dre').innerHTML = '<p class="vazio">Nada lançado em ' + nomeMes(mes).toLowerCase() + ' nem no mês anterior.</p>';
+      return;
+    }
+    var cel = function (v, r, ant, sub) {
+      if (ant && !b.tem) return '<td class="v ant">—</td>';
+      var m = sub ? '<span class="margem">' + sub + '</span>' : '';
+      return '<td class="v' + (ant ? ' ant' : '') + (v < 0 && r === 'total' ? ' neg' : '') + '">' + dinheiroSinal(v) + m + '</td>';
+    };
+    var linha = function (nome, va, vb, tipo, ma, mb) {
+      return '<tr' + (tipo ? ' class="' + tipo + '"' : '') + '><td>' + nome + '</td>' + cel(va, tipo, false, ma) + cel(vb, tipo, true, mb) + '</tr>';
+    };
+    var cats = unicos(Object.keys(a.porCat).concat(Object.keys(b.porCat)))
+      .sort(function (x, y) { return (a.porCat[y] || 0) - (a.porCat[x] || 0) || (x < y ? -1 : 1); });
+    var html = '<table class="dre"><thead><tr><th scope="col"><span class="sr">Linha</span></th>' +
+      '<th scope="col">' + soMes(mes) + '</th><th scope="col">' + soMes(somaMes(mes, -1)) + '</th></tr></thead><tbody>' +
+      linha('Vendas', a.vendas, b.vendas) +
+      linha('Outras entradas', a.outras, b.outras) +
+      linha('(−) Impostos', -a.impostos, -b.impostos) +
+      linha('(−) Mercadorias e fornecedores', -a.mercadorias, -b.mercadorias) +
+      linha('= Lucro bruto', a.bruto, b.bruto, 'total', margem(a.bruto, a.vendas), margem(b.bruto, b.vendas)) +
+      linha(cats.length
+        ? '<button type="button" class="abrir" id="abrirDespesas" aria-expanded="' + despesasAbertas + '">(−) Despesas da loja</button>'
+        : '(−) Despesas da loja', -a.despesas, -b.despesas);
+    if (despesasAbertas) cats.forEach(function (c) { html += linha(esc(c), -(a.porCat[c] || 0), -(b.porCat[c] || 0), 'sub'); });
+    html += linha('= Lucro líquido', a.liquido, b.liquido, 'total', margem(a.liquido, a.vendas), margem(b.liquido, b.vendas)) + '</tbody></table>';
+    $('dre').innerHTML = html;
+  }
+  $('dre').addEventListener('click', function (e) {
+    if (!e.target.closest('#abrirDespesas')) return;
+    despesasAbertas = !despesasAbertas;
+    desenharResultado();
+    $('abrirDespesas').focus();
+  });
+
   // transferência aparece uma vez só na lista (pela saída da carteira de origem)
   function filtrados(doMes) {
     return doMes.filter(function (i) {
@@ -1315,8 +1464,11 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
   function semAcento(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
   function filtroAtivo() { return !!(busca.trim() || periodo !== 'mes' || filtroCat || filtroConta || filtroForma); }
   // intervalo de datas do período, em volta do mês mostrado no topo
+  function buscaTodosMeses() { return periodo === 'mes' && !!busca.trim(); }
   function intervalo() {
     var fimMes = function (am) { return diaNoMes(am, 31); };
+    // quem busca "luz" quer achar em qualquer mês; um período escolhido continua limitando
+    if (buscaTodosMeses()) return { de: '0000-01-01', ate: '9999-12-31' };
     if (periodo === '3m') return { de: somaMes(mes, -2) + '-01', ate: fimMes(mes) };
     if (periodo === 'ano') return { de: mes.slice(0, 4) + '-01-01', ate: mes.slice(0, 4) + '-12-31' };
     if (periodo === 'datas') return { de: $('fpDe').value || '0000-01-01', ate: $('fpAte').value || '9999-12-31' };
@@ -1361,12 +1513,13 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
     if (periodo === '3m') partes.push('últimos 3 meses');
     else if (periodo === 'ano') partes.push('ano de ' + mes.slice(0, 4));
     else if (periodo === 'datas') partes.push('datas escolhidas');
+    else if (buscaTodosMeses()) partes.push('buscando em todos os meses');
     else partes.push(nomeMes(mes).toLowerCase());
     if (filtroCat) partes.push(filtroCat);
     if (filtroConta) partes.push(nomeCarteira(filtroConta));
     if (filtroForma) partes.push(filtroForma);
     $('resumoFiltro').textContent = 'Mostrando: ' + partes.join(' · ');
-    $('hLista').textContent = periodo === 'mes' ? 'Lançamentos do mês' : 'Lançamentos';
+    $('hLista').textContent = periodo === 'mes' && !buscaTodosMeses() ? 'Lançamentos do mês' : 'Lançamentos';
   }
 
   function desenharLista() {
@@ -1767,6 +1920,8 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
     editandoCarteira = null;
     $('painelCarteira').hidden = true;
     $('painelTransf').hidden = true;
+    $('painelExtrato').hidden = true;
+    extrato = null;
     $('eCarteira').hidden = true;
     $('eTransf').hidden = true;
     $('eCarteiras').hidden = true;
@@ -1937,6 +2092,251 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
     $('busca').focus();
   });
 
+  // ---- importar extrato do banco (extrato.js expõe window.GastoExtrato) ----
+  function erroExtrato(msg) {
+    $('eExtrato').textContent = msg;
+    $('eExtrato').hidden = !msg;
+  }
+
+  $('abrirExtrato').addEventListener('click', function () {
+    fecharPaineisCarteira();
+    var banco = dados.contas.find(function (c) { return c.tipo === 'banco' || c.tipo === 'digital'; });
+    $('exConta').innerHTML = opcoesCarteira(banco ? banco.id : dados.ultimaConta);
+    $('exArquivo').value = '';
+    $('exPrevia').hidden = true;
+    $('exPrevia').innerHTML = '';
+    $('exImportar').hidden = true;
+    erroExtrato('');
+    $('painelExtrato').hidden = false;
+    $('acoesCarteiras').hidden = true;
+    $('exConta').focus();
+  });
+  $('exCancelar').addEventListener('click', fecharPaineisCarteira);
+
+  // lê como UTF-8; extrato de banco brasileiro em Windows-1252 é relido com essa codificação
+  function lerArquivoTexto(arq, pronto, falhou) {
+    var leitor = new FileReader(), segunda = false;
+    leitor.onload = function () {
+      var t = String(leitor.result || '');
+      var quebrados = (t.match(/�/g) || []).length;
+      if (!segunda && (/CHARSET:\s*1252/i.test(t) || quebrados > 2)) {
+        segunda = true;
+        try { return leitor.readAsText(arq, 'windows-1252'); } catch (e) {}
+      }
+      pronto(t);
+    };
+    leitor.onerror = falhou;
+    leitor.readAsText(arq);
+  }
+
+  $('exArquivo').addEventListener('change', function () {
+    var arq = this.files && this.files[0];
+    extrato = null;
+    $('exPrevia').hidden = true;
+    $('exImportar').hidden = true;
+    erroExtrato('');
+    if (!arq) return;
+    lerArquivoTexto(arq, function (texto) { processarExtrato(texto, arq.name || ''); },
+      function () { erroExtrato('Não deu para abrir o arquivo. Tente de novo.'); });
+  });
+
+  function processarExtrato(texto, nome) {
+    var G = window.GastoExtrato, n = nome.toLowerCase();
+    var ordem = /\.csv$/.test(n) ? ['lerCSV', 'lerOFX'] : /\.ofx$/.test(n) ? ['lerOFX', 'lerCSV']
+      : /<OFX|OFXHEADER/i.test(texto) ? ['lerOFX', 'lerCSV'] : ['lerCSV', 'lerOFX'];
+    var tentar = function (f) {
+      try { return G[f](texto) || { ok: false }; } catch (e) { return { ok: false }; }
+    };
+    var r = tentar(ordem[0]);
+    if (!r.ok) { var r2 = tentar(ordem[1]); if (r2.ok) r = r2; }
+    if (!r.ok) return erroExtrato(r.erro || 'Não reconheci esse arquivo. Exporte o extrato do banco em OFX ou CSV.');
+    if (!r.linhas || !r.linhas.length) return erroExtrato('Não achei lançamentos nesse arquivo. Confira se é o extrato do período certo.');
+    extrato = { nome: nome, banco: r.banco || null, linhas: r.linhas };
+    conciliarExtrato();
+  }
+
+  function conciliarExtrato() {
+    extrato.contaId = $('exConta').value;
+    extrato.res = window.GastoExtrato.conciliar(extrato.linhas, dados.itens, extrato.contaId);
+    desenharExtrato();
+  }
+  $('exConta').addEventListener('change', function () { if (extrato) conciliarExtrato(); });
+
+  function valorExtrato(v) {
+    return '<span class="valor' + (v > 0 ? ' entrada' : '') + '">' + (v > 0 ? '+ ' : '− ') + dinheiro(Math.abs(v)) + '</span>';
+  }
+
+  function desenharExtrato() {
+    var r = extrato.res, datas = extrato.linhas.map(function (l) { return l.data; }).sort();
+    var html = '<p class="ex-cab">' + esc(extrato.nome || 'Extrato') + (extrato.banco ? ' · ' + esc(extrato.banco) : '') + ' · ' +
+      plural(extrato.linhas.length, 'linha', 'linhas') + ' de ' + dataBr(datas[0]) + ' a ' + dataBr(datas[datas.length - 1]) + '</p>';
+
+    html += '<div class="ex-grupo"><h4>Encontrados (' + r.encontrados.length + '): vão ser marcados como pagos</h4>';
+    r.encontrados.forEach(function (e) {
+      var l = e.linha, it = e.item, abs = Math.abs(l.valor), dif = abs - it.valor, ajuste = '';
+      if (e.motivo === 'valor diferente') {
+        ajuste = ehEntrada(it) ? '<span class="ajuste desconto">recebido ' + dinheiro(abs) + ', previsto ' + dinheiro(it.valor) + '</span>'
+          : dif > 0 ? '<span class="ajuste">+' + dinheiro(dif) + ' de juros/multa</span>'
+          : '<span class="ajuste desconto">' + dinheiro(-dif) + ' de desconto</span>';
+      }
+      html += '<div class="ex-linha"><span class="data">' + dataCurta(l.data) + '</span><span class="desc-ex">' + esc(l.desc) + '</span>' + valorExtrato(l.valor) +
+        '<span class="ex-liga"><span>↔ ' + esc(it.desc) + ' · vence ' + dataCurta(it.venc) + '</span>' + ajuste + '</span></div>';
+    });
+    if (!r.encontrados.length) html += '<p class="vazio">Nenhuma conta lançada bate com o extrato.</p>';
+    html += '</div>';
+
+    html += '<div class="ex-grupo"><h4>Novos (' + r.novos.length + '): vão ser criados</h4>';
+    r.novos.forEach(function (n, k) {
+      var l = n.linha, s = n.sugestao || {}, tipo = s.tipo || (l.valor < 0 ? 'saida' : 'entrada');
+      var lista = OPCOES[tipo].cats.slice();
+      if (s.cat && lista.indexOf(s.cat) < 0) lista.push(s.cat);
+      html += '<div class="ex-linha" id="exL' + k + '"><input type="checkbox" id="exSel' + k + '" data-k="' + k + '" checked aria-label="Importar ' + esc(l.desc) + '">' +
+        '<label for="exSel' + k + '" class="desc-ex"><span class="data">' + dataCurta(l.data) + '</span> ' + esc(l.desc) + '</label>' + valorExtrato(l.valor) +
+        '<div class="ex-campos"><input id="exDesc' + k + '" value="' + esc(s.desc || l.desc) + '" aria-label="Descrição" autocomplete="off">' +
+        '<select id="exCat' + k + '" aria-label="Categoria">' + lista.map(function (c) {
+          return '<option' + (c === s.cat ? ' selected' : '') + '>' + esc(c) + '</option>';
+        }).join('') + '</select></div></div>';
+    });
+    if (!r.novos.length) html += '<p class="vazio">Nada novo para criar.</p>';
+    html += '</div>';
+
+    if (r.jaImportados.length) {
+      html += '<details class="ex-grupo"><summary>Já importados (' + r.jaImportados.length + '): ignorados</summary>';
+      r.jaImportados.forEach(function (j) {
+        html += '<div class="ex-linha"><span class="data">' + dataCurta(j.linha.data) + '</span><span class="desc-ex">' + esc(j.linha.desc) + '</span>' + valorExtrato(j.linha.valor) + '</div>';
+      });
+      html += '</details>';
+    }
+    $('exPrevia').innerHTML = html;
+    $('exPrevia').hidden = false;
+    contarExtrato();
+  }
+
+  function contarExtrato() {
+    var n = extrato.res.encontrados.length;
+    extrato.res.novos.forEach(function (x, k) {
+      var marcado = $('exSel' + k).checked;
+      $('exL' + k).classList.toggle('fora', !marcado);
+      if (marcado) n++;
+    });
+    $('exImportar').hidden = false;
+    $('exImportar').disabled = !n;
+    $('exImportar').textContent = n ? 'Importar ' + plural(n, 'lançamento', 'lançamentos') : 'Nada para importar';
+  }
+  $('exPrevia').addEventListener('change', function (e) { if (e.target.type === 'checkbox' && extrato) contarExtrato(); });
+
+  $('exImportar').addEventListener('click', function () {
+    if (!extrato) return;
+    var r = extrato.res, novos = [];
+    r.novos.forEach(function (n, k) {
+      if (!$('exSel' + k).checked) return;
+      var s = {}, base = n.sugestao || {};
+      Object.keys(base).forEach(function (c) { s[c] = base[c]; });
+      s.desc = $('exDesc' + k).value.trim() || n.linha.desc;
+      s.cat = $('exCat' + k).value;
+      novos.push({ linha: n.linha, sugestao: s });
+    });
+    var marcados = r.encontrados.length, contaId = extrato.contaId;
+    if (!marcados && !novos.length) return;
+    dados.itens = window.GastoExtrato.aplicar({ encontrados: r.encontrados, jaImportados: r.jaImportados, novos: novos }, dados.itens, contaId, id);
+    dados.ultimaConta = contaId;
+    confirmandoId = null;
+    var editado = editandoId && achar(editandoId);
+    if (editado && editado.pago) { $('fPago').checked = true; $('fConta').value = editado.conta; }
+    fecharPaineisCarteira();
+    salvar(); desenhar();
+    avisar('Extrato importado: ' + plural(marcados, 'marcado como pago', 'marcados como pagos') + ', ' + plural(novos.length, 'novo', 'novos') + '.');
+  });
+
+  // ---- relatório para o contador ----
+  function numContador(c) { return (c < 0 ? '-' : '') + (Math.abs(c) / 100).toFixed(2).replace('.', ','); }
+
+  function linhasContador(am) {
+    var r = dreMes(am), fim = diaNoMes(am, 31);
+    var linhas = [
+      ['Gasto em Dia · relatório para o contador'],
+      ['Loja', dados.loja || 'Minha Loja'],
+      ['Mês', nomeMes(am)],
+      [],
+      ['Resultado do mês (pela data de vencimento)', 'Valor (R$)'],
+      ['Vendas', numContador(r.vendas)],
+      ['Outras entradas', numContador(r.outras)],
+      ['(-) Impostos', numContador(-r.impostos)],
+      ['(-) Mercadorias e fornecedores', numContador(-r.mercadorias)],
+      ['= Lucro bruto', numContador(r.bruto)],
+      ['(-) Despesas da loja', numContador(-r.despesas)]
+    ];
+    Object.keys(r.porCat).sort().forEach(function (c) { linhas.push(['    ' + c, numContador(-r.porCat[c])]); });
+    linhas.push(['= Lucro líquido', numContador(r.liquido)], []);
+    linhas.push(['Saldo das carteiras em ' + dataBr(fim), 'Valor (R$)']);
+    var total = 0;
+    dados.contas.forEach(function (c) {
+      var s = window.GastoNucleo.saldoConta(c.id, fim);
+      total += s;
+      linhas.push([c.nome, numContador(s)]);
+    });
+    linhas.push(['Total', numContador(total)], []);
+    linhas.push(['Vencimento', 'Pagamento', 'Tipo', 'Descrição', 'Fornecedor/Cliente', 'Categoria', 'Forma', 'Carteira', 'Valor previsto', 'Valor pago', 'Situação']);
+    dados.itens.filter(function (i) { return i.venc.slice(0, 7) === am; }).sort(porData).forEach(function (i) {
+      var tr = ehTransf(i);
+      linhas.push([
+        dataBr(i.venc), i.pago && i.pagoEm ? dataBr(i.pagoEm) : '', tr ? 'Transferência' : ehEntrada(i) ? 'Entrada' : 'Saída',
+        i.desc, i.contato || '', i.cat, i.forma, nomeCarteira(i.conta),
+        numContador(i.valor), i.pago ? numContador(valorEfetivo(i)) : '', tr ? 'Feita' : situacao(i).txt
+      ]);
+    });
+    return linhas;
+  }
+  function celCsv(x) { x = String(x); return /[;"\r\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }
+  function mesDoContador() { return $('ctMes').value || mes; }
+
+  function desenharContador() {
+    var meses = unicos(dados.itens.map(function (i) { return i.venc.slice(0, 7); }).concat([mes])).sort().reverse();
+    var atual = mesContador && meses.indexOf(mesContador) >= 0 ? mesContador : mes;
+    $('ctMes').innerHTML = meses.map(function (am) {
+      return '<option value="' + am + '"' + (am === atual ? ' selected' : '') + '>' + nomeMes(am) + '</option>';
+    }).join('');
+  }
+  $('ctMes').addEventListener('change', function () { mesContador = this.value === mes ? null : this.value; });
+
+  $('copiarContador').addEventListener('click', function () {
+    var texto = linhasContador(mesDoContador()).map(function (l) {
+      return l.map(function (c) { return String(c).replace(/[\t\r\n]/g, ' '); }).join('\t');
+    }).join('\n');
+    var mostrar = function () {
+      var t = $('contadorTexto');
+      t.value = texto; t.hidden = false; t.focus(); t.select();
+      avisar('Selecione o texto abaixo e copie');
+    };
+    try {
+      navigator.clipboard.writeText(texto).then(function () {
+        $('contadorTexto').hidden = true;
+        avisar('Relatório copiado. Cole no Excel, no Planilhas Google ou no e-mail do contador.');
+      }, mostrar);
+    } catch (e) { mostrar(); }
+  });
+
+  // CSV no padrão do Excel em português: ponto e vírgula, vírgula decimal e BOM para os acentos
+  function csvContador(am) {
+    return '﻿' + linhasContador(am).map(function (l) { return l.map(celCsv).join(';'); }).join('\r\n') + '\r\n';
+  }
+  $('baixarContador').addEventListener('click', function () {
+    var am = mesDoContador();
+    try {
+      var url = URL.createObjectURL(new Blob([csvContador(am)], { type: 'text/csv;charset=utf-8' }));
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'gasto-em-dia-contador-' + am + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      avisar('Relatório do contador gerado');
+    } catch (e) {
+      avisar('O arquivo não baixou. Use Copiar relatório.');
+    }
+  });
+
   // ---- boas-vindas ----
   $('entendi').addEventListener('click', function () {
     dados.boasVindas = true;
@@ -2102,6 +2502,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
   });
 
   $('versao').textContent = VERSAO;
+  $('abrirExtrato').hidden = !window.GastoExtrato;
   desenhar();
 
   try {

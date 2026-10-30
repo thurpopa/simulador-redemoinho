@@ -2,6 +2,37 @@
 
 Todas as mudanças importantes do Gasto em Dia ficam anotadas aqui.
 
+## [0.2.0-alpha] - 2026-10-30
+
+Segunda versão de teste, com as funções que as ferramentas de gestão financeira mais usadas têm (veja `docs/pesquisa-concorrentes.md`).
+
+### Adicionado
+
+- Carteiras (caixa da loja, banco, conta digital, maquininha), cada uma com saldo inicial e saldo atual. O card "Onde está o dinheiro" mostra o saldo de cada uma e o total.
+- Transferência entre carteiras: muda os saldos, mas não entra em entradas, saídas, lucro nem categorias.
+- "Paguei" e "Recebi" com data, valor pago e carteira. A diferença para o valor previsto aparece como juros/multa ou desconto, e o resumo mostra os juros e multas do mês.
+- Saldo previsto para 30, 60 ou 90 dias, com gráfico, lista dos dias com movimento e aviso no topo quando o saldo vai ficar negativo.
+- Limite de gasto por categoria, com barra verde, amarela e vermelha e aviso quando passa do limite.
+- Comparação com o mês anterior (↑ 18%, ↓ 7%) em entradas, saídas, lucro e cada categoria, com a média de 3 meses.
+- Fornecedor e cliente em cada lançamento: escolher um nome já usado preenche categoria, forma, carteira e o último valor.
+- Busca e filtros por período, categoria, carteira e forma de pagamento. Com o período padrão, a busca procura em todos os meses.
+- Resultado do mês (DRE simplificado): vendas, outras entradas, impostos, mercadorias e fornecedores, lucro bruto, despesas da loja (abre por categoria) e lucro líquido, com margem e o mês anterior ao lado.
+- Relatório para o contador: resultado do mês, saldo de cada carteira no fim do mês e todos os lançamentos, para copiar (cola no Excel e no Planilhas Google) ou baixar em CSV no padrão do Excel em português.
+- Importar extrato do banco em OFX ou CSV: o que bate com uma conta lançada vira pago na data do extrato, o resto vira lançamento novo com categoria sugerida pelo histórico, e importar o mesmo extrato de novo não duplica nada.
+
+### Mudado
+
+- Os dados da versão 0.1 são convertidos sozinhos: tudo vai para a carteira "Caixa da loja", e as contas pagas ganham a data de pagamento igual ao vencimento.
+- No celular, os cards seguem a ordem de uso: carteiras, vencimentos, saldo previsto, categorias, resultado, lançamentos, formulário e seus dados.
+
+### Limitações conhecidas
+
+- Os dados continuam só no aparelho e no navegador. Faça backup.
+- O leitor de extrato foi testado com arquivos gerados nos testes, no formato dos bancos brasileiros, mas ainda não com extratos reais. Arquivos fora do padrão podem não ser reconhecidos.
+- A conciliação não junta várias linhas do extrato para casar com uma conta só.
+- O resultado do mês é pela data de vencimento, não pela data do pagamento.
+- Dentro do link de visualização do Claude, "Baixar arquivo" e "Baixar CSV" não baixam nada; use os botões de copiar.
+
 ## [0.1.0-alpha] - 2026-10-30
 
 Primeira versão para testar com lojistas.

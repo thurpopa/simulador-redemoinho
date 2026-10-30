@@ -1,7 +1,7 @@
 // Gasto em Dia: funciona offline quando hospedado em https.
 var VERSAO = 'gasto-em-dia-0.2.0-alpha';
 var FONTES = 'gasto-em-dia-fontes';
-var ARQUIVOS = ['./', './index.html', './boleto.js', './manifest.webmanifest', './icone.svg', './icone-192.png'];
+var ARQUIVOS = ['./', './index.html', './boleto.js', './extrato.js', './manifest.webmanifest', './icone.svg', './icone-192.png'];
 
 self.addEventListener('install', function (ev) {
   ev.waitUntil(caches.open(VERSAO).then(function (c) { return c.addAll(ARQUIVOS); }));
