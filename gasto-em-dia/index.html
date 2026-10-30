@@ -228,6 +228,8 @@ li.atrasada .dia b, li.atrasada .dia span { color: var(--danger); }
 .painel { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
 .painel h3, .pg h3 { margin: 0; font: 600 15px/1.2 var(--f-display); }
 .grade-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+#painelExtrato .grade-campos { grid-template-columns: minmax(0, 1fr); }
+#exArquivo { font-size: 13px; padding: 8px; }
 
 /* Confirmar pagamento dentro do item */
 .pg { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px; background: var(--bg); border-radius: 12px; padding: 12px; }
@@ -1238,8 +1240,8 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
       '<input id="pgValor" inputmode="decimal" autocomplete="off" value="' + valorCampo(i.valor) + '"></div>' +
       '<div class="campo"><label for="pgConta">Carteira</label><select id="pgConta">' + opcoesCarteira(i.conta || dados.ultimaConta) + '</select></div>' +
       '</div><p class="erro" id="ePg" hidden></p>' +
-      '<div class="acoes-dados"><button type="button" class="btn peq prim" data-acao="confirmarPg" data-id="' + i.id + '">Confirmar</button>' +
-      '<button type="button" class="btn peq" data-acao="cancelarPg" data-id="' + i.id + '">Cancelar</button></div></div>';
+      '<div class="acoes-dados"><button type="button" class="btn peq prim" data-acao="confirmarPg" data-id="' + esc(i.id) + '">Confirmar</button>' +
+      '<button type="button" class="btn peq" data-acao="cancelarPg" data-id="' + esc(i.id) + '">Cancelar</button></div></div>';
   }
 
   // diferença entre o pago e o previsto: juros/multa ou desconto
@@ -1262,7 +1264,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
         '<div class="info"><strong>' + esc(i.desc) + '</strong>' +
         '<div class="meta"><span class="chip ' + s.cls + '">' + s.txt + '</span><span>' + esc(i.forma) + '</span></div></div>' +
         '<div class="lado"><span class="valor">' + dinheiro(i.valor) + '</span>' +
-        (aberto ? '' : '<button type="button" class="btn peq" data-acao="pagar" data-id="' + i.id + '">Paguei</button>') + '</div>' +
+        (aberto ? '' : '<button type="button" class="btn peq" data-acao="pagar" data-id="' + esc(i.id) + '">Paguei</button>') + '</div>' +
         (aberto ? painelPagamento(i) : '') +
         '</li>';
     });
@@ -1451,7 +1453,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
   // transferência aparece uma vez só na lista (pela saída da carteira de origem)
   function filtrados(doMes) {
     return doMes.filter(function (i) {
-      if (ehTransf(i)) return filtro === 'todos' && !ehEntrada(i);
+      if (ehTransf(i)) return filtro === 'todos' && (!ehEntrada(i) || !parDe(i)); // a metade sem par (backup antigo) também aparece
       if (filtro === 'todos') return true;
       if (filtro === 'entrada') return ehEntrada(i);
       return !ehEntrada(i) && (filtro === 'pago' ? i.pago : !i.pago);
@@ -1534,17 +1536,17 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
         return '<div class="linha">' + data +
           '<div class="info"><strong>Transferência</strong>' +
           '<div class="meta"><span>' + esc(nomeCarteira(i.conta)) + ' → ' + esc(par ? nomeCarteira(par.conta) : '?') + '</span>' +
-          '<button type="button" class="link" data-acao="apagar" data-id="' + i.id + '">Apagar</button></div></div>' +
+          '<button type="button" class="link" data-acao="apagar" data-id="' + esc(i.id) + '">Apagar</button></div></div>' +
           '<div class="lado"><span class="valor">' + dinheiro(i.valor) + '</span><span class="chip transf">Transferência</span></div></div>';
       }
       var marcar = ent ? (i.pago ? 'a receber' : 'recebida') : (i.pago ? 'não paga' : 'paga');
       var aberto = confirmandoId === i.id && confirmandoLugar === 'lista';
       return '<div class="linha">' + data +
-        '<div class="info"><button type="button" class="desc" data-acao="editar" data-id="' + i.id + '" title="Toque para editar">' + esc(i.desc) + '</button>' +
+        '<div class="info"><button type="button" class="desc" data-acao="editar" data-id="' + esc(i.id) + '" title="Toque para editar">' + esc(i.desc) + '</button>' +
         '<div class="meta"><span>' + (i.contato ? esc(i.contato) + ' · ' : '') + esc(i.cat) + ' · ' + esc(i.forma) + ' · ' + esc(nomeCarteira(i.conta)) + '</span>' + textoAjuste(i) +
-        '<button type="button" class="link" data-acao="apagar" data-id="' + i.id + '">Apagar</button></div></div>' +
+        '<button type="button" class="link" data-acao="apagar" data-id="' + esc(i.id) + '">Apagar</button></div></div>' +
         '<div class="lado"><span class="valor' + (ent ? ' entrada' : '') + '">' + (ent ? '+ ' : '') + dinheiro(valorEfetivo(i)) + '</span>' +
-        '<button type="button" class="chip ' + s.cls + '" data-acao="alternar" data-id="' + i.id + '" title="Toque para marcar como ' + marcar + '">' + s.txt + '</button></div>' +
+        '<button type="button" class="chip ' + s.cls + '" data-acao="alternar" data-id="' + esc(i.id) + '" title="Toque para marcar como ' + marcar + '">' + s.txt + '</button></div>' +
         (aberto ? painelPagamento(i) : '') +
         '</div>';
     }).join('') || '<p class="vazio">' + (filtro === 'todos' && !filtroAtivo() ? 'Nada lançado neste mês. Adicione o primeiro no formulário.' : 'Nada encontrado com essa busca ou filtro.') + '</p>';
@@ -1902,7 +1904,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
         i.pago && i.pagoEm ? lerData(i.pagoEm).toLocaleDateString('pt-BR') : ''
       ]);
     });
-    var texto = linhas.map(function (l) { return l.map(function (c) { return String(c).replace(/\t|\n/g, ' '); }).join('\t'); }).join('\n');
+    var texto = linhas.map(function (l) { return l.map(function (c) { return semFormula(String(c).replace(/[\t\r\n]/g, ' ')); }).join('\t'); }).join('\n');
     var mostrar = function () {
       var t = $('copiaTexto');
       t.value = texto; t.hidden = false; t.focus(); t.select();
@@ -2249,6 +2251,8 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
   });
 
   // ---- relatório para o contador ----
+  // texto que começa com = + - @ vira fórmula no Excel; números negativos como -150,00 continuam números
+  function semFormula(x) { return /^[=+@]|^-(?![\d.,]+$)/.test(x) ? "'" + x : x; }
   function numContador(c) { return (c < 0 ? '-' : '') + (Math.abs(c) / 100).toFixed(2).replace('.', ','); }
 
   function linhasContador(am) {
@@ -2263,11 +2267,11 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
       ['Outras entradas', numContador(r.outras)],
       ['(-) Impostos', numContador(-r.impostos)],
       ['(-) Mercadorias e fornecedores', numContador(-r.mercadorias)],
-      ['= Lucro bruto', numContador(r.bruto)],
+      ['(=) Lucro bruto', numContador(r.bruto)],
       ['(-) Despesas da loja', numContador(-r.despesas)]
     ];
     Object.keys(r.porCat).sort().forEach(function (c) { linhas.push(['    ' + c, numContador(-r.porCat[c])]); });
-    linhas.push(['= Lucro líquido', numContador(r.liquido)], []);
+    linhas.push(['(=) Lucro líquido', numContador(r.liquido)], []);
     linhas.push(['Saldo das carteiras em ' + dataBr(fim), 'Valor (R$)']);
     var total = 0;
     dados.contas.forEach(function (c) {
@@ -2287,7 +2291,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
     });
     return linhas;
   }
-  function celCsv(x) { x = String(x); return /[;"\r\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }
+  function celCsv(x) { x = semFormula(String(x)); return /[;"\r\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }
   function mesDoContador() { return $('ctMes').value || mes; }
 
   function desenharContador() {
@@ -2301,7 +2305,7 @@ footer details .versao-tit { margin-top: 8px; font-weight: 600; color: var(--ink
 
   $('copiarContador').addEventListener('click', function () {
     var texto = linhasContador(mesDoContador()).map(function (l) {
-      return l.map(function (c) { return String(c).replace(/[\t\r\n]/g, ' '); }).join('\t');
+      return l.map(function (c) { return semFormula(String(c).replace(/[\t\r\n]/g, ' ')); }).join('\t');
     }).join('\n');
     var mostrar = function () {
       var t = $('contadorTexto');
